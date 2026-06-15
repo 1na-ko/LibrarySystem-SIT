@@ -22,6 +22,7 @@ public enum ErrorCode {
     NOT_FOUND(404, "资源不存在"),
     CONFLICT(409, "数据冲突，请检查后重试"),
     INTERNAL_ERROR(500, "服务器内部错误"),
+    RATE_LIMITED(429, "请求过于频繁，请稍后再试"),
 
     // ==================== 借阅域 (1xxx) ====================
     BOOK_NOT_FOUND(1000, "图书不存在"),

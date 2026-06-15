@@ -72,8 +72,8 @@ public class GlobalExceptionHandler {
     private HttpStatus mapHttpStatus(ErrorCode errorCode) {
         return switch (errorCode) {
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
-            case UNAUTHORIZED, TOKEN_EXPIRED, TOKEN_INVALID -> HttpStatus.UNAUTHORIZED;
-            case FORBIDDEN, USER_DISABLED -> HttpStatus.FORBIDDEN;
+            case UNAUTHORIZED, TOKEN_EXPIRED, TOKEN_INVALID, BAD_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN, USER_DISABLED, ACCOUNT_FROZEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND, BOOK_NOT_FOUND, USER_NOT_FOUND,
                  SUPPLIER_NOT_FOUND, NEGOTIATION_NOT_FOUND,
                  RESERVATION_NOT_FOUND, BORROW_RECORD_NOT_FOUND,

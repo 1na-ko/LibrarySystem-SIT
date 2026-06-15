@@ -88,12 +88,22 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
+    # 枚举映射：显式声明 type-handler，无 @EnumValue 时按枚举 name() 与 DB ENUM 列互转
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
 
 # ---- JWT 认证 ----
 jwt:
   secret: ${JWT_SECRET:}
   access-token-expiration: 7200000      # 2 小时
   refresh-token-expiration: 604800000   # 7 天
+
+# ---- 限流（Redis 令牌桶，键定义见 RateLimitProperties）----
+# login/register 按客户端 IP 防爆破；authenticated 按 userId；anonymous 按 IP
+ratelimit:
+  login:         { capacity: 20, refill-per-min: 20 }
+  register:      { capacity: 20, refill-per-min: 20 }
+  authenticated: { capacity: 100, refill-per-min: 100 }
+  anonymous:     { capacity: 100, refill-per-min: 100 }
 
 # ---- SpringDoc OpenAPI ----
 springdoc:

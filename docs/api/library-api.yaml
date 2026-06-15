@@ -824,6 +824,7 @@ components:
     # ---- 通用 ----
     ErrorResponse:
       type: object
+      description: 错误响应（与 Result 在错误场景等价：code/message/timestamp）
       properties:
         code:
           type: integer
@@ -836,12 +837,6 @@ components:
         timestamp:
           type: integer
           format: int64
-        path:
-          type: string
-          description: 请求路径
-        traceId:
-          type: string
-          description: 链路追踪 ID
 
   # ---- 请求头参数 ----
   parameters:
@@ -965,9 +960,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 401
+                code: 4003
                 message: "用户名或密码错误"
                 timestamp: 1718400000000
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/v1/auth/register:
     post:
@@ -982,17 +979,24 @@ paths:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
         "200":
-          description: 注册成功
+          description: 注册成功（注册即登录，返回令牌对）
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Result"
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginResponse"
         "409":
           description: 用户名已存在
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/v1/auth/refresh:
     post:
@@ -1020,6 +1024,8 @@ paths:
                         $ref: "#/components/schemas/RefreshResponse"
         "401":
           description: Refresh Token 无效或已过期
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/v1/auth/logout:
     post:
@@ -1032,6 +1038,12 @@ paths:
       responses:
         "200":
           description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        "401":
+          description: 未认证（缺少有效 Access Token）
 
   # ======================== 图书检索模块 ========================
   /api/v1/books/search:
