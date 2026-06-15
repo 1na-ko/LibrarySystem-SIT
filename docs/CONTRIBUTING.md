@@ -637,7 +637,26 @@ public static final int days = 30;            // 非 final 且未大写
 | library-acquisition | 80% |
 | library-security | 90% |
 
-### 7.2 必须测试的场景
+### 7.2 测试命名规范
+
+所有测试方法**必须**遵循 `should{预期行为}When{条件/输入}` 命名模式：
+
+```java
+// ✅ 正确：should + 预期行为 + When + 条件
+void shouldReturnSearchResultsWhenKeywordValid()
+void shouldThrowBizExceptionWhenKeywordIsEmpty()
+void shouldReturnEmptyPageWhenNoMatchFound()
+void shouldRejectBorrowWhenUserExceedsMaxBooks()
+
+// ❌ 错误：模糊、无结构
+void testSearch()
+void testBorrowFail()
+void test1()
+```
+
+**测试类命名**：`{被测类}Test`，如 `BookServiceTest`、`BorrowControllerTest`。
+
+### 7.3 必须测试的场景
 
 每个 Service 的 public 方法至少覆盖：
 
@@ -650,12 +669,12 @@ class BookServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenKeywordIsEmpty() {
+    void shouldThrowBizExceptionWhenKeywordIsEmpty() {
         // ✅ 边界场景 — 空输入
     }
 
     @Test
-    void shouldReturnEmptyPageWhenNoMatch() {
+    void shouldReturnEmptyPageWhenNoMatchFound() {
         // ✅ 边界场景 — 无匹配结果
     }
 
@@ -719,7 +738,7 @@ class BookServiceTest {
 | 缩进 | 4 个空格（不使用 Tab） |
 | 行尾 | LF（Unix 风格） |
 | 导入优化 | 自动整理 import，不使用通配符 `*` |
-| Code Style | 导入项目根目录的 `idea-code-style.xml` |
+| Code Style | 遵循项目 `.editorconfig`，Java 行宽 120 字符 |
 
 **安装并启用插件**：
 - SonarLint（实时代码质量检查）

@@ -170,6 +170,8 @@ cd f:/CodeforJAVA/LibrarySystem-SIT
 docker-compose up -d
 ```
 
+> **注意**：`docker-compose.yml` 实际文件将在编码期创建于项目根目录。当前文档阶段，附录 A 中提供了完整内容供参考，可手动创建该文件后执行上述命令。
+
 **`docker-compose.yml`** 内容见 [附录 A](#附录-a-docker-composeyml)。
 
 **验证容器状态**：
@@ -389,7 +391,23 @@ RABBITMQ_USERNAME=guest
 RABBITMQ_PASSWORD=guest
 
 # ========== JWT ==========
-JWT_SECRET=YourBase64EncodedSecretKeyHere_MustBeAtLeast256Bits
+# 生成方式：在终端执行以下命令生成一个安全的密钥
+#   openssl rand -base64 64
+# 或在 PowerShell 中：
+#   [Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
+# 注意：密钥长度至少 256 位（32 字节 Base64 编码后约 44 字符），此处使用 64 字节
+JWT_SECRET=
+
+# ========== LLM & Embedding ==========
+# DeepSeek API（用于谈判策略生成、NER/RE、推荐理由等语言智能任务）
+# 申请地址：https://platform.deepseek.com/
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+# 阿里云百炼 Embedding API（用于语义检索增强、文本向量化）
+# 申请地址：https://bailian.console.aliyun.com/
+DASHSCOPE_API_KEY=
+DASHSCOPE_EMBEDDING_MODEL=text-embedding-v3
 
 # ========== Logging ==========
 LOG_LEVEL=DEBUG
@@ -397,13 +415,15 @@ LOG_LEVEL=DEBUG
 
 ### 4.3 初始化数据库
 
-首次启动时，Flyway 会自动执行数据库迁移脚本。确认 `src/main/resources/db/migration/` 下有迁移脚本。
+首次启动时，Flyway 会自动执行数据库迁移脚本。确认 `library-server/src/main/resources/db/migration/` 下有迁移脚本（开发阶段将在编码期创建，当前文档阶段暂无）。
 
 也可以通过 Maven 手动执行：
 
 ```bash
 mvn flyway:migrate -pl library-server
 ```
+
+> **注意**：Docker Compose 中 MySQL 容器挂载了 `./docs/db/init.sql` 作为初始化脚本（`/docker-entrypoint-initdb.d/init.sql`），该文件将在编码期创建。当前文档阶段若使用 Docker 启动 MySQL，初始化脚本路径挂载不会影响容器启动（缺失时仅跳过初始化）。
 
 ### 4.4 IDE 打开（IntelliJ IDEA）
 
@@ -845,15 +865,24 @@ services:
       - "9300:9300"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+      - es_plugins:/usr/share/elasticsearch/plugins
 
-  # IK 分词器安装（启动时自动安装）
+  # IK 分词器安装初始化容器
+  # 设计说明：es-ik-installer 先于 ES 启动，将 IK 插件安装到共享卷 es_plugins 中；
+  # 随后 elasticsearch 挂载同一卷，启动时自动加载已安装的插件。
+  # 首次安装后需重启 ES 容器：docker-compose restart elasticsearch
   es-ik-installer:
     image: elasticsearch:8.11.0
     container_name: library-es-ik-install
     command: >
       bash -c "
-        bin/elasticsearch-plugin list | grep -q analysis-ik ||
-        bin/elasticsearch-plugin install --batch https://get.infini.cloud/elasticsearch/analysis-ik/8.11.0
+        if [ -d /usr/share/elasticsearch/plugins/analysis-ik ]; then
+          echo 'IK plugin already installed, skipping.'
+        else
+          echo 'Installing IK plugin...'
+          bin/elasticsearch-plugin install --batch https://get.infini.cloud/elasticsearch/analysis-ik/8.11.0
+          echo 'IK plugin installed successfully. Please restart elasticsearch container.'
+        fi
       "
     volumes:
       - es_plugins:/usr/share/elasticsearch/plugins
