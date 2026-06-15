@@ -55,6 +55,15 @@ gen/
 .DS_Store
 Thumbs.db
 
+# ====== 构建产物 / 打包文件 ======
+# 通用压缩包（初始化/临时打包产物，不应入库；确需分发的 release 制品请走 CI 产出目录）
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
 # ====== Node / 前端（如有） ======
 node_modules/
 dist/
