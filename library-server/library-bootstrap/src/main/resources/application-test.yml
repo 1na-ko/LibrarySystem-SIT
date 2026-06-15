@@ -21,6 +21,9 @@ logging:
 
 # 测试环境允许查看健康检查完整细节，便于排查中间件连通性
 management:
+  endpoints:
+    web:
+      base-path: /
   endpoint:
     health:
       show-details: always
