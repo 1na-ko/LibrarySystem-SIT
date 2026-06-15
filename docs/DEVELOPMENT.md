@@ -687,7 +687,7 @@ LibrarySystem-SIT/
 │   └── src/main/java/com/library/acquisition/
 │       ├── controller/                      #   采编 API
 │       ├── service/                         #   预测 / 查重 / 谈判
-│       ├── ml/                              #   ML 模型（ARIMA / LR）
+│       ├── ml/                              #   ML 模型（简化 ARIMA / LR）
 │       └── repository/                      #   采编数据访问
 │
 ├── library-security/                        # 📦 安全模块

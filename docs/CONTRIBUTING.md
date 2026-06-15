@@ -240,9 +240,9 @@ public class BorrowServiceImpl implements BorrowService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public BorrowResult borrow(Long userId, String bookIsbn) {
+    public BorrowResult borrow(Long userId, Long bookId) {
         // 1. 业务校验（防御式编程，快速失败）
-        Book book = bookMapper.selectByIsbn(bookIsbn);
+        Book book = bookMapper.selectById(bookId);
         if (book == null) {
             throw new BizException(ErrorCode.BOOK_NOT_FOUND);
         }
