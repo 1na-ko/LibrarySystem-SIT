@@ -123,8 +123,6 @@ hotfix/<简述>              例：hotfix-login-npe
 
 ### 2.3 Scope 范围
 
-[查看完整原始文件](f:/CodeforJAVA/LibrarySystem-SIT/docs/CONTRIBUTING.md)
-
 | Scope | 对应模块 |
 |-------|----------|
 | `common` | library-common |
@@ -364,12 +362,12 @@ public class BookService {
 @Slf4j          // 日志
 @RequiredArgsConstructor  // 构造器注入（Service / Controller）
 @AllArgsConstructor       // Entity / DTO
-@NoArgsConstructor(access = AccessLevel.PROTECTED)  // JPA Entity 必须
+@NoArgsConstructor(access = AccessLevel.PROTECTED)  // 反射/序列化框架兼容
 ```
 
 **禁止**使用的注解：
 - ❌ `@SneakyThrows` — 隐藏异常，难以排查
-- ❌ `@EqualsAndHashCode` 在 Entity 上 — JPA 代理问题
+- ❌ `@EqualsAndHashCode` 在 Entity 上不加限制地使用 — 应基于主键 ID 显式实现，或使用 `@EqualsAndHashCode(onlyExplicitlyIncluded = true)` 仅标记 ID 字段，避免字段值变更导致集合行为异常
 - ❌ 过度使用 `@Builder` 在简单 DTO 上 — 增加冗余代码
 
 ---

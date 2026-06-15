@@ -1,3 +1,4 @@
+# ====== Maven ======
 target/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -10,8 +11,50 @@ buildNumber.properties
 # https://maven.apache.org/tools/wrapper/#Usage_with_or_without_Binary_JAR
 .mvn/wrapper/maven-wrapper.jar
 
-# Eclipse m2e generated files
-# Eclipse Core
+# ====== IDE ======
+# Eclipse
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
+.settings/
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+# VSCode (workspace settings 允许提交，个人偏好不提交)
+# .vscode/ 已提交则以团队为准
+
+# ====== Android / Gradle ======
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+*.dex
+*.class
+bin/
+gen/
+
+# ====== 环境变量 & 密钥 ======
+.env
+.env.local
+.env.*.local
+*.pem
+*.p12
+*.jks
+*.keystore
+
+# ====== 日志 & 临时文件 ======
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ====== Node / 前端（如有） ======
+node_modules/
+dist/
+pnpm-lock.yaml.bak

@@ -643,6 +643,8 @@ ALTER DATABASE library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ## 8. 项目结构速览
 
+> **⚠️ 规划阶段说明**：以下目录树为系统架构设计所定义的**目标结构**。当前项目处于文档制定阶段，源代码文件（`library-*` 模块及 `library-web` 前端）将在后续编码阶段逐步创建。开发者应在启动编码前对照此结构确认模块划分。
+
 ```
 LibrarySystem-SIT/
 ├── docs/                                    # 📄 项目文档
@@ -809,6 +811,8 @@ git push origin feature/your-feature-name
 ```
 
 ---
+
+<a name="appendix-a"></a>
 
 ## 附录 A — docker-compose.yml
 
