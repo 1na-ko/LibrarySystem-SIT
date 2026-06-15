@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
-> **项目**: 图书馆智能管理系统 (LibrarySystem-SIT)
-> **状态**: 初始化框架已搭建（7 模块 BUILD SUCCESS），业务源码待实现
+> **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
+> **状态**: 阶段 0 ✅ | 阶段 1-11 📋 待实施
 > **最后更新**: 2026-06-15
 
 ---
@@ -43,7 +43,14 @@
 
 ```
 LibrarySystem-SIT/
-├── docs/                          # 📄 项目文档（架构蓝本 + 开发指南 + 贡献规范 + OpenAPI）
+├── docs/                          # 📄 项目文档（索引 → README.md）
+│   ├── README.md                  #   文档导航
+│   ├── 系统架构设计文档.md          #   设计蓝本
+│   ├── DEVELOPMENT.md             #   开发环境指南
+│   ├── CONTRIBUTING.md            #   编码规范与协作
+│   ├── api/library-api.yaml       #   OpenAPI 契约
+│   ├── db/init.sql                #   Docker MySQL 初始化
+│   └── implementation/            #   实施计划与进度记录
 ├── library-server/                # ☕ 后端 Maven 多模块项目（7 子模块）
 │   ├── pom.xml                    #   父 POM — 统一版本与插件管理
 │   ├── library-common/            #   📦 公共基础设施（异常/Result/DTO/工具）
