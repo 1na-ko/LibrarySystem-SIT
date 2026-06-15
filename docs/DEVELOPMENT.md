@@ -506,18 +506,20 @@ sdk.dir=C\:\\Users\\<你的用户名>\\AppData\\Local\\Android\\Sdk
 
 ### 5.4 配置后端地址
 
-编辑 `library-android/app/src/main/java/com/library/android/config/ApiConfig.java`：
+后端 API 基地址在 `library-android/app/build.gradle.kts` 中通过 `buildConfigField` 定义：
 
-```java
-public class ApiConfig {
-    // 本地开发后端地址
+```kotlin
+defaultConfig {
+    // 后端 API 基地址
     // Android 模拟器使用 10.0.2.2 访问宿主机的 localhost
-    public static final String BASE_URL = "http://10.0.2.2:8080/";
+    buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
 
     // 真机调试时改为电脑局域网 IP（确保同一 WiFi 下）
-    // public static final String BASE_URL = "http://192.168.x.x:8080/";
+    // buildConfigField("String", "BASE_URL", "\"http://192.168.x.x:8080/api/v1/\"")
 }
 ```
+
+编译后通过 `BuildConfig.BASE_URL` 在代码中引用。
 
 ### 5.5 运行
 
@@ -549,7 +551,7 @@ public class ApiConfig {
 | 8 | 后端编译 | `mvn clean compile` | BUILD SUCCESS |
 | 9 | 后端启动 | 启动 `LibraryApplication` | 日志无 ERROR |
 | 10 | 健康检查 | `curl localhost:8080/api/v1/health` | 所有组件 UP |
-| 11 | Swagger | 浏览器 http://localhost:8080/swagger-ui.html | 显示 API 文档 |
+| 11 | Swagger | 浏览器 http://localhost:8080/api/v1/swagger-ui.html | 显示 API 文档 |
 | 12 | 登录接口 | POST `/api/v1/auth/login` | 返回 JWT Token |
 | 13 | Android 编译 | Android Studio `Run 'app'` | BUILD SUCCESSFUL |
 | 14 | Android 登录 | App 输入测试账号登录 | 进入主界面 |

@@ -22,9 +22,8 @@ buildNumber.properties
 *.iws
 *.ipr
 out/
-# VSCode（仅提交 settings.json，个人偏好不提交）
-.vscode/*
-!.vscode/settings.json
+# VSCode（个人偏好不入库；共享配置如需提交请用 .vscode/extensions.json 等）
+.vscode/
 
 # ====== Android / Gradle ======
 .gradle/

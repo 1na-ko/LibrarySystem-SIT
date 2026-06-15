@@ -792,11 +792,25 @@ indent_size = 2
 [*.yml]
 indent_size = 2
 
+[*.yaml]
+indent_size = 2
+
 [*.properties]
 indent_size = 2
 
 [*.java]
 max_line_length = 120
+
+[*.kt]
+indent_size = 4
+max_line_length = 120
+
+[*.kts]
+indent_size = 4
+max_line_length = 120
+
+[*.json]
+indent_size = 2
 ```
 
 ---
