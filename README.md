@@ -201,45 +201,6 @@ LibrarySystem-SIT/
 
 ---
 
-## 🤝 贡献指南
-
-我们欢迎所有形式的贡献！请先阅读 [CONTRIBUTING.md](docs/CONTRIBUTING.md)。
-
-**分支策略**：`feature/<模块>-<简述>` → Squash Merge → `develop` → Merge Commit → `main`
-
-**Commit 规范**：[Conventional Commits](https://www.conventionalcommits.org/)，中文 subject
-
-```bash
-git commit -m "feat(core): 实现图书关键词搜索接口"
-git commit -m "fix(borrow): 修复超期未还状态更新bug"
-git commit -m "docs(api): 补全借阅模块OpenAPI文档"
-```
-
-**测试命名**：`should{预期行为}When{条件/输入}`
-
----
-
-## 📊 开发进度
-
-| 阶段 | 名称 | 状态 |
-|------|------|------|
-| 0 | 基础设施底座 | ✅ 已完成 |
-| 1 | 安全与认证 | 📋 待开始 |
-| 2 | 核心业务—数据层 | 📋 待开始 |
-| 3 | 核心业务—图书检索 | 📋 待开始 |
-| 4 | 核心业务—借阅与预约 | 📋 待开始 |
-| 5 | AI 基础设施 | 📋 待开始 |
-| 6 | 图书推荐引擎 | 📋 待开始 |
-| 7 | 学科知识图谱 | 📋 待开始 |
-| 8 | 智能采编 | 📋 待开始 |
-| 9 | 系统管理与监控 | 📋 待开始 |
-| 10 | 集成测试与加固 | 📋 待开始 |
-| 11 | 文档收尾与交付审计 | 📋 待开始 |
-
-→ 详见 [后端分阶段实施计划](docs/implementation/后端分阶段实施计划.md)
-
----
-
 ## 📝 License
 
 MIT © 2026 LibrarySystem-SIT Team

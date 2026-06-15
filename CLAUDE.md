@@ -167,7 +167,8 @@ open http://localhost:8080/api/v1/swagger-ui.html
 
 ## 7. 给 AI 助手的提示
 
-- **源码未实现** — 当前仅有 POM 和空包结构，业务代码在 feature 分支编写，不要假设已有实现
+- **源码按阶段实施** — 严格按 `docs/implementation/后端分阶段实施计划.md` 的顺序与任务清单推进，每阶段完成需编写完成记录归档至 `docs/implementation/`
+- **每次操作同步文档** — 任何代码变更（新增 API、修改表结构、调整配置项、变更模块依赖）都必须同步更新对应的文档：架构设计文档、OpenAPI 契约、CLAUDE.md（进度状态）、以及涉及到的开发/贡献指南。代码与文档不一致视为未完成
 - **文档优先** — `docs/系统架构设计文档.md` 是开发蓝本，优先以文档为准
 - **OpenAPI 契约** — `docs/api/library-api.yaml` 是前后端数据契约，修改 API 需同步更新
 - **健康检查路径** — `/api/v1/health`（非 `/actuator/health`）
