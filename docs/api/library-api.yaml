@@ -1,0 +1,2058 @@
+openapi: 3.0.3
+info:
+  title: 图书馆智能管理系统 API
+  description: |
+    ## 概述
+    本 API 文档是图书馆智能管理系统前后端协作的**数据契约**，覆盖基础图书管理、学科知识图谱、智能采编三大功能域。
+
+    ### 设计原则
+    - **RESTful 风格**：资源导向 URL，HTTP 方法语义化
+    - **统一响应体**：所有接口返回 `Result<T>` 结构
+    - **分页规范**：GET 列表接口默认 page=1, size=20, maxSize=100
+    - **错误码体系**：业务错误码 4 位数字，详见各接口说明
+
+    ### 认证方式
+    - 除 `/api/v1/auth/**` 外，所有接口需在 Header 中携带：`Authorization: Bearer <access_token>`
+    - Access Token 有效期 2h，过期后使用 Refresh Token 换取新 Token
+
+    ### 版本管理
+    - URL 路径版本：`/api/v1/`
+    - 破坏性变更时递增版本号，旧版本保持至少 6 个月的兼容期
+
+    ### 联系人
+    - 开发团队：LibrarySystem-SIT Team
+  version: 1.0.0
+  contact:
+    name: 开发团队
+    email: dev@library-system.local
+
+servers:
+  - url: http://localhost:8080
+    description: 本地开发环境
+  - url: https://dev-api.library-system.local
+    description: 开发联调环境
+  - url: https://api.library-system.local
+    description: 生产环境
+
+tags:
+  - name: 认证
+    description: 登录、注册、Token 刷新
+  - name: 图书检索
+    description: 多维度搜索、详情、推荐
+  - name: 借阅管理
+    description: 借书、还书、续借、借阅记录
+  - name: 预约管理
+    description: 预约、排队、取消、通知
+  - name: 个人中心
+    description: 个人信息、借阅历史、推荐
+  - name: 知识图谱
+    description: 主题网络、文献溯源、知识搜索
+  - name: 智能采编
+    description: 采购预测、查重、缺口分析、谈判
+
+# ============================================================
+#  全局组件定义
+# ============================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Token，登录接口获取。
+        Header 格式：`Authorization: Bearer eyJhbGciOi...`
+
+  schemas:
+    # ---- 统一响应体 ----
+    Result:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码，200 表示成功
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: 操作成功
+        data:
+          type: object
+          description: 响应数据（泛型）
+        timestamp:
+          type: integer
+          format: int64
+          description: 响应时间戳（毫秒）
+          example: 1718400000000
+
+    PageResult:
+      type: object
+      properties:
+        records:
+          type: array
+          description: 当前页数据列表
+        total:
+          type: integer
+          format: int64
+          description: 总记录数
+          example: 150
+        pageNum:
+          type: integer
+          description: 当前页码（从 1 开始）
+          example: 1
+        pageSize:
+          type: integer
+          description: 每页记录数
+          example: 20
+        totalPages:
+          type: integer
+          description: 总页数
+          example: 8
+
+    # ---- 分页参数 ----
+    PageRequest:
+      type: object
+      properties:
+        pageNum:
+          type: integer
+          default: 1
+          minimum: 1
+        pageSize:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+
+    # ---- 认证 ----
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: 用户名 / 学号
+          example: "2024001001"
+        password:
+          type: string
+          format: password
+          description: 登录密码
+          example: "Abc@123456"
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT 访问令牌（2h 有效）
+        refreshToken:
+          type: string
+          description: 刷新令牌（7d 有效）
+        tokenType:
+          type: string
+          example: "Bearer"
+        expiresIn:
+          type: integer
+          description: Access Token 有效期（秒）
+          example: 7200
+        user:
+          $ref: "#/components/schemas/UserProfile"
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          description: 刷新令牌
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    # ---- 用户 ----
+    RegisterRequest:
+      type: object
+      required: [username, password, realName, email]
+      properties:
+        username:
+          type: string
+          description: 学号/工号
+          minLength: 5
+          maxLength: 20
+          example: "2024001001"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 32
+          description: 密码（8-32位，含大小写字母+数字+特殊字符）
+          example: "Abc@123456"
+        realName:
+          type: string
+          description: 真实姓名
+          maxLength: 50
+          example: "张三"
+        email:
+          type: string
+          format: email
+          example: "zhangsan@university.edu.cn"
+        phone:
+          type: string
+          pattern: '^1[3-9]\d{9}$'
+          example: "13800138000"
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: "2024001001"
+        realName:
+          type: string
+          example: "张三"
+        role:
+          type: string
+          enum: [STUDENT, TEACHER, LIBRARIAN, ACQUISITOR, ADMIN]
+          example: "STUDENT"
+        email:
+          type: string
+          example: "zhangsan@university.edu.cn"
+        phone:
+          type: string
+          example: "13800138000"
+        maxBooks:
+          type: integer
+          example: 5
+        status:
+          type: string
+          enum: [ACTIVE, FROZEN, DISABLED]
+        createTime:
+          type: string
+          format: date-time
+
+    # ---- 图书 ----
+    BookVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        isbn:
+          type: string
+          example: "978-7-111-58680-7"
+        title:
+          type: string
+          example: "深入理解Java虚拟机"
+        author:
+          type: string
+          example: "周志明"
+        publisher:
+          type: string
+          example: "机械工业出版社"
+        pubDate:
+          type: string
+          format: date
+          example: "2019-12-01"
+        categoryName:
+          type: string
+          example: "计算机科学"
+        description:
+          type: string
+        coverUrl:
+          type: string
+          format: uri
+        location:
+          type: string
+          example: "A区-3架-12层"
+        availCopies:
+          type: integer
+          description: 可借册数
+          example: 3
+        totalCopies:
+          type: integer
+          description: 总册数
+          example: 5
+        borrowCount:
+          type: integer
+          description: 累计借阅次数
+          example: 127
+    BookDetailVO:
+      allOf:
+        - $ref: "#/components/schemas/BookVO"
+        - type: object
+          properties:
+            keywords:
+              type: array
+              items:
+                type: string
+              example: ["Java", "JVM", "虚拟机", "性能优化"]
+            relatedBooks:
+              type: array
+              items:
+                $ref: "#/components/schemas/BookVO"
+              description: 相关图书（知识图谱关联）
+            reservationCount:
+              type: integer
+              description: 当前预约人数
+              example: 2
+
+    BookSearchRequest:
+      type: object
+      properties:
+        keyword:
+          type: string
+          description: 搜索关键词
+          example: "Java虚拟机"
+        author:
+          type: string
+          description: 作者筛选
+          example: "周志明"
+        isbn:
+          type: string
+          description: ISBN 精确搜索
+        categoryId:
+          type: integer
+          format: int64
+          description: 分类筛选
+        sortBy:
+          type: string
+          enum: [relevance, borrowCount, pubDate]
+          default: relevance
+        pageNum:
+          type: integer
+          default: 1
+        pageSize:
+          type: integer
+          default: 20
+
+    # ---- 借阅 ----
+    BorrowRequest:
+      type: object
+      required: [bookId]
+      properties:
+        bookId:
+          type: integer
+          format: int64
+          description: 图书 ID
+          example: 42
+    BorrowResultVO:
+      type: object
+      properties:
+        borrowId:
+          type: integer
+          format: int64
+          example: 520
+        bookTitle:
+          type: string
+        dueDate:
+          type: string
+          format: date
+          description: 应还日期
+          example: "2026-07-15"
+        status:
+          type: string
+          enum: [BORROWED]
+    RenewResultVO:
+      type: object
+      properties:
+        borrowId:
+          type: integer
+          format: int64
+        oldDueDate:
+          type: string
+          format: date
+        newDueDate:
+          type: string
+          format: date
+          description: 续借后新的应还日期（延长30天）
+          example: "2026-08-14"
+        renewCount:
+          type: integer
+
+    BorrowRecordVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        book:
+          $ref: "#/components/schemas/BookVO"
+        borrowDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        returnDate:
+          type: string
+          format: date
+          nullable: true
+        renewCount:
+          type: integer
+        status:
+          type: string
+          enum: [BORROWED, RENEWED, RETURNED, OVERDUE]
+        fineAmount:
+          type: number
+          format: double
+          nullable: true
+
+    # ---- 预约 ----
+    ReservationRequest:
+      type: object
+      required: [bookId]
+      properties:
+        bookId:
+          type: integer
+          format: int64
+          example: 42
+    ReservationVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        book:
+          $ref: "#/components/schemas/BookVO"
+        reserveTime:
+          type: string
+          format: date-time
+        queuePosition:
+          type: integer
+          description: 当前排队序号
+          example: 3
+        status:
+          type: string
+          enum: [WAITING, NOTIFIED, RESERVED, EXPIRED, COMPLETED, CANCELLED]
+        expireTime:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ---- 推荐 ----
+    BookRecommendVO:
+      type: object
+      properties:
+        book:
+          $ref: "#/components/schemas/BookVO"
+        score:
+          type: number
+          format: double
+          description: 推荐分数（0-1）
+          example: 0.87
+        reason:
+          type: string
+          description: 推荐理由
+          example: "借阅过《Java并发编程》的读者也借了此书"
+
+    # ---- 知识图谱 ----
+    KnowledgeGraphVO:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphEdge"
+    GraphNode:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        label:
+          type: string
+        type:
+          type: string
+          enum: [BOOK, AUTHOR, SUBJECT, KEYWORD, PUBLICATION]
+        properties:
+          type: object
+          description: 节点附加属性
+    GraphEdge:
+      type: object
+      properties:
+        sourceId:
+          type: integer
+          format: int64
+        targetId:
+          type: integer
+          format: int64
+        relation:
+          type: string
+          enum: [CITES, AUTHORED_BY, BELONGS_TO, HAS_KEYWORD, RELATED_TO, PUBLISHED_IN, CO_CITED]
+        weight:
+          type: number
+          format: double
+          description: 关系权重
+
+    TraceGraph:
+      type: object
+      properties:
+        sourceBook:
+          $ref: "#/components/schemas/BookVO"
+        paths:
+          type: array
+          items:
+            type: object
+            properties:
+              nodes:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GraphNode"
+              edges:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GraphEdge"
+              depth:
+                type: integer
+              totalWeight:
+                type: number
+                format: double
+
+    # ---- 智能采编 ----
+    PurchasePredictionVO:
+      type: object
+      properties:
+        subjectId:
+          type: integer
+          format: int64
+        subjectName:
+          type: string
+        month:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          example: "2026-07"
+        predictedDemand:
+          type: integer
+          description: 预测需求量（册）
+        confidence:
+          type: number
+          format: double
+          description: 置信度（0-1）
+          example: 0.85
+        features:
+          type: object
+          properties:
+            historyTrend:
+              type: number
+              format: double
+              description: 历史趋势因子
+            seasonFactor:
+              type: number
+              format: double
+              description: 季节因子
+            reservationHeat:
+              type: integer
+              description: 预约热度
+
+    DuplicateCheckResult:
+      type: object
+      properties:
+        isDuplicate:
+          type: boolean
+          example: true
+        duplicates:
+          type: array
+          items:
+            type: object
+            properties:
+              book:
+                $ref: "#/components/schemas/BookVO"
+              score:
+                type: number
+                format: double
+                description: 相似度分数
+                example: 0.95
+              matchStrategy:
+                type: string
+                enum: [ISBN_EXACT, TITLE_FUZZY, AUTHOR_TITLE]
+                description: 匹配策略
+
+    GapAnalysisResult:
+      type: object
+      properties:
+        subjectId:
+          type: integer
+          format: int64
+        subjectName:
+          type: string
+        totalCoreBooks:
+          type: integer
+          description: 学科核心书目总数
+        ownedBooks:
+          type: integer
+          description: 已馆藏数量
+        coverage:
+          type: number
+          format: double
+          description: 馆藏覆盖率
+          example: 0.72
+        gapBooks:
+          type: array
+          items:
+            type: object
+            properties:
+              isbn:
+                type: string
+              title:
+                type: string
+              author:
+                type: string
+              priority:
+                type: string
+                enum: [CRITICAL, HIGH, MEDIUM, LOW]
+                description: 采购优先级
+
+    NegotiationSuggestion:
+      type: object
+      properties:
+        resourceName:
+          type: string
+        supplierName:
+          type: string
+        priceRange:
+          type: object
+          properties:
+            floorPrice:
+              type: number
+              format: double
+            ceilingPrice:
+              type: number
+              format: double
+            medianPrice:
+              type: number
+              format: double
+            suggestedOffer:
+              type: number
+              format: double
+        strategies:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              description:
+                type: string
+              priority:
+                type: integer
+                description: 优先级 0-100
+        keyTerms:
+          type: array
+          items:
+            type: string
+          description: 谈判关键条款
+        riskWarnings:
+          type: array
+          items:
+            type: string
+          description: 风险提示
+
+    # ---- 通用 ----
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 错误码
+          example: 1001
+        message:
+          type: string
+          description: 错误描述
+          example: "图书库存不足"
+        timestamp:
+          type: integer
+          format: int64
+        path:
+          type: string
+          description: 请求路径
+        traceId:
+          type: string
+          description: 链路追踪 ID
+
+  # ---- 请求头参数 ----
+  parameters:
+    Authorization:
+      name: Authorization
+      in: header
+      required: true
+      schema:
+        type: string
+      description: "Bearer {access_token}"
+    PageNum:
+      name: pageNum
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: 页码
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: 每页数量
+
+# ============================================================
+#  路径定义
+# ============================================================
+paths:
+  # ======================== 认证模块 ========================
+  /api/v1/auth/login:
+    post:
+      tags: [认证]
+      summary: 用户登录
+      description: 使用学号/工号和密码登录，返回 JWT 令牌对
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              student:
+                summary: 学生登录
+                value:
+                  username: "2024001001"
+                  password: "Abc@123456"
+              admin:
+                summary: 管理员登录
+                value:
+                  username: "admin"
+                  password: "Admin@123456"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginResponse"
+              example:
+                code: 200
+                message: "登录成功"
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refreshToken: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                  tokenType: "Bearer"
+                  expiresIn: 7200
+                  user:
+                    id: 1
+                    username: "2024001001"
+                    realName: "张三"
+                    role: "STUDENT"
+                    email: "zhangsan@university.edu.cn"
+                    maxBooks: 5
+                    status: "ACTIVE"
+                timestamp: 1718400000000
+        "401":
+          description: 用户名或密码错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                message: "用户名或密码错误"
+                timestamp: 1718400000000
+
+  /api/v1/auth/register:
+    post:
+      tags: [认证]
+      summary: 用户注册
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        "409":
+          description: 用户名已存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [认证]
+      summary: 刷新 Token
+      description: 使用 Refresh Token 换取新的 Access Token。旧的 Refresh Token 立即失效。
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/RefreshResponse"
+        "401":
+          description: Refresh Token 无效或已过期
+
+  /api/v1/auth/logout:
+    post:
+      tags: [认证]
+      summary: 登出
+      description: 使当前的 Refresh Token 失效
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 登出成功
+
+  # ======================== 图书检索模块 ========================
+  /api/v1/books/search:
+    get:
+      tags: [图书检索]
+      summary: 关键词搜索图书
+      description: |
+        支持按书名、作者、关键词的全文搜索。
+        - 默认按**相关度**排序（BM25 算法 + 借阅热度加权）
+        - 高并发搜索使用 Redis 缓存热点词（TTL 30min）
+        - 中文分词基于 IK Analyzer
+      operationId: searchBooks
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+          description: 搜索关键词
+          example: "Java虚拟机"
+        - name: author
+          in: query
+          schema:
+            type: string
+          description: 作者筛选（可选）
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 分类筛选（可选）
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [relevance, borrowCount, pubDate]
+            default: relevance
+          description: 排序方式
+        - $ref: "#/components/parameters/PageNum"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: 搜索结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PageResult"
+              example:
+                code: 200
+                message: "操作成功"
+                data:
+                  records:
+                    - id: 42
+                      isbn: "978-7-111-58680-7"
+                      title: "深入理解Java虚拟机"
+                      author: "周志明"
+                      publisher: "机械工业出版社"
+                      pubDate: "2019-12-01"
+                      categoryName: "计算机科学"
+                      availCopies: 3
+                      totalCopies: 5
+                      borrowCount: 127
+                  total: 15
+                  pageNum: 1
+                  pageSize: 20
+                  totalPages: 1
+                timestamp: 1718400000000
+        "400":
+          description: 关键词为空或格式非法
+
+  /api/v1/books/search/advanced:
+    get:
+      tags: [图书检索]
+      summary: 高级组合搜索
+      description: 多字段组合精确/模糊搜索，支持布尔逻辑
+      operationId: advancedSearch
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+          description: 书名（模糊匹配）
+        - name: author
+          in: query
+          schema:
+            type: string
+          description: 作者（精确匹配）
+        - name: isbn
+          in: query
+          schema:
+            type: string
+          description: ISBN（精确匹配）
+        - name: publisher
+          in: query
+          schema:
+            type: string
+          description: 出版社（模糊匹配）
+        - name: pubYearFrom
+          in: query
+          schema:
+            type: integer
+          description: 出版年份起始
+        - name: pubYearTo
+          in: query
+          schema:
+            type: integer
+          description: 出版年份截止
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: onlyAvailable
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: 仅显示有库存的
+        - $ref: "#/components/parameters/PageNum"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: 搜索结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PageResult"
+
+  /api/v1/books/suggest:
+    get:
+      tags: [图书检索]
+      summary: 搜索自动补全
+      description: 根据用户输入前缀，返回补全建议列表（基于 ES Completion Suggester）
+      operationId: suggest
+      parameters:
+        - name: prefix
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: 输入前缀
+          example: "深入"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 20
+      responses:
+        "200":
+          description: 补全建议
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            text:
+                              type: string
+                              example: "深入理解Java虚拟机"
+                            type:
+                              type: string
+                              enum: [book, author, keyword]
+              example:
+                code: 200
+                message: "操作成功"
+                data:
+                  - text: "深入理解Java虚拟机"
+                    type: "book"
+                  - text: "深入浅出Spring Boot"
+                    type: "book"
+                  - text: "深入理解计算机系统"
+                    type: "book"
+                timestamp: 1718400000000
+
+  /api/v1/books/hot:
+    get:
+      tags: [图书检索]
+      summary: 热门图书榜
+      description: 按借阅次数排序，支持按分类筛选
+      operationId: hotBooks
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        "200":
+          description: 热门图书列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BookVO"
+
+  /api/v1/books/{id}:
+    get:
+      tags: [图书检索]
+      summary: 图书详情
+      description: 获取图书完整信息，含相关图书推荐（知识图谱关联）、当前预约人数
+      operationId: getBookDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 42
+      responses:
+        "200":
+          description: 图书详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BookDetailVO"
+        "404":
+          description: 图书不存在
+
+  /api/v1/books/{id}/related:
+    get:
+      tags: [图书检索]
+      summary: 相关图书推荐
+      description: 基于知识图谱的多跳关联推荐（同主题、同作者、共被引、借阅共现）
+      operationId: getRelatedBooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 20
+      responses:
+        "200":
+          description: 相关图书列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BookRecommendVO"
+
+  # ======================== 借阅管理模块 ========================
+  /api/v1/borrows:
+    post:
+      tags: [借阅管理]
+      summary: 借书申请
+      description: |
+        发起借阅请求。系统校验：
+        1. 图书库存充足
+        2. 用户未超出最大借阅数
+        3. 用户无超期未还记录
+        4. 未重复借阅同一本书
+      operationId: borrowBook
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BorrowRequest"
+      responses:
+        "200":
+          description: 借阅成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BorrowResultVO"
+        "400":
+          description: |
+            | 错误码 | 说明 |
+            |--------|------|
+            | 1001 | 图书库存不足 |
+            | 1002 | 借阅数量超限 |
+            | 1003 | 账户已冻结 |
+        "409":
+          description: 已借阅该书，不可重复借阅
+
+    get:
+      tags: [借阅管理]
+      summary: 我的借阅列表
+      description: 查询当前用户的借阅记录
+      operationId: getMyBorrows
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [BORROWED, RENEWED, RETURNED, OVERDUE]
+          description: 按状态筛选（不传则全部）
+        - $ref: "#/components/parameters/PageNum"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: 借阅记录列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PageResult"
+
+  /api/v1/borrows/{id}:
+    get:
+      tags: [借阅管理]
+      summary: 借阅详情
+      operationId: getBorrowDetail
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 借阅详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BorrowRecordVO"
+        "404":
+          description: 借阅记录不存在
+
+  /api/v1/borrows/{id}/return:
+    put:
+      tags: [借阅管理]
+      summary: 归还图书
+      description: 归还后自动触发预约通知（如有排队读者）
+      operationId: returnBook
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 借阅记录 ID
+      responses:
+        "200":
+          description: 归还成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        "409":
+          description: 该书已归还，不可重复操作
+
+  /api/v1/borrows/{id}/renew:
+    put:
+      tags: [借阅管理]
+      summary: 续借图书
+      description: |
+        续借规则：
+        - 每本书最多续借 1 次
+        - 续借延长期限：30 天
+        - 超期图书不可续借
+        - 已被预约的图书不可续借
+      operationId: renewBook
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 借阅记录 ID
+      responses:
+        "200":
+          description: 续借成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/RenewResultVO"
+        "400":
+          description: 续借条件不满足
+
+  /api/v1/borrows/overdue:
+    get:
+      tags: [借阅管理]
+      summary: 超期未还记录
+      description: 查询所有超期未还记录（管理员权限）
+      operationId: getOverdueRecords
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageNum"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: 超期记录列表
+        "403":
+          description: 无管理员权限
+
+  # ======================== 预约管理模块 ========================
+  /api/v1/reservations:
+    post:
+      tags: [预约管理]
+      summary: 预约图书
+      description: |
+        预约已全部借出的图书，进入等待队列。
+        - 使用 Redis ZSET 维护排队顺序
+        - 图书归还后自动通知队首读者
+        - 通知后 48h 内未确认自动释放
+      operationId: reserveBook
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationRequest"
+      responses:
+        "200":
+          description: 预约成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ReservationVO"
+        "400":
+          description: 图书有库存，可直接借阅，无需预约
+        "409":
+          description: 已预约过该书，不可重复预约
+
+    get:
+      tags: [预约管理]
+      summary: 我的预约列表
+      operationId: getMyReservations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [WAITING, NOTIFIED, RESERVED, EXPIRED, COMPLETED, CANCELLED]
+        - $ref: "#/components/parameters/PageNum"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: 预约列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PageResult"
+
+  /api/v1/reservations/{id}:
+    delete:
+      tags: [预约管理]
+      summary: 取消预约
+      operationId: cancelReservation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 取消成功
+
+  /api/v1/reservations/{id}/queue-position:
+    get:
+      tags: [预约管理]
+      summary: 查询排队位置
+      description: 返回当前在预约队列中的序号
+      operationId: getQueuePosition
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 预约记录 ID
+      responses:
+        "200":
+          description: 排队位置
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          position:
+                            type: integer
+                            example: 3
+                          totalWaiting:
+                            type: integer
+                            example: 12
+
+  # ======================== 个人中心模块 ========================
+  /api/v1/users/me:
+    get:
+      tags: [个人中心]
+      summary: 获取个人信息
+      operationId: getMyProfile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 用户信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserProfile"
+
+    put:
+      tags: [个人中心]
+      summary: 更新个人信息
+      operationId: updateMyProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                  pattern: '^1[3-9]\d{9}$'
+      responses:
+        "200":
+          description: 更新成功
+
+  /api/v1/users/me/history:
+    get:
+      tags: [个人中心]
+      summary: 借阅历史
+      description: 查询当前用户所有历史借阅记录（含已归还）
+      operationId: getMyHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+          description: 按年份筛选
+        - $ref: "#/components/parameters/PageNum"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: 借阅历史列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PageResult"
+
+  /api/v1/users/me/stats:
+    get:
+      tags: [个人中心]
+      summary: 借阅统计
+      description: 借阅统计数据（总数、分类分布、月度趋势）
+      operationId: getMyStats
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 统计数据
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          totalBorrows:
+                            type: integer
+                            example: 47
+                          currentBorrows:
+                            type: integer
+                            example: 3
+                          totalOverdue:
+                            type: integer
+                            example: 2
+                          totalFines:
+                            type: number
+                            format: double
+                            example: 5.50
+                          categoryDistribution:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                categoryName:
+                                  type: string
+                                count:
+                                  type: integer
+                          monthlyTrend:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  example: "2026-05"
+                                count:
+                                  type: integer
+
+  /api/v1/users/me/recommendations:
+    get:
+      tags: [个人中心]
+      summary: 个性化推荐
+      description: |
+        混合推荐策略：
+        - 协同过滤（User-CF + Item-CF）权重 0.4
+        - 基于内容推荐（TF-IDF 向量余弦相似度）权重 0.3
+        - 知识图谱推荐（多跳邻居发现）权重 0.3
+      operationId: getRecommendations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        "200":
+          description: 推荐列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BookRecommendVO"
+
+  # ======================== 知识图谱模块 ========================
+  /api/v1/kg/book/{id}/graph:
+    get:
+      tags: [知识图谱]
+      summary: 图书知识图谱
+      description: 获取以指定图书为中心的知识图谱（主题关联网络），含 1-2 跳邻居
+      operationId: getBookGraph
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 图书 ID
+        - name: depth
+          in: query
+          schema:
+            type: integer
+            default: 2
+            minimum: 1
+            maximum: 3
+          description: 邻居跳数
+      responses:
+        "200":
+          description: 知识图谱数据
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/KnowledgeGraphVO"
+              example:
+                code: 200
+                message: "操作成功"
+                data:
+                  nodes:
+                    - id: 1
+                      label: "深入理解Java虚拟机"
+                      type: "BOOK"
+                    - id: 101
+                      label: "周志明"
+                      type: "AUTHOR"
+                    - id: 201
+                      label: "JVM"
+                      type: "KEYWORD"
+                    - id: 202
+                      label: "性能优化"
+                      type: "KEYWORD"
+                    - id: 301
+                      label: "计算机科学"
+                      type: "SUBJECT"
+                    - id: 2
+                      label: "Java并发编程实战"
+                      type: "BOOK"
+                  edges:
+                    - sourceId: 1
+                      targetId: 101
+                      relation: "AUTHORED_BY"
+                      weight: 1.0
+                    - sourceId: 1
+                      targetId: 201
+                      relation: "HAS_KEYWORD"
+                      weight: 0.9
+                    - sourceId: 1
+                      targetId: 301
+                      relation: "BELONGS_TO"
+                      weight: 1.0
+                    - sourceId: 1
+                      targetId: 2
+                      relation: "CO_CITED"
+                      weight: 0.75
+                timestamp: 1718400000000
+        "404":
+          description: 图书不存在或无关联图谱
+
+  /api/v1/kg/book/{id}/trace:
+    get:
+      tags: [知识图谱]
+      summary: 文献溯源
+      description: 获取文献引用链（前向/后向/双向溯源），揭示知识演化脉络
+      operationId: traceLiterature
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 图书 ID
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [FORWARD, BACKWARD, BOTH]
+            default: BOTH
+          description: |
+            - FORWARD：谁引用了本文（前向溯源）
+            - BACKWARD：本文引用了谁（后向溯源）
+            - BOTH：双向溯源
+        - name: maxDepth
+          in: query
+          schema:
+            type: integer
+            default: 3
+            minimum: 1
+            maximum: 5
+          description: 最大跳数
+      responses:
+        "200":
+          description: 溯源路径图
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TraceGraph"
+
+  /api/v1/kg/subject/{name}:
+    get:
+      tags: [知识图谱]
+      summary: 学科主题网络
+      description: 获取指定学科领域的完整知识网络（关键词关联 + PageRank 中心度）
+      operationId: getSubjectNetwork
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 学科名称（支持 URL 编码中文）
+          example: "计算机科学"
+        - name: topK
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: 返回的关键词节点数
+      responses:
+        "200":
+          description: 学科主题网络
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/KnowledgeGraphVO"
+
+  /api/v1/kg/search:
+    get:
+      tags: [知识图谱]
+      summary: 知识实体搜索
+      description: 在图谱中搜索实体（图书、作者、关键词、学科）
+      operationId: searchEntities
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: entity
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 实体名称
+          example: "机器学习"
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [BOOK, AUTHOR, SUBJECT, KEYWORD]
+          description: 实体类型筛选
+      responses:
+        "200":
+          description: 搜索结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            entityId:
+                              type: integer
+                              format: int64
+                            entityName:
+                              type: string
+                            entityType:
+                              type: string
+                            pagerank:
+                              type: number
+                              format: double
+
+  # ======================== 智能采编模块 ========================
+  /api/v1/acquisition/predict:
+    get:
+      tags: [智能采编]
+      summary: 采购需求预测
+      description: |
+        基于 ARIMA 时间序列 + 多元回归，预测未来月份的采购需求量。
+        特征变量：历史借阅趋势、预约热度、复本率、季节因子、学科增长率
+      operationId: predictDemand
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: subjectId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 学科 ID
+        - name: months
+          in: query
+          schema:
+            type: integer
+            default: 3
+            minimum: 1
+            maximum: 12
+          description: 预测未来月份数
+      responses:
+        "200":
+          description: 预测结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/PurchasePredictionVO"
+              example:
+                code: 200
+                message: "操作成功"
+                data:
+                  - subjectId: 1
+                    subjectName: "计算机科学"
+                    month: "2026-07"
+                    predictedDemand: 85
+                    confidence: 0.85
+                    features:
+                      historyTrend: 1.15
+                      seasonFactor: 1.5
+                      reservationHeat: 23
+                  - subjectId: 1
+                    subjectName: "计算机科学"
+                    month: "2026-08"
+                    predictedDemand: 72
+                    confidence: 0.78
+                    features:
+                      historyTrend: 1.15
+                      seasonFactor: 1.0
+                      reservationHeat: 18
+                timestamp: 1718400000000
+
+  /api/v1/acquisition/duplicate-check:
+    post:
+      tags: [智能采编]
+      summary: 采购查重
+      description: |
+        三重策略查重：
+        1. ISBN 精确匹配（权重 1.0）
+        2. 标题模糊匹配（ES More Like This，阈值 0.8）
+        3. 作者+标题联合匹配（余弦相似度，阈值 0.7）
+      operationId: checkDuplicate
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                isbn:
+                  type: string
+                title:
+                  type: string
+                author:
+                  type: string
+                publisher:
+                  type: string
+            examples:
+              full:
+                summary: 完整信息
+                value:
+                  isbn: "978-7-111-58680-7"
+                  title: "深入理解Java虚拟机"
+                  author: "周志明"
+                  publisher: "机械工业出版社"
+              partial:
+                summary: 仅标题
+                value:
+                  title: "Python机器学习实战"
+                  author: "李明"
+      responses:
+        "200":
+          description: 查重结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/DuplicateCheckResult"
+
+  /api/v1/acquisition/gap-analysis:
+    get:
+      tags: [智能采编]
+      summary: 馆藏缺口分析
+      description: 基于学科核心书目清单（来自知识图谱高 PageRank 节点），识别馆藏缺失
+      operationId: analyzeGap
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: subjectId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 学科 ID
+      responses:
+        "200":
+          description: 缺口分析结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/GapAnalysisResult"
+
+  /api/v1/acquisition/negotiation:
+    post:
+      tags: [智能采编]
+      summary: 创建谈判记录
+      description: 记录电子资源采购谈判信息，系统自动生成谈判建议
+      operationId: createNegotiation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resourceName, supplierId, resourceCategory]
+              properties:
+                resourceName:
+                  type: string
+                  description: 电子资源名称
+                  example: "IEEE Xplore Digital Library"
+                supplierId:
+                  type: integer
+                  format: int64
+                  description: 供应商 ID
+                resourceCategory:
+                  type: string
+                  enum: [JOURNAL, DATABASE, EBOOK, CONFERENCE]
+                  description: 资源类别
+                expectedBudget:
+                  type: number
+                  format: double
+                  description: 预算金额（元）
+                userCount:
+                  type: integer
+                  description: 预计使用人数
+      responses:
+        "200":
+          description: 谈判建议
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/NegotiationSuggestion"
+
+  /api/v1/acquisition/negotiation/{id}/suggestion:
+    get:
+      tags: [智能采编]
+      summary: 获取谈判建议详情
+      operationId: getNegotiationSuggestion
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 谈判记录 ID
+      responses:
+        "200":
+          description: 谈判建议
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/NegotiationSuggestion"
+
+  # ======================== 健康检查 ========================
+  /api/v1/health:
+    get:
+      tags: [系统]
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        "200":
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+                  components:
+                    type: object
+                    properties:
+                      mysql:
+                        type: string
+                        example: "UP"
+                      redis:
+                        type: string
+                        example: "UP"
+                      elasticsearch:
+                        type: string
+                        example: "UP"
+                      neo4j:
+                        type: string
+                        example: "UP"
+                      rabbitmq:
+                        type: string
+                        example: "UP"
