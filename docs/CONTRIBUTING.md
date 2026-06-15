@@ -126,13 +126,14 @@ hotfix/<简述>              例：hotfix-login-npe
 | Scope | 对应模块 |
 |-------|----------|
 | `common` | library-common |
+| `ai` | library-ai（LLM / Embedding / NLP） |
 | `core` | library-core |
 | `kg` | library-knowledge-graph |
 | `acquisition` | library-acquisition |
 | `security` | library-security |
-| `server` | library-server（启动/配置） |
-| `android` | library-web（Android 前端） |
-| `deps` | 依赖管理 |
+| `bootstrap` | library-bootstrap（启动/聚合/全局配置） |
+| `android` | library-android（Android 前端） |
+| `deps` | 依赖管理（父 POM / Gradle 版本目录） |
 
 ### 2.4 规则
 
@@ -377,7 +378,7 @@ public class BookService {
 ### 4.1 包结构
 
 ```
-com.library.web/
+com.library.android/
 ├── LibraryApplication.java         # Application 类
 ├── ui/                             # UI 层（Activity / Fragment / Adapter）
 │   ├── main/
@@ -389,7 +390,7 @@ com.library.web/
 ├── repository/                     # 数据仓库（网络 → 本地 降级策略）
 ├── network/                        # Retrofit API 接口 + Interceptor
 ├── model/                          # 数据模型（VO / DTO）
-├── di/                             # Hilt / Dagger 依赖注入模块
+├── di/                             # Hilt 依赖注入模块
 └── util/                           # 工具类
 ```
 
@@ -630,10 +631,13 @@ public static final int days = 30;            // 非 final 且未大写
 | 模块 | 最低行覆盖率 |
 |------|-------------|
 | library-common | 90% |
+| library-ai | 80% |
 | library-core | 85% |
 | library-knowledge-graph | 80% |
 | library-acquisition | 80% |
 | library-security | 90% |
+| library-bootstrap | 70% |
+| library-android | 50% |
 
 ### 7.2 测试命名规范
 
@@ -702,11 +706,13 @@ class BookServiceTest {
 ## 改动范围
 <!-- 修改了哪些模块/文件 -->
 - [ ] library-common
+- [ ] library-ai
 - [ ] library-core
 - [ ] library-knowledge-graph
 - [ ] library-acquisition
 - [ ] library-security
-- [ ] library-web (Android)
+- [ ] library-bootstrap
+- [ ] library-android
 
 ## 测试情况
 <!-- 描述你做了什么测试 -->

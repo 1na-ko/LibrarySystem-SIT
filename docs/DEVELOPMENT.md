@@ -415,22 +415,23 @@ LOG_LEVEL=DEBUG
 
 ### 4.3 初始化数据库
 
-首次启动时，Flyway 会自动执行数据库迁移脚本。确认 `library-server/src/main/resources/db/migration/` 下有迁移脚本（开发阶段将在编码期创建，当前文档阶段暂无）。
+首次启动时，Flyway 会自动执行数据库迁移脚本。确认 `library-server/library-bootstrap/src/main/resources/db/migration/` 下有迁移脚本（开发阶段将在编码期创建，当前文档阶段暂无）。
 
 也可以通过 Maven 手动执行：
 
 ```bash
-mvn flyway:migrate -pl library-server
+cd library-server
+mvn flyway:migrate -pl library-bootstrap
 ```
 
 > **注意**：Docker Compose 中 MySQL 容器挂载了 `./docs/db/init.sql` 作为初始化脚本（`/docker-entrypoint-initdb.d/init.sql`），该文件将在编码期创建。当前文档阶段若使用 Docker 启动 MySQL，初始化脚本路径挂载不会影响容器启动（缺失时仅跳过初始化）。
 
 ### 4.4 IDE 打开（IntelliJ IDEA）
 
-1. **File → Open** → 选择项目根目录的 `pom.xml`（以 Maven 项目方式打开）
+1. **File → Open** → 选择 `library-server/` 目录下的 `pom.xml`（以 Maven 项目方式打开）
 2. IDEA 会自动识别多模块结构，等待 Maven 依赖下载完成
 3. 配置 JDK：**File → Project Structure → Project SDK** → 选择 JDK 17
-4. 找到 `library-server/src/main/java/com/library/LibraryApplication.java`
+4. 找到 `library-bootstrap/src/main/java/com/library/LibraryApplication.java`
 5. 右键 → **Run 'LibraryApplication'**
 
 ### 4.5 命令行启动
@@ -441,11 +442,11 @@ mvn clean compile -DskipTests
 
 # 启动应用（开发环境）
 cd library-server
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+mvn spring-boot:run -pl library-bootstrap -Dspring-boot.run.profiles=dev
 
 # 或者先打包再启动
 mvn clean package -DskipTests
-java -jar library-server/target/library-server-1.0.0.jar --spring.profiles.active=dev
+java -jar library-bootstrap/target/library-bootstrap-1.0.0.jar --spring.profiles.active=dev
 ```
 
 ### 4.6 验证后端
@@ -502,7 +503,7 @@ curl -X POST http://localhost:8080/api/v1/admin/init-test-data
 
 ### 5.3 导入项目
 
-1. **File → Open** → 选择 `library-web/` 目录
+1. **File → Open** → 选择 `library-android/` 目录
 2. 等待 Gradle Sync 完成
 3. 若遇同步失败，检查 `local.properties` 中的 SDK 路径：
 
@@ -512,7 +513,7 @@ sdk.dir=C\:\\Users\\<你的用户名>\\AppData\\Local\\Android\\Sdk
 
 ### 5.4 配置后端地址
 
-编辑 `library-web/app/src/main/java/com/library/web/config/ApiConfig.java`：
+编辑 `library-android/app/src/main/java/com/library/android/config/ApiConfig.java`：
 
 ```java
 public class ApiConfig {
@@ -643,79 +644,100 @@ ALTER DATABASE library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ## 8. 项目结构速览
 
-> **⚠️ 规划阶段说明**：以下目录树为系统架构设计所定义的**目标结构**。当前项目处于文档制定阶段，源代码文件（`library-*` 模块及 `library-web` 前端）将在后续编码阶段逐步创建。开发者应在启动编码前对照此结构确认模块划分。
+> **⚠️ 规划阶段说明**：以下目录树为系统架构设计所定义的**目标结构**。当前项目处于文档制定阶段，源代码文件（`library-*` 后端模块及 `library-android` 前端）将在后续编码阶段逐步创建。开发者应在启动编码前对照此结构确认模块划分。
 
 ```
 LibrarySystem-SIT/
 ├── docs/                                    # 📄 项目文档
 │   ├── 系统架构设计文档.md                    #   架构蓝本
+│   ├── CONTRIBUTING.md                      #   贡献指南
 │   ├── api/
 │   │   └── library-api.yaml                 #   OpenAPI 3.0 规范
 │   └── DEVELOPMENT.md                       #   本文档
 │
-├── library-common/                          # 📦 公共模块（工具类、异常、统一响应）
-│   └── src/main/java/com/library/common/
-│       ├── exception/                       #   全局异常定义 + 错误码枚举
-│       ├── result/                          #   Result<T> 统一响应体 + PageResult
-│       ├── dto/                             #   公共 DTO
-│       ├── utils/                           #   工具类
-│       └── annotation/                      #   自定义注解（如 @RateLimit）
+├── library-server/                          # ☕ 后端（Maven 多模块项目）
+│   ├── pom.xml                              #   父 POM（依赖管理 + 插件管理）
+│   ├── library-common/                      #   📦 公共模块
+│   │   └── src/main/java/com/library/common/
+│   │       ├── exception/                   #     全局异常 + 错误码枚举
+│   │       ├── result/                      #     Result<T> + PageResult
+│   │       ├── dto/                         #     公共 DTO
+│   │       ├── utils/                       #     工具类
+│   │       └── annotation/                  #     自定义注解
+│   ├── library-ai/                          #   📦 AI 基础设施模块
+│   │   └── src/main/java/com/library/ai/
+│   │       ├── llm/                         #     DeepSeek API 封装
+│   │       ├── embedding/                   #     百炼 Embedding 封装
+│   │       ├── nlp/                         #     HanLP 本地 NLP
+│   │       └── config/                      #     AI 模块配置
+│   ├── library-core/                        #   📦 核心业务模块
+│   │   └── src/main/java/com/library/core/
+│   │       ├── controller/                  #     REST 控制器
+│   │       ├── service/                     #     业务逻辑层
+│   │       ├── mapper/                      #     MyBatis-Plus Mapper
+│   │       ├── entity/                      #     数据库实体
+│   │       ├── repository/                  #     ES / Redis 数据访问
+│   │       ├── event/                       #     领域事件
+│   │       └── config/                      #     模块配置
+│   ├── library-knowledge-graph/             #   📦 知识图谱模块
+│   │   └── src/main/java/com/library/kg/
+│   │       ├── controller/                  #     知识图谱 API
+│   │       ├── service/                     #     图谱构建 / 查询 / 溯源
+│   │       ├── repository/                  #     Neo4j Cypher 查询
+│   │       ├── model/                       #     图节点 / 关系模型
+│   │       └── config/                      #     Neo4j 配置
+│   ├── library-acquisition/                 #   📦 智能采编模块
+│   │   └── src/main/java/com/library/acquisition/
+│   │       ├── controller/                  #     采编 API
+│   │       ├── service/                     #     预测 / 查重 / 谈判
+│   │       ├── ml/                          #     ML 模型（简化 ARIMA）
+│   │       └── repository/                  #     采编数据访问
+│   ├── library-security/                    #   📦 安全模块
+│   │   └── src/main/java/com/library/security/
+│   │       ├── filter/                      #     JWT 认证过滤器
+│   │       ├── handler/                     #     认证 / 授权处理器
+│   │       └── config/                      #     Spring Security 配置
+│   └── library-bootstrap/                   #   📦 启动模块（聚合入口）
+│       └── src/main/
+│           ├── java/com/library/
+│           │   ├── LibraryApplication.java  #     🚀 Spring Boot 启动类
+│           │   └── config/                  #     全局配置
+│           └── resources/
+│               ├── application.yml          #     公共配置
+│               ├── application-dev.yml      #     开发环境配置
+│               ├── application-prod.yml     #     生产环境配置
+│               ├── application-test.yml     #     测试环境配置
+│               ├── logback-spring.xml       #     日志配置
+│               └── db/migration/            #     Flyway 迁移脚本
 │
-├── library-core/                            # 📦 核心业务模块
-│   └── src/main/java/com/library/core/
-│       ├── controller/                      #   REST 控制器
-│       │   ├── BookController.java          #     图书检索
-│       │   ├── BorrowController.java        #     借阅管理
-│       │   ├── ReservationController.java   #     预约管理
-│       │   └── UserController.java          #     个人中心
-│       ├── service/                         #   业务逻辑层
-│       ├── mapper/                          #   MyBatis-Plus Mapper
-│       ├── entity/                          #   数据库实体
-│       ├── repository/                      #   ES / Redis 数据访问
-│       ├── event/                           #   领域事件
-│       └── config/                          #   模块 Spring 配置
-│
-├── library-knowledge-graph/                 # 📦 知识图谱模块
-│   └── src/main/java/com/library/kg/
-│       ├── controller/                      #   知识图谱 API
-│       ├── service/                         #   图谱构建 / 查询 / 溯源
-│       ├── repository/                      #   Neo4j Cypher 查询
-│       ├── model/                           #   图节点 / 关系模型
-│       └── nlp/                             #   HanLP 中文 NLP 处理
-│
-├── library-acquisition/                     # 📦 智能采编模块
-│   └── src/main/java/com/library/acquisition/
-│       ├── controller/                      #   采编 API
-│       ├── service/                         #   预测 / 查重 / 谈判
-│       ├── ml/                              #   ML 模型（简化 ARIMA / LR）
-│       └── repository/                      #   采编数据访问
-│
-├── library-security/                        # 📦 安全模块
-│   └── src/main/java/com/library/security/
-│       ├── filter/                          #   JWT 认证过滤器
-│       ├── handler/                         #   认证 / 授权处理器
-│       └── config/                          #   Spring Security 配置
-│
-├── library-server/                          # 📦 启动模块（聚合模块）
-│   └── src/main/
-│       ├── java/com/library/
-│       │   └── LibraryApplication.java      # 🚀 Spring Boot 启动类
-│       └── resources/
-│           ├── application.yml              #   公共配置
-│           ├── application-dev.yml          #   开发环境配置
-│           ├── application-prod.yml         #   生产环境配置
-│           └── db/migration/                #   Flyway 迁移脚本
-│
-├── library-web/                             # 📦 Android 前端
-│   └── app/src/main/java/com/library/web/
-│       ├── ui/                              #   Activity / Fragment
-│       ├── viewmodel/                       #   ViewModel
-│       ├── repository/                      #   数据仓库（网络+本地）
-│       ├── network/                         #   Retrofit API 接口
-│       └── model/                           #   数据模型
+├── library-android/                         # 📱 Android 前端（独立 Gradle 项目）
+│   ├── build.gradle.kts                     #   项目级 Gradle 构建
+│   ├── settings.gradle.kts                  #   Gradle 设置
+│   ├── gradle.properties                    #   Gradle 属性配置
+│   ├── gradle/wrapper/                      #   Gradle Wrapper
+│   ├── gradlew / gradlew.bat                #   Gradle 执行脚本
+│   └── app/
+│       ├── build.gradle.kts                 #   应用模块构建
+│       ├── proguard-rules.pro               #   混淆规则
+│       └── src/main/
+│           ├── AndroidManifest.xml          #   应用清单
+│           ├── java/com/library/android/
+│           │   ├── LibraryApplication.java  #   Application 类
+│           │   ├── ui/                      #   Activity / Fragment / Adapter
+│           │   ├── viewmodel/               #   ViewModel
+│           │   ├── repository/              #   数据仓库（网络→本地降级）
+│           │   ├── network/                 #   Retrofit API 接口 + 拦截器
+│           │   ├── model/                   #   数据模型（VO / DTO）
+│           │   ├── di/                      #   Hilt 依赖注入模块
+│           │   └── util/                    #   工具类
+│           └── res/                         #   Android 资源
+│               ├── layout/                  #     布局文件
+│               ├── drawable/                #     图片资源
+│               ├── values/                  #     字符串 / 主题 / 颜色
+│               ├── navigation/              #     导航图
+│               └── mipmap-*/                #     应用图标
 │
 ├── docker-compose.yml                       # 🐳 Docker 中间件编排
-├── pom.xml                                  # 📐 父 POM（依赖管理）
 └── .gitignore                               # 🚫 Git 忽略规则
 ```
 
@@ -726,6 +748,9 @@ LibrarySystem-SIT/
 ### 9.1 后端
 
 ```bash
+# 进入后端项目目录
+cd library-server
+
 # 编译（跳过测试）
 mvn clean compile -DskipTests
 
@@ -758,7 +783,7 @@ mvn versions:display-dependency-updates
 
 ```bash
 # 在项目根目录
-cd library-web
+cd library-android
 
 # Gradle 清理构建
 ./gradlew clean
