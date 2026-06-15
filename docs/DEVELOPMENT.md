@@ -400,8 +400,8 @@ RABBITMQ_PASSWORD=guest
 #   openssl rand -base64 64
 # 或在 PowerShell 中：
 #   [Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
-# 注意：密钥长度至少 256 位（32 字节 Base64 编码后约 44 字符），此处使用 64 字节
-# 生产环境务必填写；为空时安全模块需显式拒绝启动（待 security 模块实现）
+# 注意：HS256 要求密钥 >= 32 字节（启动时 fail-fast 校验，不满足则拒绝启动）
+# 生成命令：openssl rand -base64 48
 JWT_SECRET=
 
 # ========== LLM & Embedding ==========
@@ -421,7 +421,7 @@ LOG_LEVEL=DEBUG
 
 ### 4.3 初始化数据库
 
-首次启动时，Flyway 会自动执行数据库迁移脚本。`V1__init_schema.sql`（已创建于 `library-server/library-bootstrap/src/main/resources/db/migration/`）建立了全部 10 张核心业务表（sys_user / category / book / borrow_record / reservation / fine_record / supplier / deal_record / electronic_resource / negotiation_record），含外键约束、索引与统一逻辑删除字段。后续按 feature 分支追加 `V2__*.sql`（种子数据）、`V3__*.sql`（全文索引等）。
+首次启动时，Flyway 会自动执行数据库迁移脚本。`V1__init_schema.sql`（已创建于 `library-server/library-bootstrap/src/main/resources/db/migration/`）建立了全部 10 张核心业务表（sys_user / category / book / borrow_record / reservation / fine_record / supplier / deal_record / electronic_resource / negotiation_record），含外键约束、索引与统一逻辑删除字段。后续按 feature 分支追加 `V2__*.sql`（种子数据）、`V3__*.sql`（全文索引等）。已落地迁移：`V2__insert_categories.sql`（36 条分类种子）、`V3__add_fulltext_index.sql`（8 个复合索引）、`V4__insert_initial_admin.sql`（初始管理员 admin/Admin@123456，生产首登须改密）。
 
 也可以通过 Maven 手动执行：
 
@@ -469,7 +469,7 @@ curl http://localhost:8080/api/v1/health
 
 > **关于健康检查的组件明细**：`components` 下各中间件（mysql/redis/elasticsearch/neo4j/rabbitmq）的 `UP` 状态，依赖对应 Spring Boot Starter 自动装配的 `HealthIndicator`。当前仅有 datasource（mysql）、redis 的 starter 就位；ES / Neo4j / RabbitMQ 的 HealthIndicator 将随各模块引入对应 starter（参见 `application.yml` 中各配置的"生效前置"注释）逐步出现。在此之前 `components` 仅展示已就绪的组件，这是预期行为。
 
-> **关于登录与 Swagger 验证**：`/auth/login`、`/swagger-ui.html` 等接口需待 `library-security` 与各业务 Controller 实现后才可联调。当前框架阶段仅能验证健康检查与上下文加载。
+> **关于登录与 Swagger 验证**：`library-security` 已实现，认证四端点（`/auth/register`、`/auth/login`、`/auth/refresh`、`/auth/logout`）可联调；初始管理员账号 `admin / Admin@123456`（V4 种子，生产首登须改密）。业务端点（books/borrows 等）待阶段 2+ 实现。
 
 ### 4.7 （待实现）初始化测试数据
 
@@ -689,11 +689,17 @@ LibrarySystem-SIT/
 │   │       ├── service/                     #     预测 / 查重 / 谈判 📋
 │   │       ├── ml/                          #     ML 模型（简化 ARIMA）📋
 │   │       └── repository/                  #     采编数据访问 📋
-│   ├── library-security/                    #   📦 安全模块（源码待实现）
+│   ├── library-security/                    #   🔐 安全模块（认证/授权/限流）✅
 │   │   └── src/main/java/com/library/security/
-│   │       ├── filter/                      #     JWT 认证过滤器 📋
-│   │       ├── handler/                     #     认证 / 授权处理器 📋
-│   │       └── config/                      #     Spring Security 配置 📋
+│   │       ├── jwt/                         #     JwtUtils 签发/解析 ✅
+│   │       ├── token/                       #     Refresh Token 轮换防重放 ✅
+│   │       ├── ratelimit/                   #     Redis 令牌桶限流 ✅
+│   │       ├── filter/                      #     Jwt/RateLimit 过滤器 ✅
+│   │       ├── handler/                     #     认证/授权 JSON 处理器 ✅
+│   │       ├── aspect/                      #     @RequireRole/@RequirePermission 切面 ✅
+│   │       ├── context/                     #     LoginUser + SecurityUtils ✅
+│   │       ├── config/                      #     SecurityConfig/JwtProperties ✅
+│   │       └── service/controller/          #     AuthService + AuthController ✅
 │   └── library-bootstrap/                   #   📦 启动模块（聚合入口）✅ 已就位
 │       └── src/main/
 │           ├── java/com/library/
@@ -971,6 +977,8 @@ volumes:
 | 图书管理员 | `librarian01` | `Abc@123456` | 管理功能测试 |
 | 采编管理员 | `acquisitor01` | `Abc@123456` | 采编功能测试 |
 | 系统管理员 | `admin` | `Admin@123456` | 全部权限 |
+
+> 注：阶段 1 仅由 V4 迁移预置 `admin`。其余账号需通过 `/auth/register` 注册（仅创建 STUDENT）或后续阶段补充种子数据；生产环境首登后务必修改 admin 默认密码。
 
 ---
 

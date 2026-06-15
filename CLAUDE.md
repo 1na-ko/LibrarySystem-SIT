@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0 ✅ | 阶段 1-11 📋 待实施
+> **状态**: 阶段 0-1 ✅ | 阶段 2-11 📋 待实施
 > **最后更新**: 2026-06-15
 
 ---
@@ -149,9 +149,17 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - Docker Compose 5 中间件编排 + IK 安装器 ✅
 - `.editorconfig` + `.gitattributes` 跨平台代码风格 ✅
 
+### 已落地（阶段 1：安全与认证）
+- JWT 认证（HS256，Access 2h 无状态 / Refresh 7d 存 Redis 轮换防重放）✅
+- Spring Security 6 配置 + `JwtAuthenticationFilter` + `RateLimitFilter` ✅
+- Redis Lua 令牌桶限流（认证 100/min·用户，登录注册 20/min·IP 防爆破）✅
+- RBAC 注解 `@RequireRole`/`@RequirePermission` + AOP 切面（KG Admin = LIBRARIAN + `kg:admin`）✅
+- 认证四端点（register/login/refresh/logout）+ BCrypt(12) ✅
+- `library-security` 模块 62 项单元测试全绿 ✅
+- 初始管理员种子（admin/Admin@123456，V4 迁移）✅
+
 ### 待实现
-- 所有业务模块的 Controller/Service/Mapper/Entity 源码（📋 标注）
-- library-security 的 JWT 过滤器 + Spring Security 配置
+- 其余业务模块（图书检索/借阅/预约/推荐/知识图谱/智能采编）的 Controller/Service/Mapper/Entity 源码
 - 各中间件 Starter 引入（ES/Neo4j/RabbitMQ 的 auto-configuration）
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线
