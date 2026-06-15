@@ -1569,7 +1569,10 @@ paths:
     get:
       tags: [借阅管理]
       summary: 超期未还记录
-      description: 查询所有超期未还记录（管理员权限）
+      description: |
+        查询所有超期未还记录。
+
+        **角色权限**：LIBRARIAN / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: getOverdueRecords
       security:
         - BearerAuth: []
@@ -2082,6 +2085,8 @@ paths:
       description: |
         基于 ARIMA 时间序列 + 多元回归，预测未来月份的采购需求量。
         特征变量：历史借阅趋势、预约热度、复本率、季节因子、学科增长率
+
+        **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: predictDemand
       security:
         - BearerAuth: []
@@ -2148,6 +2153,8 @@ paths:
         1. ISBN 精确匹配（权重 1.0）
         2. 标题模糊匹配（ES More Like This，阈值 0.8）
         3. 作者+标题联合匹配（余弦相似度，阈值 0.7）
+
+        **角色权限**：ACQUISITOR / ADMIN；LIBRARIAN 可执行以辅助编目决策（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: checkDuplicate
       security:
         - BearerAuth: []
@@ -2197,7 +2204,10 @@ paths:
     get:
       tags: [智能采编]
       summary: 馆藏缺口分析
-      description: 基于学科核心书目清单（来自知识图谱高 PageRank 节点），识别馆藏缺失
+      description: |
+        基于学科核心书目清单（来自知识图谱高 PageRank 节点），识别馆藏缺失。
+
+        **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: analyzeGap
       security:
         - BearerAuth: []
@@ -2226,7 +2236,10 @@ paths:
     post:
       tags: [智能采编]
       summary: 创建谈判记录
-      description: 记录电子资源采购谈判信息，系统自动生成谈判建议
+      description: |
+        记录电子资源采购谈判信息，系统自动生成谈判建议。
+
+        **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: createNegotiation
       security:
         - BearerAuth: []
@@ -2467,6 +2480,12 @@ paths:
     get:
       tags: [系统]
       summary: 健康检查
+      description: |
+        服务健康检查（Spring Boot Actuator，公开访问，无需认证）。
+
+        `components` 下各中间件的 `UP` 状态依赖对应 Spring Boot Starter 自动装配的
+        `HealthIndicator`。随各业务模块引入对应 starter，mysql / redis / elasticsearch /
+        neo4j / rabbitmq 将依次出现；在 starter 尚未就位前仅展示已装配的组件，属预期行为。
       operationId: healthCheck
       responses:
         "200":
