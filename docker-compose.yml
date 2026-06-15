@@ -1,0 +1,124 @@
+# =============================================================================
+# 图书馆智能管理系统 — Docker Compose 中间件编排
+# 一键启动所有开发环境中间件：MySQL / Redis / Elasticsearch / Neo4j / RabbitMQ
+# =============================================================================
+version: "3.8"
+
+services:
+  # ---- MySQL 8.0 ----
+  mysql:
+    image: mysql:8.0.35
+    container_name: library-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: library_db
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Redis 7.2 ----
+  redis:
+    image: redis:7.2-alpine
+    container_name: library-redis
+    command: redis-server --requirepass redis123456 --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123456", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Elasticsearch 8.11 ----
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: library-es
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+      - es_plugins:/usr/share/elasticsearch/plugins
+
+  # ---- IK 分词器安装（首次启动后需重启 ES） ----
+  es-ik-installer:
+    image: elasticsearch:8.11.0
+    container_name: library-es-ik-install
+    command: >
+      bash -c "
+        if [ -d /usr/share/elasticsearch/plugins/analysis-ik ]; then
+          echo 'IK plugin already installed, skipping.'
+        else
+          echo 'Installing IK plugin...'
+          bin/elasticsearch-plugin install --batch https://get.infini.cloud/elasticsearch/analysis-ik/8.11.0
+          echo 'IK plugin installed. Please restart elasticsearch container.'
+        fi
+      "
+    volumes:
+      - es_plugins:/usr/share/elasticsearch/plugins
+    depends_on:
+      - elasticsearch
+
+  # ---- Neo4j 5.x ----
+  neo4j:
+    image: neo4j:5.17.0-community
+    container_name: library-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/neo4j123456
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "neo4j123456", "RETURN 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # ---- RabbitMQ 3.12 ----
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: library-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+  redis_data:
+  es_data:
+  es_plugins:
+  neo4j_data:
+  neo4j_logs:
+  rabbitmq_data:

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.library</groupId>
+        <artifactId>library-server</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>library-knowledge-graph</artifactId>
+    <description>学科知识图谱模块 — 主题关联网络、文献溯源、知识可视化（Neo4j）</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.library</groupId>
+            <artifactId>library-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.library</groupId>
+            <artifactId>library-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-neo4j</artifactId>
+        </dependency>
+    </dependencies>
+</project>

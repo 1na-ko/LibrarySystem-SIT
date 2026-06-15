@@ -1,0 +1,112 @@
+# ============================================================
+# 图书馆智能管理系统 — 公共配置
+# 环境相关配置请使用 application-{profile}.yml 覆盖
+# ============================================================
+
+spring:
+  application:
+    name: library-system
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # ---- 数据源 ----
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:library_db}?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ---- Redis ----
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123456}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+
+  # ---- Elasticsearch ----
+  elasticsearch:
+    uris: ${ES_HOST:localhost}:${ES_PORT:9200}
+
+  # ---- Neo4j ----
+  neo4j:
+    uri: ${NEO4J_URI:bolt://localhost:7687}
+    authentication:
+      username: ${NEO4J_USERNAME:neo4j}
+      password: ${NEO4J_PASSWORD:neo4j123456}
+
+  # ---- RabbitMQ ----
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+  # ---- Flyway 数据库迁移 ----
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+
+# ---- MyBatis-Plus ----
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.library.core.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+
+# ---- JWT 认证 ----
+jwt:
+  secret: ${JWT_SECRET:}
+  access-token-expiration: 7200000      # 2 小时
+  refresh-token-expiration: 604800000   # 7 天
+
+# ---- SpringDoc OpenAPI ----
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  default-produces-media-type: application/json
+
+# ---- 服务端口 ----
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api/v1
+
+# ---- 日志 ----
+logging:
+  level:
+    root: INFO
+    com.library: ${LOG_LEVEL:DEBUG}
+    org.springframework.security: INFO
+
+# ---- Actuator 健康检查 ----
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">图书馆智能管理系统</string>
+    <string name="nav_search">搜索</string>
+    <string name="nav_borrow">借阅</string>
+    <string name="nav_profile">我的</string>
+</resources>

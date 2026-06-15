@@ -1,0 +1,27 @@
+# =============================================================================
+# 图书馆智能管理系统 — 生产环境配置
+# =============================================================================
+spring:
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.library: INFO
+    org.springframework: WARN
+
+# 生产环境建议关闭 Swagger UI
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics

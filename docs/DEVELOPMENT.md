@@ -170,7 +170,7 @@ cd f:/CodeforJAVA/LibrarySystem-SIT
 docker-compose up -d
 ```
 
-> **注意**：`docker-compose.yml` 实际文件将在编码期创建于项目根目录。当前文档阶段，附录 A 中提供了完整内容供参考，可手动创建该文件后执行上述命令。
+> **注意**：`docker-compose.yml` 已创建于项目根目录，内容与附录 A 一致。如尚未拉取最新代码，可参照附录 A 手动创建。
 
 **`docker-compose.yml`** 内容见 [附录 A](#附录-a-docker-composeyml)。
 
@@ -415,7 +415,7 @@ LOG_LEVEL=DEBUG
 
 ### 4.3 初始化数据库
 
-首次启动时，Flyway 会自动执行数据库迁移脚本。确认 `library-server/library-bootstrap/src/main/resources/db/migration/` 下有迁移脚本（开发阶段将在编码期创建，当前文档阶段暂无）。
+首次启动时，Flyway 会自动执行数据库迁移脚本。基线迁移脚本 `V1__init_schema.sql` 已创建于 `library-server/library-bootstrap/src/main/resources/db/migration/`。后续各业务模块的完整 DDL 将在对应 feature 分支中补充。
 
 也可以通过 Maven 手动执行：
 
@@ -424,7 +424,7 @@ cd library-server
 mvn flyway:migrate -pl library-bootstrap
 ```
 
-> **注意**：Docker Compose 中 MySQL 容器挂载了 `./docs/db/init.sql` 作为初始化脚本（`/docker-entrypoint-initdb.d/init.sql`），该文件将在编码期创建。当前文档阶段若使用 Docker 启动 MySQL，初始化脚本路径挂载不会影响容器启动（缺失时仅跳过初始化）。
+> **注意**：Docker Compose 中 MySQL 容器挂载了 `./docs/db/init.sql` 作为初始化脚本。该文件尚未创建（`V1__init_schema.sql` 已由 Flyway 管理），若需 Docker 启动时预置数据，可在 `docs/db/` 下创建 `init.sql`。
 
 ### 4.4 IDE 打开（IntelliJ IDEA）
 
@@ -644,7 +644,7 @@ ALTER DATABASE library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ## 8. 项目结构速览
 
-> **⚠️ 规划阶段说明**：以下目录树为系统架构设计所定义的**目标结构**。当前项目处于文档制定阶段，源代码文件（`library-*` 后端模块及 `library-android` 前端）将在后续编码阶段逐步创建。开发者应在启动编码前对照此结构确认模块划分。
+> **✅ 项目状态**：初始化框架已搭建完成（2026-06-15），Maven 多模块编译通过（7/7），Android 项目骨架就绪。以下目录树为系统架构设计所定义的**目标结构**，已与当前代码库一致。开发者可直接按此结构进行编码。
 
 ```
 LibrarySystem-SIT/
@@ -738,7 +738,9 @@ LibrarySystem-SIT/
 │               └── mipmap-*/                #     应用图标
 │
 ├── docker-compose.yml                       # 🐳 Docker 中间件编排
-└── .gitignore                               # 🚫 Git 忽略规则
+├── .env.example                              # 🔑 环境变量模板
+├── .editorconfig                             # 📝 跨编辑器代码风格
+└── .gitignore                                # 🚫 Git 忽略规则
 ```
 
 ---
