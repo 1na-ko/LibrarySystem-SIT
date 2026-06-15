@@ -1,6 +1,7 @@
 package com.library.common.result;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.library.common.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,17 +40,17 @@ public class Result<T> {
 
     /** 操作成功（无返回数据） */
     public static <T> Result<T> success() {
-        return build(200, "操作成功", null);
+        return build(ErrorCode.SUCCESS.getCode(), "操作成功", null);
     }
 
     /** 操作成功（带返回数据） */
     public static <T> Result<T> success(T data) {
-        return build(200, "操作成功", data);
+        return build(ErrorCode.SUCCESS.getCode(), "操作成功", data);
     }
 
     /** 操作成功（自定义消息 + 数据） */
     public static <T> Result<T> success(String message, T data) {
-        return build(200, message, data);
+        return build(ErrorCode.SUCCESS.getCode(), message, data);
     }
 
     /** 操作失败（使用 ErrorCode 枚举） */
