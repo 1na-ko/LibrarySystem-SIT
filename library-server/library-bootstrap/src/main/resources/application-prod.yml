@@ -1,27 +1,65 @@
 # =============================================================================
 # 图书馆智能管理系统 — 生产环境配置
+# 生产环境必须通过环境变量注入敏感信息（DB_PASSWORD / JWT_SECRET 等），
+# 禁止在配置文件中硬编码任何密钥。
 # =============================================================================
 spring:
+  # 生产数据源：密码等敏感项必须由环境变量提供，不设本地默认值以避免误用
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:library_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+
   flyway:
     enabled: true
+    # 生产环境只执行结构迁移，不执行测试种子数据
+    locations: classpath:db/migration
 
-logging:
-  level:
-    com.library: INFO
-    org.springframework: WARN
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
 
-# 生产环境建议关闭 Swagger UI
+  neo4j:
+    uri: ${NEO4J_URI}
+    authentication:
+      username: ${NEO4J_USERNAME}
+      password: ${NEO4J_PASSWORD}
+
+# ---- JWT 认证（生产环境密钥必须由环境变量注入，禁止留空默认值）----
+jwt:
+  secret: ${JWT_SECRET}
+
+# ---- SpringDoc OpenAPI（生产环境关闭文档接口，减少攻击面）----
 springdoc:
   swagger-ui:
     enabled: false
   api-docs:
     enabled: false
 
+# ---- 日志（生产环境降低级别，节省磁盘与性能开销）----
+logging:
+  level:
+    root: WARN
+    com.library: INFO
+    org.springframework: WARN
+    org.springframework.security: WARN
+
+# ---- 服务端口 ----
 server:
   port: ${SERVER_PORT:8080}
 
+# ---- Actuator：仅暴露 health 与 metrics，隐藏敏感端点 ----
 management:
   endpoints:
     web:
       exposure:
         include: health,metrics
+  endpoint:
+    health:
+      # 生产环境默认不暴露组件细节，仅显示聚合状态；需要时由授权运维访问
+      show-details: when-authorized
