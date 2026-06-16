@@ -153,7 +153,7 @@ public class ReservationServiceImpl implements ReservationService {
                 ReservationStatusEnum statusEnum = ReservationStatusEnum.valueOf(status.toUpperCase());
                 wrapper.eq(Reservation::getStatus, statusEnum);
             } catch (IllegalArgumentException e) {
-                // ignore invalid status filter
+                log.debug("无效的预约状态筛选参数: {}", status);
             }
         }
 

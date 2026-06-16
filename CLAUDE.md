@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-4 ✅ | 阶段 5-11 📋 待实施
+> **状态**: 阶段 0-5 ✅ | 阶段 6-11 📋 待实施
 > **最后更新**: 2026-06-16
 
 ---
@@ -200,9 +200,20 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - 阶段 4 审计修复（第二轮）：N+1 批量转换 / 预约状态机闭合（`ReservationExpireJob`）/ 架构蓝本回写 / RBAC 注解补全 / `OverdueCheckJob` 分批扫描 ✅
 - 阶段 4 审计修复（第三轮——综合质量审计）：`getQueuePosition()` 横向越权修复（新增 `userId` 归属校验）· `@EventListener` → `@TransactionalEventListener(AFTER_COMMIT)` 修复事件时序竞态 · `AdminBorrowController` 路径 `/borrows` → `/admin/borrows`（消除与 `BorrowController` 路径重叠）· Job 独立 `REQUIRES_NEW` 事务组件（`OverdueBatchProcessor` / `ReservationExpireBatchProcessor`）· 搜索缓存失效（`BookSearchServiceImpl.evictAllSearchCache()`）· `ReservationZsetReconcileJob` 对账骨架 · ES 重试指数退避 · `RoleEnum` 文档补充 ✅
 
+### 已落地（阶段 5：AI 基础设施）
+- `library-ai` 模块 13 个主源文件 + 28 项单元测试全绿 ✅
+- **LLM 服务**：`LlmService` / `LlmServiceImpl` — DeepSeek API（OpenAI-compatible），文本生成 + JSON Mode 结构化输出，reactor-retry 指数退避重试（最多 2 次），含 markdown 代码块剥离防御 ✅
+- **LLM 异常**：`LlmUnavailableException`（继承 RuntimeException），按故障类型分类（AUTH_FAILED / QUOTA_EXHAUSTED / SERVER_ERROR / NETWORK_ERROR / PARSE_ERROR / RETRY_EXHAUSTED）✅
+- **Embedding 服务**：`EmbeddingService` / `EmbeddingServiceImpl` — 阿里云百炼 DashScope API（text-embedding-v3，1024 维），批量自动拆批（≤25），空文本返回零向量 ✅
+- **NLP 服务**：`NlpService` / `NlpServiceImpl` — HanLP 1.8.5 portable 中文分词（`term.word`）+ TextRank 关键词提取，纯本地运行，始终可用 ✅
+- **条件 Bean**：`@ConditionalOnExpression` 确保 DeepSeek/DashScope API Key 缺失时 `LlmService`/`EmbeddingService` Bean 不存在但不阻塞启动，`NlpService` 始终可用 ✅
+- **配置**：`application.yml` 新增 `ai.deepseek.*` / `ai.dashscope.*` 配置块，环境变量由 `.env.example` 占位 ✅
+- **DTO**：`LlmChatRequest` / `LlmChatResponse` / `EmbeddingRequest` / `EmbeddingResponse` — 完整 API 请求/响应映射 ✅
+- 8 模块 BUILD SUCCESS ✅ · 全量 313 项测试全绿（common 142 + ai 28 + core 71 + security 71 + bootstrap 1）✅
+
 ### 待实现
-- 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller
-- 各中间件 Starter 引入（ES/Neo4j/RabbitMQ 的 auto-configuration）— ES 已通过手动配置启用
+- 推荐引擎 / 知识图谱 / 智能采编 的 Service/Controller
+- 各中间件 Starter 引入（Neo4j/RabbitMQ 的 auto-configuration）— ES 已通过手动配置启用
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线
 

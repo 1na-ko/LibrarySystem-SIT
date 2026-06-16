@@ -266,6 +266,10 @@ components:
         publisher:
           type: string
           example: "机械工业出版社"
+        pubDate:
+          type: string
+          format: date
+          example: "2019-12-01"
         categoryName:
           type: string
           example: "计算机科学"
@@ -419,6 +423,10 @@ components:
         id:
           type: integer
           format: int64
+        userId:
+          type: integer
+          format: int64
+          description: 用户 ID（管理员视图可跨用户查询）
         book:
           $ref: "#/components/schemas/BookSimpleVO"
         borrowDate:
@@ -456,11 +464,20 @@ components:
         id:
           type: integer
           format: int64
+        userId:
+          type: integer
+          format: int64
+          description: 用户 ID
         book:
           $ref: "#/components/schemas/BookSimpleVO"
         reserveTime:
           type: string
           format: date-time
+        notifyTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 通知时间（48h 确认窗口起始时间）
         queuePosition:
           type: integer
           description: 当前排队序号

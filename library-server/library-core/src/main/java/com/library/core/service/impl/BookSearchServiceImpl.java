@@ -131,7 +131,7 @@ public class BookSearchServiceImpl implements BookSearchService {
                 return (PageResult<BookSimpleVO>) cached;
             }
         } catch (Exception e) {
-            log.debug("读取搜索缓存失败: {}", e.getMessage());
+            log.warn("读取搜索缓存失败（Redis 不可用）: {}", e.getMessage());
         }
         return null;
     }
@@ -144,7 +144,7 @@ public class BookSearchServiceImpl implements BookSearchService {
             redisTemplate.opsForValue().set(cacheKey, result, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
             log.debug("搜索结果已缓存: {}", cacheKey);
         } catch (Exception e) {
-            log.debug("写入搜索缓存失败: {}", e.getMessage());
+            log.warn("写入搜索缓存失败（Redis 不可用）: {}", e.getMessage());
         }
     }
 
@@ -162,7 +162,7 @@ public class BookSearchServiceImpl implements BookSearchService {
                 log.info("搜索缓存已全局清除: {} 个键", keys.size());
             }
         } catch (Exception e) {
-            log.debug("清除搜索缓存失败（Redis 不可用，缓存在 TTL 后自动过期）: {}", e.getMessage());
+            log.warn("清除搜索缓存失败（Redis 不可用，缓存在 TTL 后自动过期）: {}", e.getMessage());
         }
     }
 }
