@@ -26,8 +26,8 @@ public class AsyncConfig {
     private static final int CORE_POOL_SIZE = 8;
     /** 最大线程数 */
     private static final int MAX_POOL_SIZE = 16;
-    /** 队列容量 */
-    private static final int QUEUE_CAPACITY = 100;
+    /** 队列容量（KG 构建/ES 同步事件洪峰下，100 易触发 CallerRunsPolicy 拖住调用线程） */
+    private static final int QUEUE_CAPACITY = 500;
     /** 线程名前缀 */
     private static final String THREAD_NAME_PREFIX = "library-async-";
 

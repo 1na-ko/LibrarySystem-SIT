@@ -21,14 +21,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +55,8 @@ public class ReservationServiceImpl implements ReservationService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String QUEUE_KEY_PREFIX = "reservation:queue:";
+    private static final String LOCK_KEY_PREFIX = "lock:reservation:";
+    private static final long LOCK_TTL_SECONDS = 5;
 
     @Override
     @Transactional
@@ -66,48 +72,102 @@ public class ReservationServiceImpl implements ReservationService {
             throw new BizException(ErrorCode.BOOK_AVAILABLE);
         }
 
-        // 3. 校验未重复预约（DB + Redis）
-        long existingCount = reservationMapper.selectCount(
-                new LambdaQueryWrapper<Reservation>()
-                        .eq(Reservation::getUserId, userId)
-                        .eq(Reservation::getBookId, bookId)
-                        .eq(Reservation::getStatus, ReservationStatusEnum.WAITING)
-        );
-        if (existingCount > 0) {
+        // 3. 获取分布式锁：防止同一用户对同一本书并发创建多条 WAITING 预约（TOCTOU 竞态）
+        String lockKey = LOCK_KEY_PREFIX + userId + ":" + bookId;
+        Boolean locked;
+        try {
+            locked = redisTemplate.opsForValue()
+                    .setIfAbsent(lockKey, "1", LOCK_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Redis 预约锁获取异常: key={}, error={}", lockKey, e.getMessage());
+            throw new BizException(ErrorCode.INTERNAL_ERROR);
+        }
+        if (!Boolean.TRUE.equals(locked)) {
             throw new BizException(ErrorCode.ALREADY_RESERVED);
         }
 
-        // 4. Redis ZSET 入队
+        try {
+            // 4. 校验未重复预约（锁保护下 selectCount + insert 为原子段，配合 V6 UNIQUE 约束兜底）
+            long existingCount = reservationMapper.selectCount(
+                    new LambdaQueryWrapper<Reservation>()
+                            .eq(Reservation::getUserId, userId)
+                            .eq(Reservation::getBookId, bookId)
+                            .eq(Reservation::getStatus, ReservationStatusEnum.WAITING)
+            );
+            if (existingCount > 0) {
+                throw new BizException(ErrorCode.ALREADY_RESERVED);
+            }
+
+            // 5. 持久化预约记录（queuePosition 为近似快照：锁保护下 = 已有 WAITING 数 + 1；
+            //    权威实时位置由查询接口从 Redis 计算）
+            int queuePosition = (int) existingCount + 1;
+            Reservation reservation = new Reservation();
+            reservation.setUserId(userId);
+            reservation.setBookId(bookId);
+            reservation.setReserveTime(LocalDateTime.now());
+            reservation.setStatus(ReservationStatusEnum.WAITING);
+            reservation.setQueuePosition(queuePosition);
+            reservationMapper.insert(reservation);
+
+            log.info("预约成功: reservationId={}, userId={}, bookId={}, queuePosition={}",
+                    reservation.getId(), userId, bookId, queuePosition);
+
+            // 6. ZSET 入队 + 锁释放 延迟至事务提交后：避免 DB 回滚后 Redis 残留幽灵条目，
+            //    同时覆盖"事务未提交即放锁"的提交窗口
+            deferEnqueueAndLockRelease(lockKey, bookId, userId.toString());
+            return toReservationVO(reservation);
+        } catch (Exception e) {
+            // 异常路径：事务将回滚，立即释放锁
+            releaseLockSafely(lockKey);
+            throw e;
+        }
+    }
+
+    /**
+     * 延迟到事务提交后执行 ZSET 入队并释放锁.
+     * <p>
+     * ZSET 入队必须在事务提交后，避免 DB 回滚后 Redis 残留幽灵条目；与锁释放共用同一
+     * AFTER_COMMIT 回调，一并覆盖"事务未提交即放锁"的提交窗口。无事务上下文（单测）时立即执行。
+     *
+     * @param lockKey   锁键
+     * @param bookId    图书 ID（ZSET key 的一部分）
+     * @param userIdStr 排队成员（用户 ID 字符串）
+     */
+    private void deferEnqueueAndLockRelease(String lockKey, Long bookId, String userIdStr) {
         String queueKey = QUEUE_KEY_PREFIX + bookId;
-        long score = System.currentTimeMillis();
-        try {
-            redisTemplate.opsForZSet().add(queueKey, userId.toString(), score);
-        } catch (Exception e) {
-            log.warn("Redis ZSET 入队失败，预约记录已落库但不准确: bookId={}, error={}", bookId, e.getMessage());
+        Runnable action = () -> {
+            try {
+                redisTemplate.opsForZSet().add(queueKey, userIdStr, System.currentTimeMillis());
+            } catch (Exception e) {
+                log.warn("ZSET 入队失败，预约记录已落库: bookId={}, error={}", bookId, e.getMessage());
+            } finally {
+                releaseLockSafely(lockKey);
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            // 无事务上下文（单测场景），立即执行
+            action.run();
         }
+    }
 
-        // 5. 计算排队位置
-        Long rank = null;
+    /**
+     * 安全释放 Redis 锁（吞掉 Redis 异常，仅记日志）.
+     *
+     * @param lockKey 锁键
+     */
+    private void releaseLockSafely(String lockKey) {
         try {
-            rank = redisTemplate.opsForZSet().rank(queueKey, userId.toString());
+            redisTemplate.delete(lockKey);
         } catch (Exception e) {
-            log.warn("Redis ZSET 排名查询失败: bookId={}", bookId);
+            log.warn("释放预约锁失败: key={}, error={}", lockKey, e.getMessage());
         }
-        int queuePosition = rank != null ? rank.intValue() + 1 : 1;
-
-        // 6. 持久化预约记录
-        Reservation reservation = new Reservation();
-        reservation.setUserId(userId);
-        reservation.setBookId(bookId);
-        reservation.setReserveTime(LocalDateTime.now());
-        reservation.setStatus(ReservationStatusEnum.WAITING);
-        reservation.setQueuePosition(queuePosition);
-        reservationMapper.insert(reservation);
-
-        log.info("预约成功: reservationId={}, userId={}, bookId={}, queuePosition={}",
-                reservation.getId(), userId, bookId, queuePosition);
-
-        return toReservationVO(reservation);
     }
 
     @Override
@@ -197,8 +257,11 @@ public class ReservationServiceImpl implements ReservationService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Map<Long, BookSimpleVO> bookMap = loadBookMap(bookIds);
+        // 批量预加载 WAITING 记录的排队位置（按 bookId 分组，每本书一次 zRange，消除 N+1 over Redis）
+        Map<Long, Integer> positionByReservationId = batchLoadQueuePositions(reservations);
         return reservations.stream()
-                .map(r -> buildReservationVO(r, bookMap.get(r.getBookId())))
+                .map(r -> buildReservationVO(r, bookMap.get(r.getBookId()),
+                        positionByReservationId.get(r.getId())))
                 .toList();
     }
 
@@ -254,13 +317,27 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
-     * Reservation + 关联 BookSimpleVO → ReservationVO.
+     * Reservation + 关联 BookSimpleVO → ReservationVO（单条场景，实时查询排队位置）.
      */
     private ReservationVO buildReservationVO(Reservation reservation, BookSimpleVO bookVO) {
+        return buildReservationVO(reservation, bookVO, null);
+    }
+
+    /**
+     * Reservation + 关联 BookSimpleVO → ReservationVO.
+     *
+     * @param preloadedPosition 批量预加载的排队位置（null 时降级实时查询）
+     */
+    private ReservationVO buildReservationVO(Reservation reservation, BookSimpleVO bookVO,
+                                             Integer preloadedPosition) {
         Integer queuePosition = null;
         if (reservation.getStatus() == ReservationStatusEnum.WAITING) {
-            queuePosition = queryQueuePosition(
-                    reservation.getBookId(), reservation.getUserId(), reservation.getQueuePosition());
+            if (preloadedPosition != null) {
+                queuePosition = preloadedPosition;
+            } else {
+                queuePosition = queryQueuePosition(
+                        reservation.getBookId(), reservation.getUserId(), reservation.getQueuePosition());
+            }
         }
         return ReservationVO.builder()
                 .id(reservation.getId())
@@ -272,5 +349,43 @@ public class ReservationServiceImpl implements ReservationService {
                 .status(reservation.getStatus() != null ? reservation.getStatus().name() : null)
                 .queuePosition(queuePosition)
                 .build();
+    }
+
+    /**
+     * 按 bookId 分组批量查询排队位置（每本书一次 zRange，消除 N+1 over Redis）.
+     *
+     * @param reservations 预约记录列表
+     * @return reservationId → 1-based 排队位置
+     */
+    private Map<Long, Integer> batchLoadQueuePositions(List<Reservation> reservations) {
+        Map<Long, List<Reservation>> byBook = reservations.stream()
+                .filter(r -> r.getStatus() == ReservationStatusEnum.WAITING)
+                .collect(Collectors.groupingBy(Reservation::getBookId));
+
+        Map<Long, Integer> result = new HashMap<>();
+        for (Map.Entry<Long, List<Reservation>> e : byBook.entrySet()) {
+            String queueKey = QUEUE_KEY_PREFIX + e.getKey();
+            try {
+                Set<Object> members = redisTemplate.opsForZSet().range(queueKey, 0, -1);
+                if (members == null) {
+                    continue;
+                }
+                // zRange 按 score 升序返回，建立 member → 1-based 位置
+                Map<String, Integer> memberToPos = new HashMap<>();
+                int pos = 1;
+                for (Object m : members) {
+                    memberToPos.put(m.toString(), pos++);
+                }
+                for (Reservation r : e.getValue()) {
+                    Integer p = memberToPos.get(r.getUserId().toString());
+                    if (p != null) {
+                        result.put(r.getId(), p);
+                    }
+                }
+            } catch (Exception ex) {
+                log.debug("批量查询排队位置失败，降级实时查询: bookId={}", e.getKey());
+            }
+        }
+        return result;
     }
 }

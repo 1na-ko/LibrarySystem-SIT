@@ -26,6 +26,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!-- Redis：StringRedisTemplate 用于限流令牌桶与 JWT Refresh Token 轮换（显式声明，避免依赖 core 传递） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
         <!-- AOP：支持 @RequireRole / @RequirePermission 切面 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

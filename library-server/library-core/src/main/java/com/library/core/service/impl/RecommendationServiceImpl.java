@@ -288,16 +288,6 @@ public class RecommendationServiceImpl implements RecommendationService {
      * Book → BookSimpleVO（避免 N+1 分类查询）.
      */
     private BookSimpleVO toBookSimpleVO(Book book, Map<Long, String> categoryNameMap) {
-        return BookSimpleVO.builder()
-                .id(book.getId())
-                .isbn(book.getIsbn())
-                .title(book.getTitle())
-                .author(book.getAuthor())
-                .publisher(book.getPublisher())
-                .coverUrl(book.getCoverUrl())
-                .pubDate(book.getPubDate())
-                .availCopies(book.getAvailCopies())
-                .categoryName(categoryNameMap.get(book.getCategoryId()))
-                .build();
+        return BookSimpleVO.from(book, categoryNameMap.get(book.getCategoryId()));
     }
 }

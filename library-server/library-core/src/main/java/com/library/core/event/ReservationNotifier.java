@@ -98,9 +98,10 @@ public class ReservationNotifier {
                 reservation.setExpireTime(now.plusHours(CONFIRM_WINDOW_HOURS));
                 int rows = reservationMapper.updateById(reservation);
                 if (rows == 0) {
-                    log.error("预约状态更新失败（乐观锁冲突或记录已变更）: reservationId={}, userId={}",
+                    // Reservation 实体未启用 @Version 乐观锁，updateById 按主键更新；
+                    // rows==0 意味着记录在 select 后被并发删除或逻辑删除，需人工核对
+                    log.error("预约状态更新失败（记录在 select 后被变更/删除）: reservationId={}, userId={}",
                             reservation.getId(), userId);
-                    // 已从 ZSET pop 但 DB 未更新 → 数据不一致，记录日志供人工处理
                     return;
                 }
 

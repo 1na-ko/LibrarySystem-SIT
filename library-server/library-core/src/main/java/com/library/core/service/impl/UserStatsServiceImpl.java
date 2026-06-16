@@ -120,30 +120,37 @@ public class UserStatsServiceImpl implements UserStatsService {
     }
 
     /**
-     * 构建近 12 月月度借阅趋势.
+     * 构建近 12 月月度借阅趋势（单次遍历分组，O(N) 替代原 O(12×N)）.
      */
     private List<UserStatsVO.MonthlyStat> buildMonthlyTrend(List<BorrowRecord> records) {
         LocalDate now = LocalDate.now();
         DateTimeFormatter monthFmt = DateTimeFormatter.ofPattern("yyyy-MM");
-        List<UserStatsVO.MonthlyStat> trend = new ArrayList<>();
 
+        // 1. 初始化近 12 月的 key（保持顺序），默认计数 0
+        LinkedHashMap<String, Long> monthCount = new LinkedHashMap<>();
         for (int i = 11; i >= 0; i--) {
-            LocalDate monthStart = now.minusMonths(i).withDayOfMonth(1);
-            String monthKey = monthStart.format(monthFmt);
-            long count = records.stream()
-                    .filter(r -> {
-                        LocalDate refDate = r.getBorrowDate() != null ? r.getBorrowDate()
-                                : r.getCreateTime().toLocalDate();
-                        return refDate.getYear() == monthStart.getYear()
-                                && refDate.getMonthValue() == monthStart.getMonthValue();
-                    })
-                    .count();
-            trend.add(UserStatsVO.MonthlyStat.builder()
-                    .month(monthKey)
-                    .count(count)
-                    .build());
+            monthCount.put(now.minusMonths(i).withDayOfMonth(1).format(monthFmt), 0L);
         }
 
-        return trend;
+        // 2. 单次遍历累加（仅统计落在近 12 月窗口内的记录）
+        LocalDate windowStart = now.minusMonths(11).withDayOfMonth(1);
+        LocalDate windowEndExclusive = now.plusMonths(1).withDayOfMonth(1);
+        for (BorrowRecord r : records) {
+            LocalDate refDate = r.getBorrowDate() != null ? r.getBorrowDate()
+                    : (r.getCreateTime() != null ? r.getCreateTime().toLocalDate() : null);
+            if (refDate != null
+                    && !refDate.isBefore(windowStart)
+                    && refDate.isBefore(windowEndExclusive)) {
+                monthCount.merge(refDate.format(monthFmt), 1L, Long::sum);
+            }
+        }
+
+        // 3. 转换为 VO 列表
+        return monthCount.entrySet().stream()
+                .map(e -> UserStatsVO.MonthlyStat.builder()
+                        .month(e.getKey())
+                        .count(e.getValue())
+                        .build())
+                .toList();
     }
 }

@@ -1,9 +1,10 @@
 package com.library.security.token;
 
+import com.library.security.config.JwtProperties;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -37,8 +38,17 @@ class TokenServiceImplTest {
     @Mock
     private RedisScript<Long> rotateScript;
 
-    @InjectMocks
+    @Mock
+    private JwtProperties jwtProperties;
+
     private TokenServiceImpl tokenService;
+
+    @BeforeEach
+    void setUp() {
+        // 默认值：Refresh Token 有效期 7 天（604,800,000ms）
+        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(604_800_000L);
+        tokenService = new TokenServiceImpl(redis, rotateScript, jwtProperties);
+    }
 
     @Test
     @DisplayName("storeRefresh 应以 7d TTL 写入 auth:refresh:{userId}")

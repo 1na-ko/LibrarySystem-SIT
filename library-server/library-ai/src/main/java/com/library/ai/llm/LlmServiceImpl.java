@@ -131,6 +131,17 @@ public class LlmServiceImpl implements LlmService {
                         new LlmUnavailableException("DeepSeek API 网络错误: " + e.getMessage(), e, "NETWORK_ERROR"))
                 .retryWhen(Retry.backoff(llmConfig.getMaxRetries(), Duration.ofSeconds(1))
                         .maxBackoff(Duration.ofSeconds(8))
+                        .filter(throwable -> {
+                            // 跳过永久性错误的重试（无意义且浪费配额窗口）：
+                            // AUTH_FAILED(401/403) / QUOTA_EXHAUSTED(429) / CLIENT_ERROR(400/404 等请求格式错误)
+                            if (throwable instanceof LlmUnavailableException e) {
+                                String reason = e.getReason();
+                                return !"AUTH_FAILED".equals(reason)
+                                        && !"QUOTA_EXHAUSTED".equals(reason)
+                                        && !"CLIENT_ERROR".equals(reason);
+                            }
+                            return true; // 网络等临时错误继续重试
+                        })
                         .doBeforeRetry(rs -> log.warn("DeepSeek API 调用重试: 第 {} 次, 失败原因: {}",
                                 rs.totalRetries() + 1, rs.failure().getMessage()))
                         .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
@@ -167,13 +178,8 @@ public class LlmServiceImpl implements LlmService {
             return content;
         }
         String trimmed = content.trim();
-        // 剥离开头的 ```json 或 ```
-        if (trimmed.startsWith("```")) {
-            int firstNewline = trimmed.indexOf('\n');
-            if (firstNewline > 0) {
-                trimmed = trimmed.substring(firstNewline + 1);
-            }
-        }
+        // 剥离开头的 ```json / ```（正则兼容单行 ```json{...}``` 无换行的边界情况）
+        trimmed = trimmed.replaceAll("^```(?:[a-zA-Z]+)?\\s*", "");
         // 剥离结尾的 ```
         if (trimmed.endsWith("```")) {
             trimmed = trimmed.substring(0, trimmed.length() - 3);

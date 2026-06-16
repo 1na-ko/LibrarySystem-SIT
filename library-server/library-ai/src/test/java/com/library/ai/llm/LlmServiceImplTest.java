@@ -97,9 +97,9 @@ class LlmServiceImplTest {
         }
 
         @Test
-        @DisplayName("HTTP 错误时 retryWhen 耗尽应抛出 RETRY_EXHAUSTED 异常")
-        void shouldThrowLlmUnavailableWhenHttpErrorExhaustsRetry() {
-            when(llmConfig.getMaxRetries()).thenReturn(0);
+        @DisplayName("AUTH_FAILED/QUOTA_EXHAUSTED 永久性错误应跳过重试，直接传播原始异常")
+        void shouldSkipRetryForPermanentErrorsLikeAuthFailed() {
+            when(llmConfig.getMaxRetries()).thenReturn(2); // 虽有重试配额，但 AUTH_FAILED 应被 filter 跳过
             when(deepseekWebClient.post()
                     .uri(anyString())
                     .bodyValue(any())
@@ -108,6 +108,26 @@ class LlmServiceImplTest {
                     .bodyToMono(LlmChatResponse.class))
                     .thenReturn(Mono.error(new LlmUnavailableException(
                             "DeepSeek API 返回错误: 401 UNAUTHORIZED", "AUTH_FAILED")));
+
+            assertThatThrownBy(() -> llmService.chat("测试"))
+                    .isInstanceOf(LlmUnavailableException.class)
+                    .hasMessageContaining("401")
+                    .extracting(ex -> ((LlmUnavailableException) ex).getReason())
+                    .isEqualTo("AUTH_FAILED"); // 原始异常直接传播，不被 retry 重包装
+        }
+
+        @Test
+        @DisplayName("SERVER_ERROR 应被重试，maxRetries=0 时由 onRetryExhaustedThrow 包装为 RETRY_EXHAUSTED")
+        void shouldThrowRetryExhaustedWhenServerErrorExhaustsRetry() {
+            when(llmConfig.getMaxRetries()).thenReturn(0);
+            when(deepseekWebClient.post()
+                    .uri(anyString())
+                    .bodyValue(any())
+                    .retrieve()
+                    .onStatus(any(), any())
+                    .bodyToMono(LlmChatResponse.class))
+                    .thenReturn(Mono.error(new LlmUnavailableException(
+                            "DeepSeek API 返回错误: 500 Internal Server Error", "SERVER_ERROR")));
 
             assertThatThrownBy(() -> llmService.chat("测试"))
                     .isInstanceOf(LlmUnavailableException.class)

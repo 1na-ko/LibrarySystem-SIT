@@ -96,22 +96,14 @@ public class BookController {
      * 图书详情.
      * <p>
      * 获取图书完整信息，含关键词列表、相关图书推荐、当前预约人数。
+     * VO 组装由 {@link BookService#getDetail(Long)} 在 Service 层完成，
+     * Controller 层仅做参数编排与调用，遵循分层原则。
      *
      * @param id 图书 ID
      */
     @GetMapping("/{id}")
     public Result<BookDetailVO> getDetail(@PathVariable Long id) {
-        // 图书详情（含 reservationCount，由 BookService 填充）
-        BookDetailVO vo = bookService.getDetail(id);
-
-        // 补充相关图书（RelatedBookService 是合理的 Service 层调用）
-        List<BookRecommendVO> related = relatedBookService.getRelated(id, 10);
-        List<BookSimpleVO> relatedBooks = related.stream()
-                .map(BookRecommendVO::getBook)
-                .toList();
-        vo.setRelatedBooks(relatedBooks);
-
-        return Result.success(vo);
+        return Result.success(bookService.getDetail(id));
     }
 
     /**

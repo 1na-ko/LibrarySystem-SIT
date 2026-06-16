@@ -89,7 +89,12 @@ public class BookAdminServiceImpl implements BookAdminService {
         if (dto.getPublisher() != null) book.setPublisher(dto.getPublisher());
         if (dto.getPubDate() != null) book.setPubDate(dto.getPubDate());
         if (dto.getCategoryId() != null) book.setCategoryId(dto.getCategoryId());
-        if (dto.getTotalCopies() != null) book.setTotalCopies(dto.getTotalCopies());
+        if (dto.getTotalCopies() != null) {
+            // 同步调整 availCopies：delta = newTotal - oldTotal
+            int delta = dto.getTotalCopies() - book.getTotalCopies();
+            book.setTotalCopies(dto.getTotalCopies());
+            book.setAvailCopies(Math.max(0, book.getAvailCopies() + delta));
+        }
         if (dto.getDescription() != null) book.setDescription(dto.getDescription());
         if (dto.getLocation() != null) book.setLocation(dto.getLocation());
         if (dto.getKeywords() != null) book.setKeywords(dto.getKeywords());

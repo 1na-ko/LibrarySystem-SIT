@@ -52,6 +52,10 @@ public class LlmConfig {
     private Duration readTimeout;
 
     @Getter
+    @Value("${ai.deepseek.write-timeout:30s}")
+    private Duration writeTimeout;
+
+    @Getter
     @Value("${ai.deepseek.max-retries:2}")
     private int maxRetries;
 
@@ -77,7 +81,7 @@ public class LlmConfig {
                 .responseTimeout(readTimeout)
                 .doOnConnected(conn ->
                         conn.addHandlerLast(new ReadTimeoutHandler(readTimeout.toSeconds(), TimeUnit.SECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(30, TimeUnit.SECONDS)));
+                                .addHandlerLast(new WriteTimeoutHandler(writeTimeout.toSeconds(), TimeUnit.SECONDS)));
 
         WebClient client = WebClient.builder()
                 .baseUrl(baseUrl)

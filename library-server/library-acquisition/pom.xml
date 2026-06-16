@@ -27,6 +27,14 @@
             <artifactId>library-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.library</groupId>
+            <artifactId>library-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
         </dependency>

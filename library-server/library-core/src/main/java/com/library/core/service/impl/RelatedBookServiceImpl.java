@@ -7,15 +7,17 @@ import com.library.core.entity.Book;
 import com.library.core.entity.Category;
 import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
+import com.library.core.service.KgRelatedBookPort;
 import com.library.core.service.RelatedBookService;
 import com.library.core.vo.BookRecommendVO;
 import com.library.core.vo.BookSimpleVO;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,21 +25,31 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 相关图书服务实现.
+ * 相关图书服务适配器.
  * <p>
- * 当前阶段（KG 模块未实现）使用 MySQL 同分类/同作者查询作为降级实现。
- * 阶段 7 完成后替换为 Neo4j 知识图谱多跳查询。
+ * 优先通过 {@link KgRelatedBookPort}（KG 模块提供，条件注入）使用 Neo4j
+ * 多跳邻居查询获取相关图书；KG 不可用时回退 MySQL 同分类/同作者查询（降级策略）。
+ * <p>
+ * 阶段 7 后 KG 路径全面生效，降级路径保证无 Neo4j 环境仍可工作。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RelatedBookServiceImpl implements RelatedBookService {
 
     private final BookMapper bookMapper;
     private final CategoryMapper categoryMapper;
+    private final ObjectProvider<KgRelatedBookPort> portProvider;
+
+    public RelatedBookServiceImpl(BookMapper bookMapper,
+                                  CategoryMapper categoryMapper,
+                                  ObjectProvider<KgRelatedBookPort> portProvider) {
+        this.bookMapper = bookMapper;
+        this.categoryMapper = categoryMapper;
+        this.portProvider = portProvider;
+    }
 
     private static final int MAX_LIMIT = 20;
     private static final double CATEGORY_SCORE = 0.7;
@@ -50,10 +62,26 @@ public class RelatedBookServiceImpl implements RelatedBookService {
         }
         int actualLimit = Math.min(limit, MAX_LIMIT);
 
+        // 优先 KG 路径
+        KgRelatedBookPort port = portProvider.getIfAvailable();
+        if (port != null) {
+            try {
+                List<BookRecommendVO> kgResult = port.getRelated(bookId, actualLimit);
+                if (kgResult != null && !kgResult.isEmpty()) {
+                    return kgResult;
+                }
+            } catch (Exception e) {
+                log.warn("KG 相关图书查询失败，回退 MySQL: {}", e.getMessage());
+            }
+        }
+
         Book target = bookMapper.selectById(bookId);
         if (target == null) {
             throw new BizException(ErrorCode.BOOK_NOT_FOUND);
         }
+
+        // 批量预加载全部候选图书的分类名称——消除 N+1
+        Map<Long, String> categoryNameMap = loadCategoryNameMap();
 
         Set<Long> seenIds = new LinkedHashSet<>();
         seenIds.add(bookId); // 排除自身
@@ -72,7 +100,7 @@ public class RelatedBookServiceImpl implements RelatedBookService {
             );
             for (Book book : sameCategory) {
                 if (seenIds.add(book.getId())) {
-                    result.add(toRecommendVO(book, CATEGORY_SCORE, "同分类图书"));
+                    result.add(toRecommendVO(book, CATEGORY_SCORE, "同分类图书", categoryNameMap));
                     if (result.size() >= actualLimit) {
                         return result.subList(0, actualLimit);
                     }
@@ -90,7 +118,7 @@ public class RelatedBookServiceImpl implements RelatedBookService {
             );
             for (Book book : sameAuthor) {
                 if (seenIds.add(book.getId())) {
-                    result.add(toRecommendVO(book, AUTHOR_SCORE, "同作者图书"));
+                    result.add(toRecommendVO(book, AUTHOR_SCORE, "同作者图书", categoryNameMap));
                     if (result.size() >= actualLimit) {
                         break;
                     }
@@ -102,30 +130,36 @@ public class RelatedBookServiceImpl implements RelatedBookService {
     }
 
     /**
-     * Entity → BookRecommendVO（含分类名称批量查詢）.
+     * 批量预加载所有分类名称（id → name），消除 N+1 查询.
      */
-    private BookRecommendVO toRecommendVO(Book book, double score, String reason) {
-        // 批量预加载已于 getRelated() 中完成一次 category 查询；
-        // 此处按需补充单个分类名称
+    private Map<Long, String> loadCategoryNameMap() {
+        try {
+            return categoryMapper.selectList(null).stream()
+                    .collect(Collectors.toMap(Category::getId, Category::getName, (a, b) -> a));
+        } catch (Exception e) {
+            log.warn("批量加载分类名称失败: {}", e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Entity → BookRecommendVO（使用预加载的分类名称 Map 消除 N+1）.
+     */
+    private BookRecommendVO toRecommendVO(Book book, double score, String reason,
+                                          Map<Long, String> categoryNameMap) {
         String categoryName = null;
         if (book.getCategoryId() != null) {
-            Category category = categoryMapper.selectById(book.getCategoryId());
-            if (category != null) {
-                categoryName = category.getName();
+            categoryName = categoryNameMap.get(book.getCategoryId());
+            // 降级：缓存未命中时按需查询
+            if (categoryName == null) {
+                Category category = categoryMapper.selectById(book.getCategoryId());
+                if (category != null) {
+                    categoryName = category.getName();
+                }
             }
         }
         return BookRecommendVO.builder()
-                .book(BookSimpleVO.builder()
-                        .id(book.getId())
-                        .isbn(book.getIsbn())
-                        .title(book.getTitle())
-                        .author(book.getAuthor())
-                        .publisher(book.getPublisher())
-                        .coverUrl(book.getCoverUrl())
-                        .pubDate(book.getPubDate())
-                        .availCopies(book.getAvailCopies())
-                        .categoryName(categoryName)
-                        .build())
+                .book(BookSimpleVO.from(book, categoryName))
                 .score(score)
                 .reason(reason)
                 .build();
