@@ -25,13 +25,15 @@
 | [implementation/阶段3完成记录](implementation/阶段3完成记录.md) | 阶段 3（核心业务—图书检索）完成详情与架构决策记录 |
 | [implementation/阶段4完成记录](implementation/阶段4完成记录.md) | 阶段 4（核心业务—借阅与预约）完成详情与架构决策记录 |
 | [implementation/阶段5完成记录](implementation/阶段5完成记录.md) | 阶段 5（AI 基础设施）完成详情与架构决策记录 |
+| [implementation/阶段6完成记录](implementation/阶段6完成记录.md) | 阶段 6（图书推荐引擎）完成详情与架构决策记录 |
+| [implementation/阶段6审计修复记录](implementation/阶段6审计修复记录.md) | 阶段 6 后跨阶段综合质量审计修复（P0-P2 + 文档/契约同步） |
 | [implementation/前端人员B完成记录](implementation/前端人员B完成记录.md) | Android 前端人员 B — 借阅管理/预约管理/知识图谱/系统管理/条码扫描 完成详情 |
 
 ### 技术参考
 
 | 文档 | 说明 |
 |------|------|
-| [api/library-api.yaml](api/library-api.yaml) | OpenAPI 3.0 规范，前后端数据契约（28 个端点，完整 Schema + Example） |
+| [api/library-api.yaml](api/library-api.yaml) | OpenAPI 3.0 规范，前后端数据契约（39 个端点：31 个已实现 + 8 个规划中标注 `x-implemented: false`，完整 Schema + Example） |
 | [db/init.sql](db/init.sql) | Docker MySQL 容器首次启动时的字符集初始化脚本 |
 
 ---
@@ -56,6 +58,8 @@ docs/
     ├── 阶段3完成记录.md                 # 阶段 3 完成详情
     ├── 阶段4完成记录.md                 # 阶段 4 完成详情
     ├── 阶段5完成记录.md                 # 阶段 5 完成详情
+    ├── 阶段6完成记录.md                 # 阶段 6 完成详情
+    ├── 阶段6审计修复记录.md             # 阶段 6 后跨阶段综合审计修复
     └── 前端人员B完成记录.md             # Android 前端人员 B 完成详情
 ```
 

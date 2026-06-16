@@ -71,9 +71,12 @@ public class EsIndexInitializer {
                         .properties("description", p -> p.text(t -> t.analyzer("ik_smart_analyzer")))
                         .properties("keywords", p -> p
                                 .text(t -> t.analyzer("ik_smart_analyzer").boost(2.0)))
+                        .properties("categoryId", p -> p.long_(l -> l))
                         .properties("categoryName", p -> p.keyword(k -> k))
                         .properties("borrowCount", p -> p.integer(i -> i))
                         .properties("availCopies", p -> p.integer(i -> i))
+                        .properties("coverUrl", p -> p.keyword(k -> k))
+                        .properties("location", p -> p.keyword(k -> k))
                         .properties("pubDate", p -> p.date(d -> d))
                         .properties("suggest", p -> p.completion(c -> c.analyzer("ik_smart_analyzer")))
                 )

@@ -26,6 +26,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.math.BigDecimal;
@@ -38,6 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -199,6 +202,34 @@ class BorrowServiceTest {
             assertThatThrownBy(() -> borrowService.borrow(1L, 10L))
                     .isInstanceOf(BizException.class)
                     .hasMessageContaining("超期未还");
+        }
+
+        @Test
+        @DisplayName("事务激活时应延迟释放锁至提交后（注册 AFTER_COMMIT 回调，不立即 delete）")
+        void shouldDeferLockReleaseUntilCommitWhenTransactionActive() {
+            // 手动激活事务同步，模拟 @Transactional 上下文
+            TransactionSynchronizationManager.initSynchronization();
+            try {
+                when(sysUserMapper.selectById(1L)).thenReturn(user);
+                when(bookMapper.selectById(10L)).thenReturn(book);
+                when(borrowRecordMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+                when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any())).thenReturn(true);
+                when(bookMapper.updateById(any(Book.class))).thenReturn(1);
+                when(borrowRecordMapper.insert(any(BorrowRecord.class))).thenReturn(1);
+
+                borrowService.borrow(1L, 10L);
+
+                // 事务激活时：借书成功后锁不立即释放（延迟到 afterCommit）
+                verify(redisTemplate, never()).delete(anyString());
+                // 已注册事务同步回调
+                assertThat(TransactionSynchronizationManager.getSynchronizations()).isNotEmpty();
+                // 模拟事务提交：触发 afterCommit 回调 → 此时才释放锁
+                TransactionSynchronizationManager.getSynchronizations().forEach(sync ->
+                        ((TransactionSynchronization) sync).afterCommit());
+                verify(redisTemplate).delete("lock:borrow:10");
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization();
+            }
         }
     }
 

@@ -62,7 +62,10 @@ public enum ErrorCode {
     BAD_CREDENTIALS(4003, "用户名或密码错误"),
     TOKEN_EXPIRED(4004, "登录已过期，请重新登录"),
     TOKEN_INVALID(4005, "令牌无效"),
-    USER_DISABLED(4006, "账户已被禁用");
+    USER_DISABLED(4006, "账户已被禁用"),
+
+    // ==================== 推荐域 (5xxx) ====================
+    RECOMMEND_PARALLEL_TIMEOUT(5001, "推荐计算超时，已返回部分结果");
 
     /** 业务错误码 */
     private final int code;

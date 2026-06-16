@@ -146,6 +146,17 @@ ai:
     read-timeout: 30s
     max-batch-size: 25
 
+# ---- 推荐引擎 ----
+recommendation:
+  cf-weight: 0.4            # 协同过滤权重
+  content-weight: 0.3       # 内容推荐权重
+  kg-weight: 0.3            # 知识图谱权重（KG 就绪后生效）
+  user-cf-top-k: 20         # User-CF 相似用户 Top-K
+  item-cf-top-k: 10         # Item-CF 每本书取相似书 Top-K
+  content-candidate-limit: 500  # 内容推荐候选池上限（控制 Embedding API 调用量）
+  recall-timeout-seconds: 5 # 并行召回超时秒数
+  max-limit: 50             # 推荐结果上限
+
 # ---- Actuator 健康检查 ----
 management:
   endpoints:

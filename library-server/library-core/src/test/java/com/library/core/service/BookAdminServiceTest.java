@@ -1,13 +1,16 @@
-package com.library.security.controller;
+package com.library.core.service;
 
 import com.library.common.exception.BizException;
 import com.library.common.exception.ErrorCode;
 import com.library.core.dto.BookCreateDTO;
 import com.library.core.dto.BookUpdateDTO;
 import com.library.core.entity.Book;
+import com.library.core.event.BookCreatedEvent;
+import com.library.core.event.BookDeletedEvent;
+import com.library.core.event.BookUpdatedEvent;
 import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.BorrowRecordMapper;
-import com.library.core.service.BookService;
+import com.library.core.service.impl.BookAdminServiceImpl;
 import com.library.core.vo.BookDetailVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,14 +35,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * AdminBookController 单元测试.
+ * BookAdminService 单元测试.
+ * <p>
+ * 覆盖管理端图书编目的业务逻辑：ISBN 唯一校验、活跃借阅检查、乐观锁、领域事件发布。
+ * （阶段 6 审计修复：本测试由 security/AdminBookControllerTest 迁移而来，
+ *  因编目逻辑已由 Controller 下沉至 BookAdminServiceImpl。）
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
-@DisplayName("AdminBookController")
+@DisplayName("BookAdminService")
 @ExtendWith(MockitoExtension.class)
-class AdminBookControllerTest {
+class BookAdminServiceTest {
 
     @Mock
     private BookMapper bookMapper;
@@ -54,7 +61,7 @@ class AdminBookControllerTest {
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private AdminBookController adminBookController;
+    private BookAdminServiceImpl bookAdminService;
 
     private Book sampleBook;
     private BookDetailVO sampleDetailVO;
@@ -96,7 +103,7 @@ class AdminBookControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /admin/books")
+    @DisplayName("createBook")
     class Create {
 
         @Test
@@ -107,7 +114,7 @@ class AdminBookControllerTest {
                     .categoryId(1L).totalCopies(5).build();
             when(bookMapper.selectCount(any())).thenReturn(1L);
 
-            assertThatThrownBy(() -> adminBookController.create(dto))
+            assertThatThrownBy(() -> bookAdminService.createBook(dto))
                     .isInstanceOf(BizException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.DUPLICATE_ISBN);
@@ -129,11 +136,11 @@ class AdminBookControllerTest {
             });
             when(bookService.getById(1L)).thenReturn(sampleDetailVO);
 
-            var result = adminBookController.create(dto);
+            BookDetailVO result = bookAdminService.createBook(dto);
 
-            assertThat(result.getCode()).isEqualTo(200);
-            assertThat(result.getData().getTitle()).isEqualTo("深入理解Java虚拟机");
-            assertThat(result.getData().getCategoryName()).isEqualTo("计算机科学");
+            assertThat(result.getTitle()).isEqualTo("深入理解Java虚拟机");
+            assertThat(result.getCategoryName()).isEqualTo("计算机科学");
+            verify(eventPublisher).publishEvent(any(BookCreatedEvent.class));
         }
 
         @Test
@@ -152,12 +159,12 @@ class AdminBookControllerTest {
             });
             when(bookService.getById(1L)).thenReturn(sampleDetailVO);
 
-            adminBookController.create(dto);
+            bookAdminService.createBook(dto);
         }
     }
 
     @Nested
-    @DisplayName("PUT /admin/books/{id}")
+    @DisplayName("updateBook")
     class Update {
 
         @Test
@@ -166,7 +173,7 @@ class AdminBookControllerTest {
             BookUpdateDTO dto = BookUpdateDTO.builder().title("新书名").build();
             when(bookMapper.selectById(999L)).thenReturn(null);
 
-            assertThatThrownBy(() -> adminBookController.update(999L, dto))
+            assertThatThrownBy(() -> bookAdminService.updateBook(999L, dto))
                     .isInstanceOf(BizException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.BOOK_NOT_FOUND);
@@ -180,10 +187,10 @@ class AdminBookControllerTest {
             when(bookMapper.updateById(any(Book.class))).thenReturn(1);
             when(bookService.getById(1L)).thenReturn(sampleDetailVO);
 
-            var result = adminBookController.update(1L, dto);
+            BookDetailVO result = bookAdminService.updateBook(1L, dto);
 
-            assertThat(result.getCode()).isEqualTo(200);
-            assertThat(result.getData().getCategoryName()).isEqualTo("计算机科学");
+            assertThat(result.getCategoryName()).isEqualTo("计算机科学");
+            verify(eventPublisher).publishEvent(any(BookUpdatedEvent.class));
         }
 
         @Test
@@ -193,7 +200,7 @@ class AdminBookControllerTest {
             when(bookMapper.selectById(1L)).thenReturn(sampleBook);
             when(bookMapper.updateById(any(Book.class))).thenReturn(0);
 
-            assertThatThrownBy(() -> adminBookController.update(1L, dto))
+            assertThatThrownBy(() -> bookAdminService.updateBook(1L, dto))
                     .isInstanceOf(BizException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CONFLICT);
@@ -201,7 +208,7 @@ class AdminBookControllerTest {
     }
 
     @Nested
-    @DisplayName("DELETE /admin/books/{id}")
+    @DisplayName("deleteBook")
     class Delete {
 
         @Test
@@ -209,19 +216,19 @@ class AdminBookControllerTest {
         void shouldThrowWhenBookNotFound() {
             when(bookMapper.selectById(999L)).thenReturn(null);
 
-            assertThatThrownBy(() -> adminBookController.delete(999L))
+            assertThatThrownBy(() -> bookAdminService.deleteBook(999L))
                     .isInstanceOf(BizException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.BOOK_NOT_FOUND);
         }
 
         @Test
-        @DisplayName("存在活跃借阅时应抛出 CONFLICT")
+        @DisplayName("存在活跃借阅时应抛出 CONFLICT 且不删除")
         void shouldRefuseWhenActiveBorrows() {
             when(bookMapper.selectById(1L)).thenReturn(sampleBook);
             when(borrowRecordMapper.selectCount(any())).thenReturn(1L);
 
-            assertThatThrownBy(() -> adminBookController.delete(1L))
+            assertThatThrownBy(() -> bookAdminService.deleteBook(1L))
                     .isInstanceOf(BizException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CONFLICT);
@@ -229,15 +236,16 @@ class AdminBookControllerTest {
         }
 
         @Test
-        @DisplayName("删除成功应返回 200（MyBatis-Plus 自动逻辑删除）")
-        void shouldDeleteAndReturn200() {
+        @DisplayName("删除成功应发布 BookDeletedEvent（MyBatis-Plus 自动逻辑删除）")
+        void shouldDeleteAndPublishEvent() {
             when(bookMapper.selectById(1L)).thenReturn(sampleBook);
             when(borrowRecordMapper.selectCount(any())).thenReturn(0L);
             when(bookMapper.deleteById(1L)).thenReturn(1);
 
-            var result = adminBookController.delete(1L);
+            bookAdminService.deleteBook(1L);
 
-            assertThat(result.getCode()).isEqualTo(200);
+            verify(bookMapper).deleteById(1L);
+            verify(eventPublisher).publishEvent(any(BookDeletedEvent.class));
         }
     }
 }

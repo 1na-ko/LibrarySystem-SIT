@@ -20,10 +20,8 @@
         </dependency>
         <!--
           library-ai 依赖说明：
-          当前（阶段 5 末）尚无 core 源码直接 import com.library.ai，
-          但 Maven 依赖已在构建链中生效。
-          阶段 6（推荐引擎）将通过 LlmService 生成个性化推荐理由，
-          届时本依赖将由 RecommendationService 实际消费。
+          阶段 6（推荐引擎）已实际消费——RecommendationServiceImpl 注入 LlmService
+          生成个性化推荐理由，ContentBasedServiceImpl 注入 EmbeddingService 构建用户画像。
         -->
         <dependency>
             <groupId>com.library</groupId>

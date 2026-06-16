@@ -1288,7 +1288,7 @@ paths:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/BookVO"
+                          $ref: "#/components/schemas/BookSimpleVO"
 
   /api/v1/books/{id}:
     get:
@@ -1554,7 +1554,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Result"
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BorrowRecordVO"
         "409":
           description: 该书已归还，不可重复操作
 
@@ -1865,10 +1870,11 @@ paths:
       tags: [个人中心]
       summary: 个性化推荐
       description: |
-        混合推荐策略：
-        - 协同过滤（User-CF + Item-CF）权重 0.4
-        - 基于内容推荐（TF-IDF 向量余弦相似度）权重 0.3
-        - 知识图谱推荐（多跳邻居发现）权重 0.3
+        混合推荐策略（阶段 6 已实现）：
+        - 协同过滤（User-CF 余弦相似度 + Item-CF Jaccard）权重 0.4
+        - 基于内容推荐（Embedding 用户画像 + 余弦相似度）权重 0.3
+        - 知识图谱推荐（Neo4j 多跳邻居发现，阶段 7 替换桩实现）权重 0.3
+        - LLM 个性化推荐理由生成（DeepSeek），降级为模板理由
       operationId: getRecommendations
       security:
         - BearerAuth: []
@@ -1901,6 +1907,7 @@ paths:
       summary: 图书知识图谱
       description: 获取以指定图书为中心的知识图谱（主题关联网络），含 1-2 跳邻居
       operationId: getBookGraph
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -1981,6 +1988,7 @@ paths:
       summary: 文献溯源
       description: 获取文献引用链（前向/后向/双向溯源），揭示知识演化脉络
       operationId: traceLiterature
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2028,6 +2036,7 @@ paths:
       summary: 学科主题网络
       description: 获取指定学科领域的完整知识网络（关键词关联 + PageRank 中心度）
       operationId: getSubjectNetwork
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2064,6 +2073,7 @@ paths:
       summary: 知识实体搜索
       description: 在图谱中搜索实体（图书、作者、关键词、学科）
       operationId: searchEntities
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2117,6 +2127,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: predictDemand
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2185,6 +2196,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN；LIBRARIAN 可执行以辅助编目决策（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: checkDuplicate
+      x-implemented: false
       security:
         - BearerAuth: []
       requestBody:
@@ -2238,6 +2250,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: analyzeGap
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2270,6 +2283,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: createNegotiation
+      x-implemented: false
       security:
         - BearerAuth: []
       requestBody:
@@ -2317,6 +2331,7 @@ paths:
       tags: [智能采编]
       summary: 获取谈判建议详情
       operationId: getNegotiationSuggestion
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2347,6 +2362,7 @@ paths:
       summary: 用户列表
       description: 分页查询用户列表（管理员权限）
       operationId: listUsers
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2390,6 +2406,7 @@ paths:
       summary: 变更用户状态
       description: 冻结/解冻/禁用用户账户（管理员权限）
       operationId: updateUserStatus
+      x-implemented: false
       security:
         - BearerAuth: []
       parameters:
@@ -2438,7 +2455,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/BookVO"
+                        $ref: "#/components/schemas/BookDetailVO"
         "409":
           description: ISBN 已存在
         "403":
@@ -2476,7 +2493,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/BookVO"
+                        $ref: "#/components/schemas/BookDetailVO"
         "404":
           description: 图书不存在
         "403":
