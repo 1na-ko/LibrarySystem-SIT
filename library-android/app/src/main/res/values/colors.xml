@@ -4,6 +4,9 @@
     <color name="primary">#1565C0</color>
     <color name="on_primary">#FFFFFF</color>
     <color name="secondary">#42A5F5</color>
+    <color name="white">#FFFFFF</color>
+    <color name="gray">#757575</color>
+    <color name="red">#D32F2F</color>
 
     <!-- 扩展色板 -->
     <color name="surface_variant">#E7E0EC</color>

@@ -3,10 +3,7 @@ package com.library.android.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * 借阅结果 VO.
- *
- * @author LibrarySystem Team
- * @since 1.0.0
+ * 借书操作结果.
  */
 public class BorrowResultVO {
 
@@ -23,14 +20,8 @@ public class BorrowResultVO {
     private String status;
 
     public long getBorrowId() { return borrowId; }
-    public void setBorrowId(long borrowId) { this.borrowId = borrowId; }
-
     public String getBookTitle() { return bookTitle; }
-    public void setBookTitle(String bookTitle) { this.bookTitle = bookTitle; }
-
     public String getDueDate() { return dueDate; }
-    public void setDueDate(String dueDate) { this.dueDate = dueDate; }
-
     public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public boolean isBorrowed() { return "BORROWED".equals(status); }
 }

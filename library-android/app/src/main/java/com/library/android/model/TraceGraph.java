@@ -5,10 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 /**
- * 文献溯源图 VO.
- *
- * @author LibrarySystem Team
- * @since 1.0.0
+ * 文献溯源轨迹图.
  */
 public class TraceGraph {
 
@@ -16,17 +13,12 @@ public class TraceGraph {
     private BookVO sourceBook;
 
     @SerializedName("paths")
-    private List<TracePath> paths;
+    private List<Path> paths;
 
     public BookVO getSourceBook() { return sourceBook; }
-    public void setSourceBook(BookVO sourceBook) { this.sourceBook = sourceBook; }
+    public List<Path> getPaths() { return paths; }
 
-    public List<TracePath> getPaths() { return paths; }
-    public void setPaths(List<TracePath> paths) { this.paths = paths; }
-
-    /** 溯源路径. */
-    public static class TracePath {
-
+    public static class Path {
         @SerializedName("nodes")
         private List<GraphNode> nodes;
 
@@ -40,15 +32,8 @@ public class TraceGraph {
         private double totalWeight;
 
         public List<GraphNode> getNodes() { return nodes; }
-        public void setNodes(List<GraphNode> nodes) { this.nodes = nodes; }
-
         public List<GraphEdge> getEdges() { return edges; }
-        public void setEdges(List<GraphEdge> edges) { this.edges = edges; }
-
         public int getDepth() { return depth; }
-        public void setDepth(int depth) { this.depth = depth; }
-
         public double getTotalWeight() { return totalWeight; }
-        public void setTotalWeight(double totalWeight) { this.totalWeight = totalWeight; }
     }
 }

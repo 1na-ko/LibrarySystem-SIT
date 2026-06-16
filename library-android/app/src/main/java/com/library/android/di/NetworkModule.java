@@ -3,9 +3,9 @@ package com.library.android.di;
 import android.content.Context;
 
 import com.library.android.BuildConfig;
+import com.library.android.network.AuthApiService;
 import com.library.android.network.AuthInterceptor;
-import com.library.android.network.LibraryApi;
-import com.library.android.network.TokenAuthenticator;
+import com.library.android.network.MockInterceptor;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +23,9 @@ import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Hilt 网络层 DI 模块 — 提供 OkHttpClient / Retrofit / LibraryApi 实例.
+ * 网络层依赖提供模块.
+ *
+ * <p>提供全局单例：OkHttpClient、Retrofit、AuthApiService.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -32,27 +34,33 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
+    private static final int TIMEOUT_SECONDS = 15;
+
     @Provides
     @Singleton
-    public OkHttpClient provideOkHttpClient(AuthInterceptor authInterceptor, TokenAuthenticator tokenAuthenticator) {
+    static OkHttpClient provideOkHttpClient(@ApplicationContext Context context) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(BuildConfig.DEBUG
                 ? HttpLoggingInterceptor.Level.BODY
                 : HttpLoggingInterceptor.Level.NONE);
 
+        MockInterceptor mockInterceptor = new MockInterceptor();
+        if (BuildConfig.DEBUG) {
+            mockInterceptor.setEnabled(false);  // 设为 true 启用模拟
+        }
+
         return new OkHttpClient.Builder()
-                .addInterceptor(authInterceptor)
-                .addInterceptor(logging)
-                .authenticator(tokenAuthenticator)
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
+                .addInterceptor(mockInterceptor)          // 模拟拦截（最优先）
+                .addInterceptor(new AuthInterceptor(context)) // 认证拦截
+                .addInterceptor(logging)                  // 日志拦截
+                .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build();
     }
 
     @Provides
     @Singleton
-    public Retrofit provideRetrofit(OkHttpClient client) {
+    static Retrofit provideRetrofit(OkHttpClient client) {
         return new Retrofit.Builder()
                 .baseUrl(BuildConfig.BASE_URL)
                 .client(client)
@@ -63,27 +71,7 @@ public class NetworkModule {
 
     @Provides
     @Singleton
-    public LibraryApi provideLibraryApi(Retrofit retrofit) {
-        return retrofit.create(LibraryApi.class);
-    }
-
-    @Provides
-    @Singleton
-    public AuthInterceptor provideAuthInterceptor(@ApplicationContext Context context) {
-        return new AuthInterceptor(context);
-    }
-
-    @Provides
-    @Singleton
-    public TokenAuthenticator provideTokenAuthenticator(
-            @ApplicationContext Context context,
-            TokenAuthenticator.LibraryApiProvider apiProvider) {
-        return new TokenAuthenticator(context, apiProvider);
-    }
-
-    @Provides
-    @Singleton
-    public TokenAuthenticator.LibraryApiProvider provideLibraryApiProvider(LibraryApi api) {
-        return () -> api;
+    static AuthApiService provideAuthApiService(Retrofit retrofit) {
+        return retrofit.create(AuthApiService.class);
     }
 }

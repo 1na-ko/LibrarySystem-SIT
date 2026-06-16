@@ -2,12 +2,6 @@ package com.library.android.model;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * 登录请求体.
- *
- * @author LibrarySystem Team
- * @since 1.0.0
- */
 public class LoginRequest {
 
     @SerializedName("username")
