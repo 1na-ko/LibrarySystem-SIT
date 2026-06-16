@@ -84,6 +84,9 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.50")
     annotationProcessor("com.google.dagger:hilt-compiler:2.50")
 
+    // ---- 安全加密: EncryptedSharedPreferences ----
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     // ---- 异步: RxJava 3 ----
     implementation("io.reactivex.rxjava3:rxjava:3.1.8")
     implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
