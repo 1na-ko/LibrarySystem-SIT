@@ -68,7 +68,9 @@ public class PageResult<T> {
         result.total = total;
         result.pageNum = pageNum;
         result.pageSize = pageSize;
-        result.totalPages = (int) Math.ceil((double) total / pageSize);
+        result.totalPages = pageSize > 0
+                ? (int) Math.ceil((double) total / pageSize)
+                : 0;
         return result;
     }
 }
