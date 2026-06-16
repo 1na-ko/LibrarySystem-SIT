@@ -2,7 +2,7 @@
 
 > **适用对象**：本项目全体开发人员  
 > **目标**：30 分钟内完成本地开发环境搭建并跑通健康检查  
-> **最后更新**：2026-06-15
+> **最后更新**：2026-06-16
 
 ---
 
@@ -639,79 +639,82 @@ ALTER DATABASE library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ## 8. 项目结构速览
 
-> **项目状态**（2026-06-15）：初始化框架已搭建 —— 后端 Maven **7 模块结构已建并验证可编译（BUILD SUCCESS）**，`library-bootstrap` 启动类与全局配置就位；各业务模块（common/ai/core/kg/acquisition/security）目前仅含 `pom.xml` 与空 `src/main/java` 目录，**业务源码尚未编写**，将在对应 feature 分支按下列目标结构补全。Android 前端由前端组搭建中。
+> **项目状态**（2026-06-16）：阶段 0–8 全部完成 ✅ —— 后端 Maven **7 模块全部已实现**，8 模块 BUILD SUCCESS，全量 347 项测试全绿。Flyway V1–V6 迁移脚本就位。阶段 9–11 待实施。Android 前端由前端组搭建中。
 >
-> 以下目录树为系统架构设计所定义的**目标结构**，开发者按此结构编码。当前已落地的部分用 ✅ 标注，尚未实现的用 📋 标注。
+> 以下目录树为**当前已实现结构**，✅ 表示已落地。
 
 ```
 LibrarySystem-SIT/
 ├── docs/                                    # 📄 项目文档
-│   ├── 系统架构设计文档.md                    #   架构蓝本
+│   ├── 系统架构设计文档.md                    #   架构蓝本（v1.10）
 │   ├── CONTRIBUTING.md                      #   贡献指南
 │   ├── api/
-│   │   └── library-api.yaml                 #   OpenAPI 3.0 规范
+│   │   └── library-api.yaml                 #   OpenAPI 3.0 规范（46 端点，全部实现）
 │   └── DEVELOPMENT.md                       #   本文档
 │
 ├── library-server/                          # ☕ 后端（Maven 多模块项目）
 │   ├── pom.xml                              #   父 POM（依赖管理 + 插件管理）✅
-│   ├── library-common/                      #   📦 公共模块（源码待实现）
+│   ├── library-common/                      #   📦 公共基础设施 ✅
 │   │   └── src/main/java/com/library/common/
-│   │       ├── exception/                   #     全局异常 + 错误码枚举 📋
-│   │       ├── result/                      #     Result<T> + PageResult 📋
-│   │       ├── dto/                         #     公共 DTO 📋
-│   │       ├── utils/                       #     工具类 📋
-│   │       └── annotation/                  #     自定义注解 📋
-│   ├── library-ai/                          #   📦 AI 基础设施模块（源码待实现）
+│   │       ├── exception/                   #     ErrorCode + BizException + GlobalExceptionHandler ✅
+│   │       ├── result/                      #     Result<T> + PageResult ✅
+│   │       ├── dto/                         #     PageDTO ✅
+│   │       ├── utils/                       #     StringUtils / DateUtils / BeanCopyUtils ✅
+│   │       └── annotation/                  #     @NoAuth / @StrongPassword ✅
+│   ├── library-ai/                          #   📦 AI 基础设施 ✅（29 项测试全绿）
 │   │   └── src/main/java/com/library/ai/
-│   │       ├── llm/                         #     DeepSeek API 封装 📋
-│   │       ├── embedding/                   #     百炼 Embedding 封装 📋
-│   │       ├── nlp/                         #     HanLP 本地 NLP 📋
-│   │       └── config/                      #     AI 模块配置 📋
-│   ├── library-core/                        #   📦 核心业务模块（源码待实现）
+│   │       ├── llm/                         #     LlmService（DeepSeek，含重试/降级）✅
+│   │       ├── embedding/                   #     EmbeddingService（百炼，1024 维含重试）✅
+│   │       ├── nlp/                         #     NlpService（HanLP 分词/关键词提取）✅
+│   │       └── config/                      #     LlmConfig / EmbeddingConfig ✅
+│   ├── library-core/                        #   📦 核心业务 ✅（99 项测试全绿）
 │   │   └── src/main/java/com/library/core/
-│   │       ├── controller/                  #     REST 控制器 📋
-│   │       ├── service/                     #     业务逻辑层 📋
-│   │       ├── mapper/                      #     MyBatis-Plus Mapper 📋
-│   │       ├── entity/                      #     数据库实体 📋
-│   │       ├── repository/                  #     ES / Redis 数据访问 📋
-│   │       ├── event/                       #     领域事件 📋
-│   │       └── config/                      #     模块配置 📋
-│   ├── library-knowledge-graph/             #   📦 知识图谱模块（源码待实现）
+│   │       ├── controller/                  #     BookController / CategoryController ✅
+│   │       ├── service/                     #     图书/借阅/预约/推荐/编目 Service ✅
+│   │       ├── mapper/                      #     MyBatis-Plus Mapper（含 BorrowRecordMapper.xml）✅
+│   │       ├── entity/                      #     Book / BorrowRecord / Reservation / Category / FineRecord / SysUser ✅
+│   │       ├── repository/                  #     BookESRepository ✅
+│   │       ├── event/                       #     5 个领域事件 + ESSyncListener + ReservationNotifier ✅
+│   │       ├── schedule/                    #     OverdueCheckJob / ReservationExpireJob / ReservationZsetReconcileJob ✅
+│   │       └── config/                      #     ElasticsearchConfig / EsIndexInitializer ✅
+│   ├── library-knowledge-graph/             #   📦 学科知识图谱 ✅（3 项测试全绿）
 │   │   └── src/main/java/com/library/kg/
-│   │       ├── controller/                  #     知识图谱 API 📋
-│   │       ├── service/                     #     图谱构建 / 查询 / 溯源 📋
-│   │       ├── repository/                  #     Neo4j Cypher 查询 📋
-│   │       ├── model/                       #     图节点 / 关系模型 📋
-│   │       └── config/                      #     Neo4j 配置 📋
-│   ├── library-acquisition/                 #   📦 智能采编模块（源码待实现）
+│   │       ├── controller/                  #     KnowledgeGraphController（7 端点）✅
+│   │       ├── service/                     #     GraphBuild / GraphQuery / LiteratureTracing / TopicNetwork ✅
+│   │       ├── repository/                  #     Neo4jRepository + GdsAvailabilityProvider ✅
+│   │       ├── model/                       #     GraphNode / GraphEdge / TracePath ✅
+│   │       ├── listener/                    #     KgBuildListener（异步事件监听）✅
+│   │       └── config/                      #     KgSchemaInitializer / KnowledgeGraphProperties ✅
+│   ├── library-acquisition/                 #   📦 智能采编 ✅（10 项测试全绿）
 │   │   └── src/main/java/com/library/acquisition/
-│   │       ├── controller/                  #     采编 API 📋
-│   │       ├── service/                     #     预测 / 查重 / 谈判 📋
-│   │       ├── ml/                          #     ML 模型（简化 ARIMA）📋
-│   │       └── repository/                  #     采编数据访问 📋
-│   ├── library-security/                    #   🔐 安全模块（认证/授权/限流）✅
+│   │       ├── controller/                  #     AcquisitionController（5 端点）✅
+│   │       ├── service/                     #     Prediction / DuplicateCheck / GapAnalysis / Negotiation ✅
+│   │       ├── algorithm/                   #     SimplifiedArima（Commons Math OLS）✅
+│   │       └── config/                      #     AcquisitionProperties / AcquisitionMapperConfig ✅
+│   ├── library-security/                    #   🔐 安全模块 ✅（62 项测试全绿）
 │   │   └── src/main/java/com/library/security/
 │   │       ├── jwt/                         #     JwtUtils 签发/解析 ✅
-│   │       ├── token/                       #     Refresh Token 轮换防重放 ✅
-│   │       ├── ratelimit/                   #     Redis 令牌桶限流 ✅
-│   │       ├── filter/                      #     Jwt/RateLimit 过滤器 ✅
+│   │       ├── token/                       #     TokenService（Refresh Token 轮换防重放）✅
+│   │       ├── ratelimit/                   #     RateLimitService（Redis Lua 令牌桶）✅
+│   │       ├── filter/                      #     JwtAuthenticationFilter / RateLimitFilter ✅
 │   │       ├── handler/                     #     认证/授权 JSON 处理器 ✅
-│   │       ├── aspect/                      #     @RequireRole/@RequirePermission 切面 ✅
+│   │       ├── aspect/                      #     @RequireRole / @RequirePermission 切面 ✅
 │   │       ├── context/                     #     LoginUser + SecurityUtils ✅
-│   │       ├── config/                      #     SecurityConfig/JwtProperties ✅
-│   │       └── service/controller/          #     AuthService + AuthController ✅
-│   └── library-bootstrap/                   #   📦 启动模块（聚合入口）✅ 已就位
+│   │       ├── config/                      #     SecurityConfig / JwtProperties / LuaScriptConfig ✅
+│   │       ├── service/                     #     AuthService ✅
+│   │       └── controller/                  #     Auth / Borrow / Reservation / UserCenter / Admin / Recommend ✅
+│   └── library-bootstrap/                   #   📦 启动聚合 ✅（1 项集成测试 @Disabled）
 │       └── src/main/
 │           ├── java/com/library/
 │           │   ├── LibraryApplication.java  #     🚀 Spring Boot 启动类 ✅
-│           │   └── config/                  #     全局配置 📋
+│           │   └── config/                  #     CorsConfig / JacksonConfig / MyBatisPlusConfig / AsyncConfig ✅
 │           └── resources/
 │               ├── application.yml          #     公共配置 ✅
 │               ├── application-dev.yml      #     开发环境配置 ✅
 │               ├── application-prod.yml     #     生产环境配置 ✅
 │               ├── application-test.yml     #     测试环境配置 ✅
 │               ├── logback-spring.xml       #     日志配置 ✅
-│               └── db/migration/            #     Flyway 迁移脚本（V1 基线 ✅ / V2~V3 📋）
+│               └── db/migration/            #     Flyway V1–V6 迁移脚本 ✅
 │
 ├── library-android/                         # 📱 Android 前端（独立 Gradle 项目）
 │   ├── build.gradle.kts                     #   项目级 Gradle 构建

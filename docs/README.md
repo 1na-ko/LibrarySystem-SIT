@@ -27,13 +27,16 @@
 | [implementation/阶段5完成记录](implementation/阶段5完成记录.md) | 阶段 5（AI 基础设施）完成详情与架构决策记录 |
 | [implementation/阶段6完成记录](implementation/阶段6完成记录.md) | 阶段 6（图书推荐引擎）完成详情与架构决策记录 |
 | [implementation/阶段6审计修复记录](implementation/阶段6审计修复记录.md) | 阶段 6 后跨阶段综合质量审计修复（P0-P2 + 文档/契约同步） |
+| [implementation/阶段7完成记录](implementation/阶段7完成记录.md) | 阶段 7（学科知识图谱）完成详情——Neo4j 图谱构建/查询/溯源/主题网络 |
+| [implementation/阶段8完成记录](implementation/阶段8完成记录.md) | 阶段 8（智能采编）完成详情——ARIMA 采购预测/查重查缺/智能谈判 |
+| [implementation/阶段8后综合审计报告](implementation/阶段8后综合审计报告.md) | 阶段 0-8 四维度质量审计（实现质量/阶段配合/文档维护/架构落地），三轮修复全记录 |
 | [implementation/前端人员B完成记录](implementation/前端人员B完成记录.md) | Android 前端人员 B — 借阅管理/预约管理/知识图谱/系统管理/条码扫描 完成详情 |
 
 ### 技术参考
 
 | 文档 | 说明 |
 |------|------|
-| [api/library-api.yaml](api/library-api.yaml) | OpenAPI 3.0 规范，前后端数据契约（39 个端点：31 个已实现 + 8 个规划中标注 `x-implemented: false`，完整 Schema + Example） |
+| [api/library-api.yaml](api/library-api.yaml) | OpenAPI 3.0 规范，前后端数据契约（46 个端点：全部已实现 ✅，完整 Schema + Example） |
 | [db/init.sql](db/init.sql) | Docker MySQL 容器首次启动时的字符集初始化脚本 |
 
 ---
@@ -43,11 +46,11 @@
 ```
 docs/
 ├── README.md                           # ← 本文档（索引）
-├── 系统架构设计文档.md                  # 设计蓝本
+├── 系统架构设计文档.md                  # 设计蓝本（v1.10）
 ├── DEVELOPMENT.md                      # 开发环境指南
 ├── CONTRIBUTING.md                     # 编码规范与协作指南
 ├── api/
-│   └── library-api.yaml               # OpenAPI 契约
+│   └── library-api.yaml               # OpenAPI 契约（46 端点，全部已实现）
 ├── db/
 │   └── init.sql                       # Docker MySQL 初始化
 └── implementation/                     # 实施计划与进度记录
@@ -60,6 +63,9 @@ docs/
     ├── 阶段5完成记录.md                 # 阶段 5 完成详情
     ├── 阶段6完成记录.md                 # 阶段 6 完成详情
     ├── 阶段6审计修复记录.md             # 阶段 6 后跨阶段综合审计修复
+    ├── 阶段7完成记录.md                 # 阶段 7 完成详情
+    ├── 阶段8完成记录.md                 # 阶段 8 完成详情
+    ├── 阶段8后综合审计报告.md           # 阶段 0-8 四维度质量审计（三轮修复）
     └── 前端人员B完成记录.md             # Android 前端人员 B 完成详情
 ```
 
