@@ -11,7 +11,9 @@ import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
 import com.library.core.mapper.ReservationMapper;
 import com.library.core.service.BookService;
+import com.library.core.service.RelatedBookService;
 import com.library.core.vo.BookDetailVO;
+import com.library.core.vo.BookRecommendVO;
 import com.library.core.vo.BookSimpleVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +44,7 @@ public class BookServiceImpl implements BookService {
     private final BookMapper bookMapper;
     private final CategoryMapper categoryMapper;
     private final ReservationMapper reservationMapper;
+    private final RelatedBookService relatedBookService;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,6 +68,10 @@ public class BookServiceImpl implements BookService {
                         .eq(Reservation::getStatus, ReservationStatusEnum.WAITING)
         );
         vo.setReservationCount((int) reservationCount);
+
+        // 补充相关图书（Service 层组装，Controller 层不再变更 VO）
+        List<BookRecommendVO> related = relatedBookService.getRelated(id, 10);
+        vo.setRelatedBooks(related.stream().map(BookRecommendVO::getBook).toList());
 
         return vo;
     }
@@ -159,16 +166,6 @@ public class BookServiceImpl implements BookService {
      * @param categoryName 分类名称（可为 null）
      */
     private BookSimpleVO toSimpleVO(Book book, String categoryName) {
-        return BookSimpleVO.builder()
-                .id(book.getId())
-                .isbn(book.getIsbn())
-                .title(book.getTitle())
-                .author(book.getAuthor())
-                .publisher(book.getPublisher())
-                .coverUrl(book.getCoverUrl())
-                .pubDate(book.getPubDate())
-                .availCopies(book.getAvailCopies())
-                .categoryName(categoryName)
-                .build();
+        return BookSimpleVO.from(book, categoryName);
     }
 }

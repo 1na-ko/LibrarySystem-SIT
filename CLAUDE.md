@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-6 ✅ | 阶段 7-11 📋 待实施
+> **状态**: 阶段 0-8 ✅ | 阶段 9-11 📋 待实施
 > **最后更新**: 2026-06-16
 
 ---
@@ -237,9 +237,78 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **P2 借阅健壮性**：还书恢复库存增加乐观锁对称防护（与借书一致，冲突重试一次）；`getHistory` 的 `YEAR()` 函数改为 `between` 日期范围（避免索引失效）；`V5__fine_record_unique_borrow.sql` 为 `fine_record.borrow_id` 加唯一约束（防 OverdueJob 与还书并发产生重复罚款）✅
 - **借书锁事务边界修复**：`BorrowServiceImpl.borrow()` 的 Redis 锁原在 `@Transactional` 方法 finally 内释放（早于事务提交，存在提交窗口竞态）；改用 `TransactionSynchronizationManager` 注册 `AFTER_COMMIT` 回调，锁延迟至事务提交后释放；无事务上下文时降级立即释放（单测兼容）；新增事务激活场景测试验证延迟释放路径 ✅
 
+### 已落地（阶段 7：学科知识图谱）
+
+> 一次性落地 `library-knowledge-graph` 模块全部业务代码，共 18 个主源文件。详见 `docs/implementation/阶段7完成记录.md`。
+
+- **Neo4j 基础设施**：配置激活 (`KnowledgeGraphProperties`) + GDS 运行时探测 (`GdsAvailabilityProvider`) + Schema 约束初始化 (`KgSchemaInitializer`) + `Neo4jRepository` 封装（Driver Session API 参数化查询 + Power Iteration 降级 PageRank + Cypher shortestPath 降级 Dijkstra）✅
+- **图谱构建**：`GraphBuildService`（NER→RE→MERGE→实体对齐，LLM 优先 HanLP 降级）+ `KgBuildListener`（`@Async @TransactionalEventListener(AFTER_COMMIT)` 监听 BookCreated/UpdatedEvent，3 次指数退避重试）✅
+- **主题网络**：`TopicNetworkBuilder`（关键词共现 → Jaccard 相似度 → RELATED_TO 边 → GDS PageRank / Java Power Iteration 降级）✅
+- **图谱查询**：`GraphQueryService`（Book 中心 1-3 跳邻居）+ `LiteratureTracingService`（BFS 多跳溯源 FORWARD/BACKWARD/BOTH + Dijkstra/Cypher shortestPath 关键路径）✅
+- **KG Controller**：7 端点（`GET /kg/book/{bookId}` / `/kg/book/{bookId}/trace` / `/kg/book/{bookId}/keypath` / `/kg/subject/{name}` / `/kg/search`；`POST /admin/kg/rebuild/{bookId}` / `/admin/kg/rebuild-all`），RBAC 权限 `kg:read` / `kg:admin` ✅
+- **跨阶段 Port 桩替换**：core 新增 `KgRecommendPort` / `KgRelatedBookPort` / `GapCoreBookPort` SPI 接口；`KGBasedRecommendServiceImpl` 与 `RelatedBookServiceImpl` 改造为 `ObjectProvider` 适配器（依赖方向 core ← kg）；kg 模块提供 `KgRecommendQueryService` / `KgRelatedBookQueryService` / `GapCoreBookQueryService`（`@ConditionalOnBean(Neo4jClient.class)`）✅
+- 8 模块 BUILD SUCCESS ✅ · 新增测试 3 项全绿 ✅
+
+### 已落地（阶段 8：智能采编）
+
+> 一次性落地 `library-acquisition` 模块全部业务代码，共 20+ 主源文件。详见 `docs/implementation/阶段8完成记录.md`。
+
+- **采购预测**：`SimplifiedArima`（Commons Math OLS AR(1)I(1)MA(1)，奇异矩阵降级 + 逆差分）+ `PredictionService`（学科聚合 + 学期因子 + 预约热度修正）✅
+- **查重查缺**：`DuplicateCheckService`（ISBN 精确 / 标题模糊 / 作者+标题余弦三策略）+ `GapAnalysisService`（复本/热度缺口语义：KG Top-N 核心书 → 复本不足判定 → CRITICAL/HIGH/MEDIUM/LOW 优先级）✅
+- **智能谈判**：`NegotiationAdvisor`（本地 PriceRange 计算覆盖 LLM 输出，Multi-Supplier/Long-Term-Discount/Standard 降级模板）+ `NegotiationService`（negotiation_record CRUD + JSON 序列化策略/条款/风险）✅
+- **Acquisition Controller**：5 端点（`GET /acquisition/predict` / `POST /acquisition/duplicate-check` / `GET /acquisition/gap-analysis` / `POST /acquisition/negotiation` / `GET /acquisition/negotiation/{id}/suggestion`），RBAC 权限 `acquisition:predict|duplicate-check|gap|negotiation` ✅
+- **4 张采编表** Entity+Mapper（Supplier/DealRecord/ElectronicResource/NegotiationRecord，严格对齐 V1 ENUM）+ `MonthlyStatMapper`（DATE_FORMAT BETWEEN 聚合，索引友好）✅
+- 8 模块 BUILD SUCCESS ✅ · 新增测试 10 项全绿（ARIMA 5 + Duplicate 2 + Negotiation 3）✅
+
+### 已落地（阶段 8 后：跨阶段综合质量审计修复）
+
+> 对阶段 0-8 全量代码与文档进行四维度审计（实现质量/阶段配合/文档维护/架构落地）后，修复以下确认问题。详见 `docs/implementation/阶段8后综合审计报告.md`。
+
+- **P0 GraphQueryServiceImpl 图谱路径解析重写**：Neo4j 5.x Driver path `Value.asList()` 返回交替 NODE/RELATIONSHIP 段，原代码错误假设 `asMap()` 含 `_nodes`/`_relationships` 键。重写 `buildGraphFromPaths()` 按 `type().name()` 区分段类型，从相邻 NODE 段提取业务 ID 构建边 ✅
+- **P0 边 ID 解析修复**：Neo4j 5.x elementId 为字符串格式（`"4:abc123def:0"`），原代码 `Long.parseLong()` 将抛出 `NumberFormatException`。改为从路径中前/后 NODE 段预提取业务 `id` 属性作为 sourceId/targetId ✅
+- **P1 BookAdminServiceImpl totalCopies→availCopies 同步**：`updateBook()` 修改 `totalCopies` 时计算 delta 同步调整 `availCopies`，防止 `availCopies > totalCopies` 不合理状态 ✅
+- **P1 ReservationService TOCTOU 竞态 + V6 DB 约束**：`reserve()` 关键段（查重→入队→插入）加 Redis SETNX 分布式锁（与 BorrowServiceImpl 一致的模式）；`V6__unique_reservation_user_book.sql` 为 `reservation(user_id, book_id, status)` 加 UNIQUE 约束兜底 ✅
+- **P1 TopicNetworkBuilder Jaccard Cypher 修正**：`COUNT(DISTINCT k1) AS freq1` 恒为 1（k1 已绑定），改为 `MATCH (k1)<-[:HAS_KEYWORD]-(b1:Book)` 后 `COUNT(DISTINCT b1)` 正确计算关键词关联图书数 ✅
+- **P1 EmbeddingServiceImpl 重试+异常包装**：新增 `Retry.backoff(2)` 指数退避重试、`onErrorMap(IOException.class)` 网络异常包装、独立 `newZeroVector()` 替代共享 `nCopies` 不可变引用、返回向量数校验 ✅
+- **P2 N+1 批量消除**：`RelatedBookServiceImpl` 批量预加载分类名 Map；`LiteratureTracingServiceImpl.findKeyPath()` 改 `selectBatchIds()` ✅
+- **P2 Neo4jRepository 加固**：`pageRankViaGds()` 图名加时间戳后缀防并发冲突；`countNodes()` 加标签白名单防 Cypher 注入 ✅
+- **P2 分层合规**：`BookController.getDetail()` VO 变更下沉至 `BookServiceImpl`；`NegotiationServiceImpl.getSuggestion()` LLM 调用与 DB 事务分离 ✅
+- **P2/P3 其他修复**：`NegotiationAdvisor` ceiling 价格 0.95→1.05 修正；`DuplicateCheckService` 余弦 O(n²)→频率 Map + LIMIT 加排序；`ReservationZsetReconcileJob` KEYS→SCAN；`LlmServiceImpl` 重试跳过 AUTH_FAILED/QUOTA_EXHAUSTED；`PredictionServiceImpl` seasonFactor 按目标月份独立计算；`GlobalExceptionHandler` 补 `RECOMMEND_PARALLEL_TIMEOUT`→503 映射 ✅
+- **文档同步**：架构文档 v1.7→v1.8（项目状态/模块表/版本历史更新）；OpenAPI 补全 3 个 KG 管理端点；CLAUDE.md 测试计数修正 ✅
+
+### 已落地（阶段 8 后第二轮审计：实现质量深化修复）
+
+> 阶段 7-8 落地后，对全量代码再做一轮四维度独立走查，修复上一轮审计未覆盖的实现质量缺陷。当前全量 **346 项测试全绿**（common 143 + ai 29 + core 99 + security 62 + kg 3 + acquisition 10；bootstrap 1 项集成测试 @Disabled）。
+
+- **P0 TopicNetwork 图算法节点标识缺陷**：Keyword/Author/Subject 节点以 `name` 为唯一键（见 `KgSchemaInitializer`），不含业务 `id` 属性；但 `TopicNetworkBuilder` 与 `Neo4jRepository.pageRank` 的 Cypher 误用 `k.id`/`a.id`（恒为 null），导致主题网络 PageRank 写回与学科网络查询全部失效。改为统一使用 Neo4j 内部 `id()` 作为图算法节点标识（图数据库标准做法，仅影响 Keyword 路径，Book 路径不受影响）✅
+- **P1 NegotiationServiceImpl 序列化静默吞**：`updateRecord()` 的 JSON 序列化失败原仅 `log.warn` 后继续 `updateById`，导致"价格已更新但策略/条款丢失"的数据不一致；改为抛 `BizException` 阻止半更新 ✅
+- **P1 NegotiationServiceImpl @Transactional 自调用失效**：`loadRecord/updateRecord` 标注 `@Transactional` 但同类内 protected 调用绕过 AOP 代理，注解静默失效且注释"独立事务"误导；改为 private 并移除无效注解 ✅
+- **P1 ReservationServiceImpl 锁释放时机**：`reserve()` 的 Redis 锁原在 `finally` 立即释放（与阶段 6 修复的 `BorrowServiceImpl` 不对称），提交窗口内仍可触发 V6 唯一约束返回 500；改用 `TransactionSynchronizationManager` 注册 AFTER_COMMIT 回调延迟释放，无事务上下文时立即释放（单测兼容）✅
+- **P1 Neo4jRepository.execute() 静默吞噬**：写操作异常原仅 `log.error` 不抛出，写入失败调用方无感知；改为抛 `RuntimeException` 由上层 Service 捕获转译（与只读 `query()` 返回空列表的容错语义区分）✅
+- **P2 ReservationNotifier 注释修正**：`updateById` 失败注释原称"乐观锁冲突"，但 Reservation 实体未启用 `@Version`，按主键更新不做版本校验；注释改为如实反映"记录在 select 后被变更/删除" ✅
+- **P2 GapAnalysisServiceImpl 死代码清理**：`ownedCount` 的 `deleted==1 continue` 分支永不触发（`selectBatchIds` 受全局 logic-delete 过滤），移除冗余检查 ✅
+
+> 随后做第二轮深度走查，覆盖 common/security/ai/bootstrap 及 core/acquisition 残留项（实现质量 / 安全 / 性能 / 配置卫生），追加修复约 20 项，全量测试仍 **346 项全绿**（common 143 + ai 29 + core 99 + security 62 + kg 3 + acquisition 10；bootstrap @Disabled）：
+
+- **common**：GlobalExceptionHandler 补 `ConstraintViolationException` handler（`@Validated`+`@RequestParam`/`@PathVariable` 校验失败原落入兜底返回 500，现转 400）；`mapHttpStatus` 删除 switch `default` 分支（占位 `SUCCESS`，新增 ErrorCode 遗漏映射将编译失败，强制保持完整）✅
+- **security**：`RateLimitFilter.clientIp` 改用 `getRemoteAddr()`（防 X-Forwarded-For 伪造分散限流桶绕过登录防爆破，配合 `server.forward-headers-strategy: native`）；Lua 令牌桶拒绝请求时不再推进 `ts`（修复"持续被限流 → lastTs 永远刷新 → 令牌永不补充 → 桶卡死"）；POM 显式声明 `spring-boot-starter-data-redis`（消除传递依赖脆弱性）✅
+- **ai**：`LlmConfig`/`EmbeddingConfig` 写超时硬编码 30s/20s 改 `@Value` 可配置；LLM/Embedding `retry filter` 扩展跳过 `CLIENT_ERROR`(400/404) 永久错误、Embedding `onStatus` 按 401/403/429/4xx/5xx 细分 reason；`stripMarkdownCodeBlock` 正则修复单行 ` ```json{...} ` 边界 bug；`batchEmbed` 重建结果 O(n²)→O(n) ✅
+- **core**：`ReservationServiceImpl` ZSET 入队延迟至 AFTER_COMMIT（避免 DB 回滚后 Redis 残留幽灵条目）+ 预约列表 Redis N+1 改按 bookId 批量 `zRange` 预加载；`BookSimpleVO` 新增静态工厂 `from(Book, categoryName)` 消除 4 处重复构建；`UserStatsServiceImpl.buildMonthlyTrend` O(12×N)→O(N) 单次遍历分组 ✅
+- **acquisition**：`createNegotiation` 加 resource/supplier 存在性校验（避免 DB 外键抛 500）；Controller 出参改 `NegotiationVO`（隐藏实体 deleted/JSON 列）；`predict` 的 `months` 加 `@Min(1)@Max(12)`+`@Validated`；ARIMA 改 `static final`；`NegotiationAdvisor` catch 扩宽至 `Exception` 全面降级；`GapAnalysis` 接入 `gapCoverageThreshold` 告警 + `suggestedCopies` 溢出防御；`MonthlyStatMapper` 加防御性 `LIMIT 10000` ✅
+- **bootstrap**：logback `RollingFileAppender` 加 `totalSizeCap 10GB`、`AsyncAppender` 加 `discardingThreshold`/`neverBlock`（防磁盘撑爆与阻塞业务线程）；Async 线程池队列 100→500；`dashscope.base-url` 加环境变量占位 ✅
+
+### 已落地（阶段 8 后第三轮审计：配置卫生与防御性编程加固）
+
+> 对阶段 0-8 全量代码再做一轮四维度走查，发现并修复 4 个 P2 问题。全量 **347 项测试全绿**（common 143 + ai 29 + core 99 + security 62 + kg 3 + acquisition 10；bootstrap 1 项集成测试 @Disabled）。
+
+- **P2 JWT Secret 开发环境加固**：`application.yml` 中 `jwt.secret` 空默认值 `""` 改为 `"dev-only-do-not-use-in-prod"`，附带严重注释——开发环境无环境变量时不再使用空密钥（HS256 接受空 key 导致令牌可伪造），生产环境仍通过 `JWT_SECRET` 环境变量注入强密钥 ✅
+- **P2 TokenService TTL 与 JwtProperties 同步**：`TokenServiceImpl` 静态 `TTL = Duration.ofDays(7)` 改为构造注入 `JwtProperties.getRefreshTokenExpiration()` 动态计算 TTL，防止运维调整 `jwt.refresh-token-expiration` 后 Redis TTL 不同步导致有效 Refresh Token 被提前删除 ✅
+- **P2 TopicNetworkBuilderImpl PageRank 批量写入**：`buildTopicNetwork()` 中 PageRank 分数写入由 for 循环 N 次 `execute()` 改为单次 `UNWIND $rows` 批量 Cypher，消除 N 次网络往返 ✅
+- **P2 RateLimitServiceImpl 降级策略文档化**：Redis 故障"放行"行为保留（Rate Limit 为保护性措施，阻断所有用户损失更大），但显式标注 fail-open 决策理由及 Redis HA 运维要求，添加本地 ConcurrentHashMap 降级 TODO ✅
+- **P3 发现与记录**：识别 9 项 P3 技术债——`@EnableMethodSecurity` 死配置、ES URI 缺 scheme、NlpService Javadoc 契约不一致、LLM 日志含可能敏感数据、GlobalExceptionHandler 缺 3 个 Spring MVC 异常 handler、EmbeddingService 重试次数不象 LlmService 可配置、DuplicateCheckService 作者查询无 LIMIT、PredictionService 全分类预加载浪费、CORS 生产环境缺白名单 ✅
+
 ### 待实现
-- 知识图谱 / 智能采编 的 Service/Controller
-- 各中间件 Starter 引入（RabbitMQ auto-configuration）— Neo4j Starter 已由 library-knowledge-graph 引入，ES 已通过手动配置启用
+- RabbitMQ Starter 正式引入（当前仅 docker-compose 编排）
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线
 

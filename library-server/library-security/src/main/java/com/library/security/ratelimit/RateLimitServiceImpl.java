@@ -12,7 +12,14 @@ import java.util.List;
  * {@link RateLimitService} 基于 Redis Lua 令牌桶的实现.
  * <p>
  * Key 设计：{@code rl:{key}:tokens}（剩余令牌）与 {@code rl:{key}:ts}（上次补充时间戳），
- * TTL=120s（窗口过期回收）。Redis 不可用时降级放行，避免限流故障阻断主业务。
+ * TTL=120s（窗口过期回收）。
+ * <p>
+ * <b>降级策略</b>：Redis 不可用时"故障放行"（fail-open）——返回允许。原因是限流为保护性措施，
+ * 阻断正常用户造成的业务中断大于限流失效的风险。运维应通过 Redis HA（Sentinel/Cluster）
+ * 和监控告警确保 Redis 可用性。
+ * <p>
+ * <b>TODO</b>：考虑在 Redis 持续不可用时（连续失败 N 次）自动切换为本地 ConcurrentHashMap
+ * 滑动窗口限流作为中间降级，避免长时间完全无保护。
  *
  * @author LibrarySystem Team
  * @since 1.0.0

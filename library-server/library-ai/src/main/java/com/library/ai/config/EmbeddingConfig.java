@@ -51,6 +51,10 @@ public class EmbeddingConfig {
     private Duration readTimeout;
 
     @Getter
+    @Value("${ai.dashscope.write-timeout:20s}")
+    private Duration writeTimeout;
+
+    @Getter
     @Value("${ai.dashscope.max-batch-size:25}")
     private int maxBatchSize;
 
@@ -67,7 +71,7 @@ public class EmbeddingConfig {
                 .responseTimeout(readTimeout)
                 .doOnConnected(conn ->
                         conn.addHandlerLast(new ReadTimeoutHandler(readTimeout.toSeconds(), TimeUnit.SECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(20, TimeUnit.SECONDS)));
+                                .addHandlerLast(new WriteTimeoutHandler(writeTimeout.toSeconds(), TimeUnit.SECONDS)));
 
         WebClient client = WebClient.builder()
                 .baseUrl(baseUrl)

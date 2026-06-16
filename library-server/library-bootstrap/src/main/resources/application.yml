@@ -91,7 +91,9 @@ mybatis-plus:
 
 # ---- JWT 认证 ----
 jwt:
-  secret: ${JWT_SECRET:}
+  # ⚠️ 开发环境默认密钥仅用于本地调试——严禁用于生产！
+  # 生产环境必须通过 JWT_SECRET 环境变量注入强随机密钥（≥256-bit）
+  secret: ${JWT_SECRET:dev-only-do-not-use-in-prod}
   access-token-expiration: 7200000      # 2 小时
   refresh-token-expiration: 604800000   # 7 天
 
@@ -114,6 +116,9 @@ springdoc:
 # ---- 服务端口 ----
 server:
   port: ${SERVER_PORT:8080}
+  # 信任反向代理设置的 X-Forwarded-* 头（由 Tomcat RemoteIpValve 规范化进 remoteAddr），
+  # 配合 RateLimitFilter 使用 getRemoteAddr() 防止 X-Forwarded-For 伪造绕过限流防爆破
+  forward-headers-strategy: native
   servlet:
     context-path: /api/v1
 
@@ -135,15 +140,17 @@ ai:
     model: deepseek-chat
     connect-timeout: 10s
     read-timeout: 60s
+    write-timeout: 30s
     max-retries: 2
     max-tokens: 2048
     temperature: 0.7
   dashscope:
     api-key: ${DASHSCOPE_API_KEY:}
     embedding-model: ${DASHSCOPE_EMBEDDING_MODEL:text-embedding-v3}
-    base-url: https://dashscope.aliyuncs.com
+    base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com}
     connect-timeout: 10s
     read-timeout: 30s
+    write-timeout: 20s
     max-batch-size: 25
 
 # ---- 推荐引擎 ----
@@ -156,6 +163,40 @@ recommendation:
   content-candidate-limit: 500  # 内容推荐候选池上限（控制 Embedding API 调用量）
   recall-timeout-seconds: 5 # 并行召回超时秒数
   max-limit: 50             # 推荐结果上限
+
+# ---- 知识图谱 ----
+# 生效前置：library-knowledge-graph 模块 + Neo4j 服务就绪
+kg:
+  default-query-depth: 2
+  max-query-depth: 3
+  tracing-max-depth: 5
+  tracing-limit: 200
+  topic-jaccard-threshold: 0.15
+  core-book-top-n: 50
+  pagerank-damping: 0.85
+  pagerank-iterations: 20
+  build-timeout-ms: 30000
+  gds-enabled: true
+  constraints-auto-create: true
+
+# ---- 智能采编 ----
+# 生效前置：library-acquisition 模块就绪
+acquisition:
+  prediction-min-months: 6
+  prediction-history-months: 12
+  duplicate-title-threshold: 0.8
+  duplicate-author-title-threshold: 0.7
+  gap-core-book-top-n: 50
+  gap-heat-threshold: 0.7
+  gap-coverage-threshold: 0.8
+  negotiation-history-months: 24
+  season-exam-factor: 1.3
+  season-vacation-factor: 0.6
+  prediction-confidence-decay: 0.05         # ARIMA 置信度按月衰减
+  prediction-data-scarcity-penalty: 0.2     # 数据不足时置信度惩罚
+  prediction-reservation-heat-coefficient: 0.01  # 预约热度影响系数
+  prediction-base-multiplier: 1.1           # 预测调整基础乘数
+  prediction-copies-divisor: 50             # 周转率→建议复本除数
 
 # ---- Actuator 健康检查 ----
 management:

@@ -112,18 +112,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /**
      * 提取客户端 IP.
      * <p>
-     * ⚠️ 安全提示：X-Forwarded-For / X-Real-IP 由客户端可伪造。生产环境必须在受信任的反向代理
-     * （Nginx/网关）之后部署，并启用 {@code server.forward-headers-strategy: native} +
-     * {@code server.tomcat.remoteip.trusted-proxies}，由 Tomcat RemoteIpValve 规范化处理
-     * 可信代理链；否则攻击者可伪造 IP 头分散限流桶绕过防爆破（阶段 9 监控加固项）。
+     * 直接使用 Servlet 容器规范化后的 {@code getRemoteAddr()}，<b>不</b>自行解析
+     * {@code X-Forwarded-For} / {@code X-Real-IP}——这些头可被客户端伪造，攻击者可
+     * 携带随机伪造头分散限流桶，绕过登录防爆破。
+     * <p>
+     * 生产环境部署在反向代理之后时，应启用 {@code server.forward-headers-strategy: native}
+     * 并配置 {@code server.tomcat.remoteip.trusted-proxies}，由 Tomcat RemoteIpValve 仅在
+     * 请求来自受信代理时才采信 XFF，将其规范化进 {@code getRemoteAddr()}。
      */
     private String clientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isEmpty()) {
-            return ip.split(",")[0].trim();
-        }
-        ip = request.getHeader("X-Real-IP");
-        return (ip != null && !ip.isEmpty()) ? ip : request.getRemoteAddr();
+        return request.getRemoteAddr();
     }
 
     /** 桶配置载体 */

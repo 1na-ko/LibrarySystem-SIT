@@ -51,9 +51,15 @@ if currentTokens >= requested then
     remaining = math.floor(currentTokens - requested)
 end
 
--- 回写状态（无论放行与否都记录最新消费时间点）
-redis.call('SET', tokensKey, remaining)
-redis.call('SET', tsKey, nowSec)
+if allowed == 1 then
+    -- 放行：扣减令牌并推进时间戳，令牌自此基准点线性补充
+    redis.call('SET', tokensKey, remaining)
+    redis.call('SET', tsKey, nowSec)
+else
+    -- 拒绝：不消费令牌、不推进 ts。若拒绝也推进 ts，持续被限流的请求流会把 lastTs
+    -- 永远刷到当前秒，令牌永远来不及补充，桶被卡死在低水位无法恢复。
+    -- 仅续期 TTL，避免桶 key 在活跃限制期间过早回收。
+end
 redis.call('EXPIRE', tokensKey, ttlSeconds)
 redis.call('EXPIRE', tsKey, ttlSeconds)
 

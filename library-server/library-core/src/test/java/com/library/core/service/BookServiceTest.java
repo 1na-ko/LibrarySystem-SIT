@@ -8,6 +8,7 @@ import com.library.core.mapper.CategoryMapper;
 import com.library.core.mapper.ReservationMapper;
 import com.library.core.service.impl.BookServiceImpl;
 import com.library.core.vo.BookDetailVO;
+import com.library.core.vo.BookRecommendVO;
 import com.library.core.vo.BookSimpleVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +26,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -45,6 +48,9 @@ class BookServiceTest {
 
     @Mock
     private ReservationMapper reservationMapper;
+
+    @Mock
+    private RelatedBookService relatedBookService;
 
     @InjectMocks
     private BookServiceImpl bookService;
@@ -119,6 +125,7 @@ class BookServiceTest {
             when(bookMapper.selectById(1L)).thenReturn(book);
             when(categoryMapper.selectById(1L)).thenReturn(category);
             when(reservationMapper.selectCount(any())).thenReturn(3L);
+            when(relatedBookService.getRelated(eq(1L), anyInt())).thenReturn(List.of());
 
             BookDetailVO vo = bookService.getDetail(1L);
 

@@ -42,6 +42,9 @@ class RelatedBookServiceTest {
     @Mock
     private CategoryMapper categoryMapper;
 
+    @Mock
+    private org.springframework.beans.factory.ObjectProvider<KgRelatedBookPort> portProvider;
+
     @InjectMocks
     private RelatedBookServiceImpl relatedBookService;
 
@@ -53,6 +56,8 @@ class RelatedBookServiceTest {
 
     @BeforeEach
     void setUp() {
+        when(portProvider.getIfAvailable()).thenReturn(null); // KG 未就绪，走 MySQL 降级
+
         targetBook = buildBook(1L, "深入理解Java虚拟机", "周志明", 1L, 100);
         sameCategoryBook = buildBook(2L, "Java并发编程实战", "Brian Goetz", 1L, 80);
         sameAuthorBook = buildBook(3L, "深入理解计算机系统", "周志明", 2L, 60);

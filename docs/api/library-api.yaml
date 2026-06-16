@@ -528,7 +528,7 @@ components:
           type: string
         type:
           type: string
-          enum: [BOOK, AUTHOR, SUBJECT, KEYWORD, PUBLICATION]
+          enum: [BOOK, AUTHOR, SUBJECT, KEYWORD, PUBLICATION, CONFERENCE]
         properties:
           type: object
           description: 节点附加属性
@@ -543,7 +543,7 @@ components:
           format: int64
         relation:
           type: string
-          enum: [CITES, AUTHORED_BY, BELONGS_TO, HAS_KEYWORD, RELATED_TO, PUBLISHED_IN, CO_CITED]
+          enum: [CITES, AUTHORED_BY, BELONGS_TO, HAS_KEYWORD, RELATED_TO, PUBLISHED_IN, CO_CITED, PRESENTED_AT]
         weight:
           type: number
           format: double
@@ -634,6 +634,7 @@ components:
 
     GapAnalysisResult:
       type: object
+      description: 馆藏缺口分析结果（复本/热度语义）
       properties:
         subjectId:
           type: integer
@@ -642,30 +643,53 @@ components:
           type: string
         totalCoreBooks:
           type: integer
-          description: 学科核心书目总数
+          description: KG PageRank Top-N 核心书目总数
         ownedBooks:
           type: integer
-          description: 已馆藏数量
+          description: 核心书目中馆藏已有的数量
         coverage:
           type: number
           format: double
-          description: 馆藏覆盖率
+          description: 核心书目馆藏覆盖率 (= ownedBooks / totalCoreBooks)
           example: 0.72
         gapBooks:
           type: array
           items:
             type: object
             properties:
+              bookId:
+                type: integer
+                format: int64
               isbn:
                 type: string
               title:
                 type: string
               author:
                 type: string
+              currentCopies:
+                type: integer
+                description: 当前复本数
+              suggestedCopies:
+                type: integer
+                description: 建议复本数
+              borrowCount:
+                type: integer
+                description: 近12个月借阅次数
+              heatRatio:
+                type: number
+                format: double
+                description: 热度比 (= borrowCount / (totalCopies * 12))
+              turnoverRate:
+                type: number
+                format: double
+                description: 周转率 (= borrowCount / totalCopies)
               priority:
                 type: string
                 enum: [CRITICAL, HIGH, MEDIUM, LOW]
                 description: 采购优先级
+              reason:
+                type: string
+                description: 缺口原因简述
 
     NegotiationSuggestion:
       type: object
@@ -1901,17 +1925,17 @@ paths:
                           $ref: "#/components/schemas/BookRecommendVO"
 
   # ======================== 知识图谱模块 ========================
-  /api/v1/kg/book/{id}/graph:
+  /api/v1/kg/book/{bookId}:
     get:
       tags: [知识图谱]
       summary: 图书知识图谱
       description: 获取以指定图书为中心的知识图谱（主题关联网络），含 1-2 跳邻居
       operationId: getBookGraph
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
-        - name: id
+        - name: bookId
           in: path
           required: true
           schema:
@@ -1988,7 +2012,7 @@ paths:
       summary: 文献溯源
       description: 获取文献引用链（前向/后向/双向溯源），揭示知识演化脉络
       operationId: traceLiterature
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
@@ -2036,7 +2060,7 @@ paths:
       summary: 学科主题网络
       description: 获取指定学科领域的完整知识网络（关键词关联 + PageRank 中心度）
       operationId: getSubjectNetwork
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
@@ -2073,7 +2097,7 @@ paths:
       summary: 知识实体搜索
       description: 在图谱中搜索实体（图书、作者、关键词、学科）
       operationId: searchEntities
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
@@ -2116,6 +2140,96 @@ paths:
                               type: number
                               format: double
 
+  # ======================== 知识图谱管理端点 ========================
+  /api/v1/kg/book/{bookId}/keypath:
+    get:
+      tags: [知识图谱]
+      summary: 关键路径发现
+      description: 寻找从源文献到目标文献的最优引用路径（Dijkstra / Cypher shortestPath）
+      operationId: findKeyPath
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 源图书 ID
+        - name: targetId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 目标图书 ID
+      responses:
+        "200":
+          description: 关键路径
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TraceGraph"
+
+  /api/v1/admin/kg/rebuild/{bookId}:
+    post:
+      tags: [知识图谱]
+      summary: 重建单本图书知识图谱
+      description: |
+        为指定图书重新构建知识图谱（实体识别 + 关系抽取 + 图谱节点/边合并）。
+
+        **角色权限**：KG Admin（kg:admin 权限）
+      operationId: rebuildBookGraph
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 图书 ID
+      responses:
+        "200":
+          description: 重建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        "403":
+          description: 无知识图谱管理权限
+
+  /api/v1/admin/kg/rebuild-all:
+    post:
+      tags: [知识图谱]
+      summary: 全量重建知识图谱
+      description: |
+        对所有图书重新构建知识图谱。操作耗时较长，建议在低峰期执行。
+
+        **角色权限**：KG Admin（kg:admin 权限）
+      operationId: rebuildAllGraphs
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 全量重建已启动
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        "403":
+          description: 无知识图谱管理权限
+
   # ======================== 智能采编模块 ========================
   /api/v1/acquisition/predict:
     get:
@@ -2127,7 +2241,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: predictDemand
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
@@ -2196,7 +2310,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN；LIBRARIAN 可执行以辅助编目决策（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: checkDuplicate
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       requestBody:
@@ -2250,7 +2364,7 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: analyzeGap
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
@@ -2283,36 +2397,31 @@ paths:
 
         **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: createNegotiation
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [resourceName, supplierId, resourceCategory]
-              properties:
-                resourceName:
-                  type: string
-                  description: 电子资源名称
-                  example: "IEEE Xplore Digital Library"
-                supplierId:
-                  type: integer
-                  format: int64
-                  description: 供应商 ID
-                resourceCategory:
-                  type: string
-                  enum: [JOURNAL, DATABASE, EBOOK, CONFERENCE]
-                  description: 资源类别
-                expectedBudget:
-                  type: number
-                  format: double
-                  description: 预算金额（元）
-                userCount:
-                  type: integer
-                  description: 预计使用人数
+      parameters:
+        - name: resourceId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 电子资源 ID
+        - name: supplierId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 供应商 ID
+        - name: negotiatorId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 谈判人（用户 ID）
       responses:
         "200":
           description: 谈判建议
@@ -2331,7 +2440,7 @@ paths:
       tags: [智能采编]
       summary: 获取谈判建议详情
       operationId: getNegotiationSuggestion
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:

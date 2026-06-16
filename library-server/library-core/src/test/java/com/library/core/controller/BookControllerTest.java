@@ -148,8 +148,8 @@ class BookControllerTest {
         @Test
         @DisplayName("应返回图书详情含预约人数（委托 BookService.getDetail）")
         void shouldReturnBookDetailWithReservationCount() throws Exception {
+            // getDetail() 的 relatedBooks 组装已下沉至 BookServiceImpl，Controller 不再直接调用 RelatedBookService
             when(bookService.getDetail(1L)).thenReturn(sampleDetail);
-            when(relatedBookService.getRelated(eq(1L), anyInt())).thenReturn(List.of());
 
             mockMvc.perform(get("/books/1"))
                     .andExpect(status().isOk())

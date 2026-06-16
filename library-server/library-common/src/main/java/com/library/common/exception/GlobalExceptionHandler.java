@@ -2,6 +2,7 @@ package com.library.common.exception;
 
 import com.library.common.result.Result;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -100,6 +101,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 路径参数 / @RequestParam 约束校验失败（@Validated + @Min/@Max 等）.
+     * <p>
+     * Controller 类标注 {@code @Validated} 后，方法级参数约束（非 @RequestBody）校验失败
+     * 时 Spring 抛出 {@link ConstraintViolationException}，而非 BindException 体系；
+     * 若不单独处理将落入兜底返回 500，此处统一转 400。
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Result<Void>> handleConstraintViolation(
+            ConstraintViolationException e, HttpServletRequest request) {
+        String msg = e.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining("; "));
+        log.warn("约束校验失败: {}, path={}", msg, request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), msg));
+    }
+
+    /**
      * 运行时异常（兜底）.
      */
     @ExceptionHandler(Exception.class)
@@ -113,7 +133,7 @@ public class GlobalExceptionHandler {
     /**
      * 将业务错误码映射为 HTTP 状态码.
      * <p>
-     * 新增 ErrorCode 时<b>必须</b>同步更新此映射，避免错误码落入 default 分支返回 400。
+     * 新增 ErrorCode 时<b>必须</b>同步更新此映射——本 switch 无 default 分支，遗漏任何枚举值将导致编译失败，强制保持完整。
      */
     private HttpStatus mapHttpStatus(ErrorCode errorCode) {
         return switch (errorCode) {
@@ -149,10 +169,11 @@ public class GlobalExceptionHandler {
 
             // 503 — 依赖服务不可用
             case LLM_UNAVAILABLE, KG_BUILD_FAILED, KG_NEO4J_UNAVAILABLE,
-                 PREDICTION_DATA_INSUFFICIENT -> HttpStatus.SERVICE_UNAVAILABLE;
+                 PREDICTION_DATA_INSUFFICIENT,
+                 RECOMMEND_PARALLEL_TIMEOUT -> HttpStatus.SERVICE_UNAVAILABLE;
 
-            // 未列出的错误码 → 500（保守处理，避免将服务端错误误报为客户端错误）
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+            // SUCCESS 不会作为异常抛出；占位以保证 switch 覆盖全部枚举值（无 default，编译期强制完整）
+            case SUCCESS -> HttpStatus.OK;
         };
     }
 }

@@ -175,16 +175,6 @@ public class ContentBasedServiceImpl implements ContentBasedService {
      * Book → BookSimpleVO（含分类名称，避免 N+1）.
      */
     BookSimpleVO toBookSimpleVO(Book book, Map<Long, String> categoryNameMap) {
-        return BookSimpleVO.builder()
-                .id(book.getId())
-                .isbn(book.getIsbn())
-                .title(book.getTitle())
-                .author(book.getAuthor())
-                .publisher(book.getPublisher())
-                .coverUrl(book.getCoverUrl())
-                .pubDate(book.getPubDate())
-                .availCopies(book.getAvailCopies())
-                .categoryName(categoryNameMap.get(book.getCategoryId()))
-                .build();
+        return BookSimpleVO.from(book, categoryNameMap.get(book.getCategoryId()));
     }
 }

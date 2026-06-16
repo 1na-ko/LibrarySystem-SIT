@@ -18,15 +18,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -52,6 +55,8 @@ class ReservationServiceTest {
     private RedisTemplate<String, Object> redisTemplate;
     @Mock
     private ZSetOperations<String, Object> zSetOperations;
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
 
     @InjectMocks
     private ReservationServiceImpl reservationService;
@@ -75,7 +80,12 @@ class ReservationServiceTest {
         @DisplayName("库存为 0 时预约成功应返回 ReservationVO 含排队位置")
         void shouldReserveWhenStockZero() {
             when(bookMapper.selectById(10L)).thenReturn(book);
+            // 分布式锁
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class))).thenReturn(true);
+            // 重复检查
             when(reservationMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+            // ZSET 入队
             when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
             when(zSetOperations.add(anyString(), anyString(), anyDouble())).thenReturn(true);
             when(zSetOperations.rank(anyString(), anyString())).thenReturn(0L);
@@ -105,6 +115,10 @@ class ReservationServiceTest {
         @DisplayName("重复预约时应抛出 ALREADY_RESERVED")
         void shouldThrowAlreadyReservedWhenDuplicate() {
             when(bookMapper.selectById(10L)).thenReturn(book);
+            // 分布式锁：获取成功
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class))).thenReturn(true);
+            // 重复检查：已存在
             when(reservationMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(1L);
 
             assertThatThrownBy(() -> reservationService.reserve(1L, 10L))

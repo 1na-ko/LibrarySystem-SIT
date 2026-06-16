@@ -1,5 +1,6 @@
 package com.library.core.vo;
 
+import com.library.core.entity.Book;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,4 +49,25 @@ public class BookSimpleVO {
 
     /** 分类名称（用于搜索/列表展示） */
     private String categoryName;
+
+    /**
+     * 从 Book 实体构建 BookSimpleVO（统一各处 Book→VO 转换，消除重复代码）.
+     *
+     * @param book         图书实体
+     * @param categoryName 分类名称（可为 null）
+     * @return BookSimpleVO
+     */
+    public static BookSimpleVO from(Book book, String categoryName) {
+        return BookSimpleVO.builder()
+                .id(book.getId())
+                .isbn(book.getIsbn())
+                .title(book.getTitle())
+                .author(book.getAuthor())
+                .publisher(book.getPublisher())
+                .coverUrl(book.getCoverUrl())
+                .pubDate(book.getPubDate())
+                .availCopies(book.getAvailCopies())
+                .categoryName(categoryName)
+                .build();
+    }
 }
