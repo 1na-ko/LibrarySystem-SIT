@@ -5,6 +5,7 @@ import com.library.core.entity.Book;
 import com.library.core.entity.Category;
 import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
+import com.library.core.mapper.ReservationMapper;
 import com.library.core.service.impl.BookServiceImpl;
 import com.library.core.vo.BookDetailVO;
 import com.library.core.vo.BookSimpleVO;
@@ -41,6 +42,9 @@ class BookServiceTest {
 
     @Mock
     private CategoryMapper categoryMapper;
+
+    @Mock
+    private ReservationMapper reservationMapper;
 
     @InjectMocks
     private BookServiceImpl bookService;
@@ -106,6 +110,24 @@ class BookServiceTest {
     }
 
     @Nested
+    @DisplayName("getDetail")
+    class GetDetail {
+
+        @Test
+        @DisplayName("应返回含 reservationCount 的 BookDetailVO")
+        void shouldReturnDetailWithReservationCount() {
+            when(bookMapper.selectById(1L)).thenReturn(book);
+            when(categoryMapper.selectById(1L)).thenReturn(category);
+            when(reservationMapper.selectCount(any())).thenReturn(3L);
+
+            BookDetailVO vo = bookService.getDetail(1L);
+
+            assertThat(vo.getTitle()).isEqualTo("深入理解Java虚拟机");
+            assertThat(vo.getReservationCount()).isEqualTo(3);
+        }
+    }
+
+    @Nested
     @DisplayName("getByIsbn")
     class GetByIsbn {
 
@@ -122,13 +144,13 @@ class BookServiceTest {
         }
 
         @Test
-        @DisplayName("ISBN 不存在时应返回 null")
-        void shouldReturnNullWhenIsbnNotFound() {
+        @DisplayName("ISBN 不存在时应抛出 BOOK_NOT_FOUND")
+        void shouldThrowBizExceptionWhenIsbnNotFound() {
             when(bookMapper.selectOne(any())).thenReturn(null);
 
-            BookDetailVO vo = bookService.getByIsbn("000-0-000-00000-0");
-
-            assertThat(vo).isNull();
+            assertThatThrownBy(() -> bookService.getByIsbn("000-0-000-00000-0"))
+                    .isInstanceOf(BizException.class)
+                    .hasMessageContaining("图书不存在");
         }
     }
 

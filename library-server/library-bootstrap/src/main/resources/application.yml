@@ -38,10 +38,8 @@ spring:
           min-idle: 4
 
   # ---- Elasticsearch ----
-  # 生效前置：library-core 需引入 spring-boot-starter-data-elasticsearch（自动配置 RestClient），
-  #          或在 library-core 的 config 包内手动声明 ElasticsearchClient Bean 读取本配置。
-  #          当前 library-core 仅依赖裸 elasticsearch-java 客户端，此配置键暂未生效，
-  #          待图书检索功能开发时补全 starter 或手动配置后启用。
+  # 已生效：library-core 的 ElasticsearchConfig 手动声明 ElasticsearchClient Bean 并读取此配置键。
+  #        ES Java 客户端 8.11（elasticsearch-java）已引入，索引在启动时由 EsIndexInitializer 幂等创建。
   elasticsearch:
     uris: ${ES_HOST:localhost}:${ES_PORT:9200}
 
