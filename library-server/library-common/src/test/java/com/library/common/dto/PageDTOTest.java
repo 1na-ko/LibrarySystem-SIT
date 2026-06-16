@@ -2,6 +2,8 @@ package com.library.common.dto;
 
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,12 +19,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("PageDTO 分页请求")
 class PageDTOTest {
 
+    private static ValidatorFactory validatorFactory;
     private static Validator validator;
 
     @BeforeAll
     static void setUpValidator() {
-        try (var factory = Validation.buildDefaultValidatorFactory()) {
-            validator = factory.getValidator();
+        validatorFactory = Validation.buildDefaultValidatorFactory();
+        validator = validatorFactory.getValidator();
+    }
+
+    @AfterAll
+    static void tearDownValidator() {
+        if (validatorFactory != null) {
+            validatorFactory.close();
         }
     }
 

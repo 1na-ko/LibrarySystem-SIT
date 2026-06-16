@@ -38,7 +38,9 @@ public class CorsConfig {
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
+        // 使用 /** 而非 /api/**：应用 context-path=/api/v1，Servlet 容器剥离前缀后
+        // 内部路径为 /auth/...、/categories/... 等，不匹配 /api/** 模式
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 }

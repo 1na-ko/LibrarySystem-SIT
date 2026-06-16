@@ -68,21 +68,47 @@ public class GlobalExceptionHandler {
 
     /**
      * 将业务错误码映射为 HTTP 状态码.
+     * <p>
+     * 新增 ErrorCode 时<b>必须</b>同步更新此映射，避免错误码落入 default 分支返回 400。
      */
     private HttpStatus mapHttpStatus(ErrorCode errorCode) {
         return switch (errorCode) {
+            // 400 — 请求参数不合法
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
+
+            // 401 — 认证失败 / 凭证过期
             case UNAUTHORIZED, TOKEN_EXPIRED, TOKEN_INVALID, BAD_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
+
+            // 403 — 权限不足 / 账户受限
             case FORBIDDEN, USER_DISABLED, ACCOUNT_FROZEN -> HttpStatus.FORBIDDEN;
+
+            // 404 — 资源不存在
             case NOT_FOUND, BOOK_NOT_FOUND, USER_NOT_FOUND,
+                 CATEGORY_NOT_FOUND,
                  SUPPLIER_NOT_FOUND, NEGOTIATION_NOT_FOUND,
                  RESERVATION_NOT_FOUND, BORROW_RECORD_NOT_FOUND,
-                 KG_ENTITY_NOT_FOUND, ELECTRONIC_RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                 KG_ENTITY_NOT_FOUND, KG_GRAPH_EMPTY,
+                 ELECTRONIC_RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+
+            // 409 — 业务冲突 / 规则限制
             case CONFLICT, ALREADY_BORROWED, ALREADY_RESERVED,
-                 BOOK_ALREADY_RETURNED, USERNAME_EXISTS, DUPLICATE_ISBN -> HttpStatus.CONFLICT;
+                 BOOK_ALREADY_RETURNED, USERNAME_EXISTS, DUPLICATE_ISBN,
+                 BOOK_STOCK_EMPTY, BORROW_LIMIT_EXCEEDED, OVERDUE_UNRETURNED,
+                 RENEW_LIMIT_EXCEEDED, RENEW_OVERDUE, RENEW_RESERVED,
+                 BOOK_AVAILABLE, RESERVATION_EXPIRED -> HttpStatus.CONFLICT;
+
+            // 429 — 限流
+            case RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
+
+            // 500 — 服务器内部错误
+            case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+
+            // 503 — 依赖服务不可用
             case LLM_UNAVAILABLE, KG_BUILD_FAILED, KG_NEO4J_UNAVAILABLE,
                  PREDICTION_DATA_INSUFFICIENT -> HttpStatus.SERVICE_UNAVAILABLE;
-            default -> HttpStatus.BAD_REQUEST;
+
+            // 未列出的错误码 → 500（保守处理，避免将服务端错误误报为客户端错误）
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }
 }

@@ -54,12 +54,12 @@ public class Result<T> {
     }
 
     /** 操作失败（使用 ErrorCode 枚举） */
-    public static <T> Result<T> error(com.library.common.exception.ErrorCode errorCode) {
+    public static <T> Result<T> error(ErrorCode errorCode) {
         return build(errorCode.getCode(), errorCode.getMessage(), null);
     }
 
     /** 操作失败（使用 ErrorCode 枚举 + 动态消息） */
-    public static <T> Result<T> error(com.library.common.exception.ErrorCode errorCode, String message) {
+    public static <T> Result<T> error(ErrorCode errorCode, String message) {
         return build(errorCode.getCode(), message, null);
     }
 
