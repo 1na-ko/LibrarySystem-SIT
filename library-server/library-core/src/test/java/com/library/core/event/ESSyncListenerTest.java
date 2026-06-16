@@ -6,6 +6,7 @@ import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
 import com.library.core.repository.BookDocument;
 import com.library.core.repository.BookESRepository;
+import com.library.core.service.impl.BookSearchServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +42,9 @@ class ESSyncListenerTest {
 
     @Mock
     private CategoryMapper categoryMapper;
+
+    @Mock
+    private BookSearchServiceImpl bookSearchService;
 
     @InjectMocks
     private ESSyncListener esSyncListener;

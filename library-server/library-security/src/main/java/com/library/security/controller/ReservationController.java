@@ -82,7 +82,8 @@ public class ReservationController {
      */
     @GetMapping("/{id}/queue-position")
     public Result<Integer> getQueuePosition(@PathVariable Long id) {
-        Integer position = reservationService.getQueuePosition(id);
+        long userId = SecurityUtils.getCurrentUserId();
+        Integer position = reservationService.getQueuePosition(id, userId);
         return Result.success(position);
     }
 }

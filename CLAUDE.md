@@ -195,8 +195,10 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - 领域事件：`BookBorrowedEvent` / `BookReturnedEvent`（Record）+ `ESSyncListener` 增强 ✅
 - 5 个新增 DTO/VO：`BorrowRequest` / `ReservationRequest` / `BorrowResultVO` / `RenewResultVO` / `UserStatsVO` ✅
 - `BorrowController`（6 端点）/ `ReservationController`（4 端点）/ `AdminBorrowController`（@RequireRole）/ `UserCenterController` ✅
-- 8 模块 BUILD SUCCESS ✅ · 全量 280+ 项测试全绿 ✅
-- 阶段 4 审计修复：还书/续借/详情增加归属校验（防横向越权）· `GlobalExceptionHandler` 新增 `BindException`/`MissingServletRequestParameterException`/`HttpMessageNotReadableException` 3 个 handler · `UserCenterController` 分层重构至 `UserStatsService` · API 路径对齐 OpenAPI 契约（`/borrows` / `/reservations`）✅
+- 8 模块 BUILD SUCCESS ✅ · 全量 285 项测试全绿（common 142 + core 71 + security 71 + bootstrap 1）✅
+- 阶段 4 审计修复（第一轮）：还书/续借/详情增加归属校验（防横向越权）· `GlobalExceptionHandler` 新增 `BindException`/`MissingServletRequestParameterException`/`HttpMessageNotReadableException` 3 个 handler · `UserCenterController` 分层重构至 `UserStatsService` · API 路径对齐 OpenAPI 契约（`/borrows` / `/reservations`）✅
+- 阶段 4 审计修复（第二轮）：N+1 批量转换 / 预约状态机闭合（`ReservationExpireJob`）/ 架构蓝本回写 / RBAC 注解补全 / `OverdueCheckJob` 分批扫描 ✅
+- 阶段 4 审计修复（第三轮——综合质量审计）：`getQueuePosition()` 横向越权修复（新增 `userId` 归属校验）· `@EventListener` → `@TransactionalEventListener(AFTER_COMMIT)` 修复事件时序竞态 · `AdminBorrowController` 路径 `/borrows` → `/admin/borrows`（消除与 `BorrowController` 路径重叠）· Job 独立 `REQUIRES_NEW` 事务组件（`OverdueBatchProcessor` / `ReservationExpireBatchProcessor`）· 搜索缓存失效（`BookSearchServiceImpl.evictAllSearchCache()`）· `ReservationZsetReconcileJob` 对账骨架 · ES 重试指数退避 · `RoleEnum` 文档补充 ✅
 
 ### 待实现
 - 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller

@@ -6,14 +6,16 @@ import com.library.core.enums.ReservationStatusEnum;
 import com.library.core.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,11 +44,14 @@ public class ReservationNotifier {
     /**
      * 监听图书归还事件 → 检查预约队列 → 通知首位有效等待者.
      * <p>
+     * 使用 {@link TransactionalEventListener} (AFTER_COMMIT) 确保在归还事务提交后
+     * 再读取 MySQL 预约记录，避免读到未提交的过时数据。
+     * <p>
      * 注意：Redis ZSET popMin 非事务性，若 DB 更新失败，被 pop 的条目可能丢失。
-     * 生产环境应配合定期对账 Job 清理僵尸队列条目。
+     * 生产环境应配合定期对账 Job（{@code ReservationZsetReconcileJob}）清理僵尸队列条目。
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onBookReturned(BookReturnedEvent event) {
         String queueKey = QUEUE_KEY_PREFIX + event.bookId();
 

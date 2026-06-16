@@ -1577,7 +1577,7 @@ paths:
         "400":
           description: 续借条件不满足
 
-  /api/v1/borrows/overdue:
+  /api/v1/admin/borrows/overdue:
     get:
       tags: [借阅管理]
       summary: 超期未还记录

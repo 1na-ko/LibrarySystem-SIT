@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -159,6 +160,55 @@ class ReservationServiceTest {
             assertThatThrownBy(() -> reservationService.cancel(1L, 1L))
                     .isInstanceOf(BizException.class)
                     .hasMessageContaining("冲突");
+        }
+    }
+
+    @Nested
+    @DisplayName("getQueuePosition")
+    class GetQueuePosition {
+
+        private Reservation reservation;
+
+        @BeforeEach
+        void setUp() {
+            reservation = new Reservation();
+            reservation.setId(1L);
+            reservation.setUserId(100L);
+            reservation.setBookId(10L);
+            reservation.setStatus(ReservationStatusEnum.WAITING);
+            reservation.setQueuePosition(3);
+        }
+
+        @Test
+        @DisplayName("本人查询排队位置应成功返回")
+        void shouldReturnQueuePositionForOwner() {
+            when(reservationMapper.selectById(1L)).thenReturn(reservation);
+            when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
+            when(zSetOperations.rank(anyString(), eq("100"))).thenReturn(2L);
+
+            Integer position = reservationService.getQueuePosition(1L, 100L);
+
+            assertThat(position).isEqualTo(3); // rank=2 → 1-based position=3
+        }
+
+        @Test
+        @DisplayName("非本人查询排队位置应抛出 FORBIDDEN（防横向越权）")
+        void shouldThrowForbiddenWhenNotOwner() {
+            when(reservationMapper.selectById(1L)).thenReturn(reservation);
+
+            assertThatThrownBy(() -> reservationService.getQueuePosition(1L, 999L))
+                    .isInstanceOf(BizException.class)
+                    .hasMessageContaining("权限不足");
+        }
+
+        @Test
+        @DisplayName("预约记录不存在时应抛出 RESERVATION_NOT_FOUND")
+        void shouldThrowNotFoundWhenRecordMissing() {
+            when(reservationMapper.selectById(999L)).thenReturn(null);
+
+            assertThatThrownBy(() -> reservationService.getQueuePosition(999L, 1L))
+                    .isInstanceOf(BizException.class)
+                    .hasMessageContaining("不存在");
         }
     }
 }

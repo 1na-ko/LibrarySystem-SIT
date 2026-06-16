@@ -17,12 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
  * 管理端-借阅控制器.
  * <p>
  * 仅 LIBRARIAN 和 ADMIN 可访问的借阅管理端点。
+ * 路径前缀 {@code /admin/borrows} 与用户端 {@link BorrowController} 的 {@code /borrows} 分离，
+ * 避免 URL 路由重叠。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @RestController
-@RequestMapping("/borrows")
+@RequestMapping("/admin/borrows")
 @RequiredArgsConstructor
 public class AdminBorrowController {
 

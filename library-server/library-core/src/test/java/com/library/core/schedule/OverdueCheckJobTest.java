@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.library.core.entity.BorrowRecord;
 import com.library.core.enums.BorrowStatusEnum;
 import com.library.core.mapper.BorrowRecordMapper;
-import com.library.core.mapper.FineRecordMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +15,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,14 +34,14 @@ class OverdueCheckJobTest {
     @Mock
     private BorrowRecordMapper borrowRecordMapper;
     @Mock
-    private FineRecordMapper fineRecordMapper;
+    private OverdueBatchProcessor batchProcessor;
 
     @InjectMocks
     private OverdueCheckJob overdueCheckJob;
 
     @Test
-    @DisplayName("超期记录存在时应更新状态并生成罚款")
-    void shouldUpdateStatusAndGenerateFineWhenOverdueRecordsExist() {
+    @DisplayName("超期记录存在时应委托 batchProcessor 处理")
+    void shouldDelegateToBatchProcessorWhenOverdueRecordsExist() {
         BorrowRecord overdue = new BorrowRecord();
         overdue.setId(1L);
         overdue.setUserId(1L);
@@ -52,13 +53,11 @@ class OverdueCheckJobTest {
         when(borrowRecordMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(overdue))
                 .thenReturn(List.of());
-        when(borrowRecordMapper.updateById(any(BorrowRecord.class))).thenReturn(1);
-        when(fineRecordMapper.insert(any())).thenReturn(1);
+        when(batchProcessor.processBatch(anyList(), any(LocalDate.class))).thenReturn(1);
 
         overdueCheckJob.checkOverdue();
 
-        verify(borrowRecordMapper).updateById(any(BorrowRecord.class));
-        verify(fineRecordMapper).insert(any());
+        verify(batchProcessor).processBatch(anyList(), any(LocalDate.class));
     }
 
     @Test
@@ -69,7 +68,6 @@ class OverdueCheckJobTest {
 
         overdueCheckJob.checkOverdue();
 
-        verify(borrowRecordMapper, never()).updateById(any());
-        verify(fineRecordMapper, never()).insert(any());
+        verify(batchProcessor, never()).processBatch(anyList(), any(LocalDate.class));
     }
 }

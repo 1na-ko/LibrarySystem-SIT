@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,7 +24,8 @@ import java.util.List;
  *   NOTIFIED →（48h 超时未确认）→ EXPIRED → 顺延通知下一位
  * </pre>
  * <p>
- * 采用分批扫描，处理上限 {@link #BATCH_SIZE}，避免全量加载。
+ * 采用分批扫描，每批委托 {@link ReservationExpireBatchProcessor} 在独立事务中
+ * （{@code REQUIRES_NEW}）提交，避免大事务长时间持锁。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -36,9 +36,9 @@ import java.util.List;
 public class ReservationExpireJob {
 
     private final ReservationMapper reservationMapper;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ReservationExpireBatchProcessor batchProcessor;
 
-    private static final int BATCH_SIZE = 500;
+    static final int BATCH_SIZE = 500;
 
     /**
      * 每小时整点检查预约超时.
@@ -46,13 +46,11 @@ public class ReservationExpireJob {
      * 扫描条件：status = NOTIFIED AND expire_time < 当前时间.
      */
     @Scheduled(cron = "0 0 * * * ?")
-    @Transactional
     public void expireReservations() {
         LocalDateTime now = LocalDateTime.now();
         log.info("预约超期检查开始: time={}", now);
 
         int processedCount = 0;
-        // 分批扫描：置为 EXPIRED 后下次查询自动排除，每轮取「尚未过期处理的前 N 条」。
         while (true) {
             List<Reservation> batch = reservationMapper.selectList(
                     new LambdaQueryWrapper<Reservation>()
@@ -63,17 +61,7 @@ public class ReservationExpireJob {
             if (batch.isEmpty()) {
                 break;
             }
-            for (Reservation reservation : batch) {
-                reservation.setStatus(ReservationStatusEnum.EXPIRED);
-                int rows = reservationMapper.updateById(reservation);
-                if (rows > 0) {
-                    // 重新发布归还事件，触发 ReservationNotifier 顺延通知下一位等待者
-                    eventPublisher.publishEvent(new BookReturnedEvent(reservation.getBookId()));
-                    processedCount++;
-                    log.info("预约超时已置 EXPIRED 并顺延: reservationId={}, userId={}, bookId={}",
-                            reservation.getId(), reservation.getUserId(), reservation.getBookId());
-                }
-            }
+            processedCount += batchProcessor.processBatch(batch);
         }
 
         if (processedCount > 0) {

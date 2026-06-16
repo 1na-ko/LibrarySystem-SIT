@@ -16,6 +16,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -144,6 +145,24 @@ public class BookSearchServiceImpl implements BookSearchService {
             log.debug("搜索结果已缓存: {}", cacheKey);
         } catch (Exception e) {
             log.debug("写入搜索缓存失败: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 清除全部搜索缓存.
+     * <p>
+     * 图书变更（新增/修改/删除）时调用，通过 Redis SCAN 匹配 {@code search:*} 键并批量删除。
+     * Redis 不可用时静默降级，缓存将在 TTL（30min）后自然过期。
+     */
+    public void evictAllSearchCache() {
+        try {
+            Set<String> keys = redisTemplate.keys(CACHE_KEY_PREFIX + "*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                log.info("搜索缓存已全局清除: {} 个键", keys.size());
+            }
+        } catch (Exception e) {
+            log.debug("清除搜索缓存失败（Redis 不可用，缓存在 TTL 后自动过期）: {}", e.getMessage());
         }
     }
 }
