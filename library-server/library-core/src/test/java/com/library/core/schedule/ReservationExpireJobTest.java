@@ -3,7 +3,6 @@ package com.library.core.schedule;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.library.core.entity.Reservation;
 import com.library.core.enums.ReservationStatusEnum;
-import com.library.core.event.BookReturnedEvent;
 import com.library.core.mapper.ReservationMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,12 +10,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,14 +33,14 @@ class ReservationExpireJobTest {
     @Mock
     private ReservationMapper reservationMapper;
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private ReservationExpireBatchProcessor batchProcessor;
 
     @InjectMocks
     private ReservationExpireJob reservationExpireJob;
 
     @Test
-    @DisplayName("NOTIFIED 且超时的预约应置 EXPIRED 并发布归还事件顺延下一位")
-    void shouldExpireAndNotifyNextWhenOverdue() {
+    @DisplayName("NOTIFIED 且超时的预约应委托 batchProcessor 处理")
+    void shouldDelegateToBatchProcessorWhenOverdue() {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
         reservation.setUserId(2L);
@@ -53,12 +52,11 @@ class ReservationExpireJobTest {
         when(reservationMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(reservation))
                 .thenReturn(List.of());
-        when(reservationMapper.updateById(any(Reservation.class))).thenReturn(1);
+        when(batchProcessor.processBatch(anyList())).thenReturn(1);
 
         reservationExpireJob.expireReservations();
 
-        verify(reservationMapper).updateById(any(Reservation.class));
-        verify(eventPublisher).publishEvent(any(BookReturnedEvent.class));
+        verify(batchProcessor).processBatch(anyList());
     }
 
     @Test
@@ -69,26 +67,6 @@ class ReservationExpireJobTest {
 
         reservationExpireJob.expireReservations();
 
-        verify(reservationMapper, never()).updateById(any());
-        verify(eventPublisher, never()).publishEvent(any());
-    }
-
-    @Test
-    @DisplayName("更新行数为 0（记录已被并发变更）时不应发布归还事件")
-    void shouldNotNotifyWhenUpdateReturnsZero() {
-        Reservation reservation = new Reservation();
-        reservation.setId(1L);
-        reservation.setBookId(10L);
-        reservation.setStatus(ReservationStatusEnum.NOTIFIED);
-        reservation.setExpireTime(LocalDateTime.now().minusHours(1));
-
-        when(reservationMapper.selectList(any(LambdaQueryWrapper.class)))
-                .thenReturn(List.of(reservation))
-                .thenReturn(List.of());
-        when(reservationMapper.updateById(any(Reservation.class))).thenReturn(0);
-
-        reservationExpireJob.expireReservations();
-
-        verify(eventPublisher, never()).publishEvent(any(BookReturnedEvent.class));
+        verify(batchProcessor, never()).processBatch(anyList());
     }
 }

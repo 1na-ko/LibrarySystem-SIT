@@ -52,8 +52,10 @@ public interface ReservationService {
      * 查询当前排队位置（从 Redis ZSET 实时获取）.
      *
      * @param reservationId 预约记录 ID
+     * @param userId        当前登录用户 ID（用于归属校验，防横向越权）
      * @return 排队位置（1=队首），已不在队列时返回 null
-     * @throws com.library.common.exception.BizException 记录不存在时抛 RESERVATION_NOT_FOUND
+     * @throws com.library.common.exception.BizException 记录不存在时抛 RESERVATION_NOT_FOUND；
+     *         记录不属于当前用户时抛 FORBIDDEN
      */
-    Integer getQueuePosition(Long reservationId);
+    Integer getQueuePosition(Long reservationId, Long userId);
 }

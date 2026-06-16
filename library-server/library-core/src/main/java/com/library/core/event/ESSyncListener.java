@@ -6,11 +6,13 @@ import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
 import com.library.core.repository.BookDocument;
 import com.library.core.repository.BookESRepository;
+import com.library.core.service.impl.BookSearchServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,15 +34,20 @@ public class ESSyncListener {
     private final BookESRepository bookESRepository;
     private final BookMapper bookMapper;
     private final CategoryMapper categoryMapper;
+    private final BookSearchServiceImpl bookSearchService;
 
     private static final int MAX_RETRIES = 3;
 
     /**
      * 监听图书新增事件 → ES 索引文档.
+     * <p>
+     * 使用 {@link TransactionalEventListener} (AFTER_COMMIT) 确保在发布者事务
+     * 提交后再读取 MySQL，避免读到未提交的过时数据。
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onBookCreated(BookCreatedEvent event) {
+        bookSearchService.evictAllSearchCache();
         syncWithRetry(event.bookId(), "新增");
     }
 
@@ -48,8 +55,9 @@ public class ESSyncListener {
      * 监听图书更新事件 → ES 更新文档.
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onBookUpdated(BookUpdatedEvent event) {
+        bookSearchService.evictAllSearchCache();
         syncWithRetry(event.bookId(), "更新");
     }
 
@@ -57,8 +65,9 @@ public class ESSyncListener {
      * 监听图书删除事件 → ES 删除文档.
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onBookDeleted(BookDeletedEvent event) {
+        bookSearchService.evictAllSearchCache();
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 bookESRepository.delete(event.bookId());
@@ -67,7 +76,9 @@ public class ESSyncListener {
             } catch (Exception e) {
                 log.warn("ES 同步：图书删除失败 (attempt {}/{}), bookId={}, error={}",
                         attempt, MAX_RETRIES, event.bookId(), e.getMessage());
-                if (attempt == MAX_RETRIES) {
+                if (attempt < MAX_RETRIES) {
+                    sleepWithBackoff(attempt);
+                } else {
                     log.error("ES 同步：图书删除最终失败, bookId={}", event.bookId());
                 }
             }
@@ -78,7 +89,7 @@ public class ESSyncListener {
      * 监听图书借出事件 → ES 更新 avail_copies 和 borrow_count.
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onBookBorrowed(BookBorrowedEvent event) {
         syncWithRetry(event.bookId(), "借出计数更新");
     }
@@ -87,13 +98,13 @@ public class ESSyncListener {
      * 监听图书归还事件 → ES 更新 avail_copies.
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onBookReturned(BookReturnedEvent event) {
         syncWithRetry(event.bookId(), "归还计数更新");
     }
 
     /**
-     * 带重试的 ES 索引/更新同步.
+     * 带重试的 ES 索引/更新同步，含指数退避.
      */
     private void syncWithRetry(Long bookId, String operation) {
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -109,10 +120,27 @@ public class ESSyncListener {
             } catch (Exception e) {
                 log.warn("ES 同步：图书{}失败 (attempt {}/{}), bookId={}, error={}",
                         operation, attempt, MAX_RETRIES, bookId, e.getMessage());
-                if (attempt == MAX_RETRIES) {
+                if (attempt < MAX_RETRIES) {
+                    sleepWithBackoff(attempt);
+                } else {
                     log.error("ES 同步：图书{}最终失败, bookId={}", operation, bookId);
                 }
             }
+        }
+    }
+
+    /**
+     * 指数退避等待：100ms → 500ms → 2s.
+     *
+     * @param attempt 当前尝试次数（1-based）
+     */
+    private void sleepWithBackoff(int attempt) {
+        long[] backoff = {100, 500, 2000};
+        int index = Math.min(attempt - 1, backoff.length - 1);
+        try {
+            Thread.sleep(backoff[index]);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 

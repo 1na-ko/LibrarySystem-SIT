@@ -167,10 +167,14 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public Integer getQueuePosition(Long reservationId) {
+    public Integer getQueuePosition(Long reservationId, Long userId) {
         Reservation reservation = reservationMapper.selectById(reservationId);
         if (reservation == null) {
             throw new BizException(ErrorCode.RESERVATION_NOT_FOUND);
+        }
+        // 归属校验：仅允许查询本人预约的排队位置，防横向越权
+        if (!reservation.getUserId().equals(userId)) {
+            throw new BizException(ErrorCode.FORBIDDEN);
         }
         return queryQueuePosition(reservation.getBookId(), reservation.getUserId(),
                 reservation.getQueuePosition());
