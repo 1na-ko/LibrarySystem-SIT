@@ -38,8 +38,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 借阅管理服务实现.
@@ -341,9 +347,8 @@ public class BorrowServiceImpl implements BorrowService {
         Page<BorrowRecord> page = new Page<>(pageDTO.getPageNum(), pageDTO.getPageSize());
         IPage<BorrowRecord> result = borrowRecordMapper.selectPage(page, wrapper);
 
-        List<BorrowRecordVO> records = result.getRecords().stream()
-                .map(this::toRecordVO)
-                .toList();
+        // 批量转换：一次查询关联图书，消除 N+1
+        List<BorrowRecordVO> records = toRecordVOs(result.getRecords());
 
         return PageResult.of(records, result.getTotal(), pageDTO.getPageNum(), pageDTO.getPageSize());
     }
@@ -374,9 +379,8 @@ public class BorrowServiceImpl implements BorrowService {
         Page<BorrowRecord> page = new Page<>(pageDTO.getPageNum(), pageDTO.getPageSize());
         IPage<BorrowRecord> result = borrowRecordMapper.selectPage(page, wrapper);
 
-        List<BorrowRecordVO> records = result.getRecords().stream()
-                .map(this::toRecordVO)
-                .toList();
+        // 批量转换：一次查询关联图书，消除 N+1
+        List<BorrowRecordVO> records = toRecordVOs(result.getRecords());
 
         return PageResult.of(records, result.getTotal(), pageDTO.getPageNum(), pageDTO.getPageSize());
     }
@@ -390,9 +394,8 @@ public class BorrowServiceImpl implements BorrowService {
         Page<BorrowRecord> page = new Page<>(pageDTO.getPageNum(), pageDTO.getPageSize());
         IPage<BorrowRecord> result = borrowRecordMapper.selectPage(page, wrapper);
 
-        List<BorrowRecordVO> records = result.getRecords().stream()
-                .map(this::toRecordVO)
-                .toList();
+        // 批量转换：一次查询关联图书，消除 N+1
+        List<BorrowRecordVO> records = toRecordVOs(result.getRecords());
 
         return PageResult.of(records, result.getTotal(), pageDTO.getPageNum(), pageDTO.getPageSize());
     }
@@ -400,19 +403,61 @@ public class BorrowServiceImpl implements BorrowService {
     // ==================== VO 转换 ====================
 
     /**
-     * Entity + 关联 BookSimpleVO → BorrowRecordVO.
+     * 批量转换：一次查询所有关联图书，消除分页场景的 N+1 查询.
+     *
+     * @param records 借阅记录列表
+     * @return 借阅记录 VO 列表
+     */
+    private List<BorrowRecordVO> toRecordVOs(List<BorrowRecord> records) {
+        if (records.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<Long> bookIds = records.stream()
+                .map(BorrowRecord::getBookId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, BookSimpleVO> bookMap = loadBookMap(bookIds);
+        return records.stream()
+                .map(r -> buildRecordVO(r, bookMap.get(r.getBookId())))
+                .toList();
+    }
+
+    /**
+     * 单条转换（详情/归还等单条场景）.
+     *
+     * @param record 借阅记录
+     * @return 借阅记录 VO
      */
     private BorrowRecordVO toRecordVO(BorrowRecord record) {
-        BookSimpleVO bookVO = null;
-        try {
-            List<BookSimpleVO> books = bookService.listByIds(List.of(record.getBookId()));
-            if (!books.isEmpty()) {
-                bookVO = books.get(0);
-            }
-        } catch (Exception e) {
-            log.warn("获取图书信息失败: bookId={}, error={}", record.getBookId(), e.getMessage());
-        }
+        Set<Long> ids = record.getBookId() != null
+                ? Set.of(record.getBookId())
+                : Collections.emptySet();
+        return buildRecordVO(record, loadBookMap(ids).get(record.getBookId()));
+    }
 
+    /**
+     * 批量加载图书并以 ID 索引；查询失败降级为空 Map，不影响主流程.
+     *
+     * @param bookIds 图书 ID 集合
+     * @return id → BookSimpleVO 映射
+     */
+    private Map<Long, BookSimpleVO> loadBookMap(Set<Long> bookIds) {
+        if (bookIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            return bookService.listByIds(new ArrayList<>(bookIds)).stream()
+                    .collect(Collectors.toMap(BookSimpleVO::getId, b -> b, (a, b) -> a));
+        } catch (Exception e) {
+            log.warn("批量获取图书信息失败: bookIds={}, error={}", bookIds, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Entity + 关联 BookSimpleVO → BorrowRecordVO.
+     */
+    private BorrowRecordVO buildRecordVO(BorrowRecord record, BookSimpleVO bookVO) {
         return BorrowRecordVO.builder()
                 .id(record.getId())
                 .userId(record.getUserId())

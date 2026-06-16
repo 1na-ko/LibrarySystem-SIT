@@ -4,10 +4,12 @@ import com.library.common.dto.PageDTO;
 import com.library.common.result.PageResult;
 import com.library.common.result.Result;
 import com.library.core.dto.BorrowRequest;
+import com.library.core.enums.RoleEnum;
 import com.library.core.service.BorrowService;
 import com.library.core.vo.BorrowRecordVO;
 import com.library.core.vo.BorrowResultVO;
 import com.library.core.vo.RenewResultVO;
+import com.library.security.aspect.RequireRole;
 import com.library.security.context.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 借阅管理控制器.
  * <p>
- * 提供借书、还书、续借、借阅列表和详情端点。所有认证用户均可访问自己的借阅数据。
+ * 提供借书、还书、续借、借阅列表和详情端点。借书/还书/续借限读者与管理员角色
+ * （排除采编管理员，对齐权限矩阵 §2.3）；借阅列表与详情（查询自身数据）对所有认证用户开放。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -38,6 +41,7 @@ public class BorrowController {
     /**
      * 借书申请.
      */
+    @RequireRole({RoleEnum.STUDENT, RoleEnum.TEACHER, RoleEnum.LIBRARIAN, RoleEnum.ADMIN})
     @PostMapping
     public Result<BorrowResultVO> borrow(@Valid @RequestBody BorrowRequest request) {
         long userId = SecurityUtils.getCurrentUserId();
@@ -50,6 +54,7 @@ public class BorrowController {
      *
      * @param id 借阅记录 ID
      */
+    @RequireRole({RoleEnum.STUDENT, RoleEnum.TEACHER, RoleEnum.LIBRARIAN, RoleEnum.ADMIN})
     @PutMapping("/{id}/return")
     public Result<BorrowRecordVO> returnBook(@PathVariable Long id) {
         long userId = SecurityUtils.getCurrentUserId();
@@ -62,6 +67,7 @@ public class BorrowController {
      *
      * @param id 借阅记录 ID
      */
+    @RequireRole({RoleEnum.STUDENT, RoleEnum.TEACHER, RoleEnum.LIBRARIAN, RoleEnum.ADMIN})
     @PutMapping("/{id}/renew")
     public Result<RenewResultVO> renew(@PathVariable Long id) {
         long userId = SecurityUtils.getCurrentUserId();

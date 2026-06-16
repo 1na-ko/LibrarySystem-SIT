@@ -48,7 +48,10 @@ class OverdueCheckJobTest {
         overdue.setDueDate(LocalDate.now().minusDays(5));
         overdue.setStatus(BorrowStatusEnum.BORROWED);
 
-        when(borrowRecordMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(overdue));
+        // 分批扫描：首轮返回超期记录，次轮返回空以终止循环
+        when(borrowRecordMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(overdue))
+                .thenReturn(List.of());
         when(borrowRecordMapper.updateById(any(BorrowRecord.class))).thenReturn(1);
         when(fineRecordMapper.insert(any())).thenReturn(1);
 
