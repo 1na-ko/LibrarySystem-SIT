@@ -5,7 +5,7 @@ import lombok.Getter;
 /**
  * 全局错误码枚举.
  * <p>
- * 业务错误码采用 4 位数字：1xxx 借阅域 / 2xxx 知识图谱域 / 3xxx 采编域。
+ * 业务错误码采用 4 位数字：1xxx 借阅域 / 2xxx 知识图谱域 / 3xxx 采编域 / 4xxx 认证域。
  * HTTP 状态码由 {@link GlobalExceptionHandler} 依据错误码映射，此处仅定义业务语义。
  *
  * @author LibrarySystem Team
@@ -40,6 +40,7 @@ public enum ErrorCode {
     RESERVATION_NOT_FOUND(1012, "预约记录不存在"),
     RESERVATION_EXPIRED(1013, "预约已过期"),
     BORROW_RECORD_NOT_FOUND(1014, "借阅记录不存在"),
+    CATEGORY_NOT_FOUND(1015, "分类不存在"),
 
     // ==================== 知识图谱域 (2xxx) ====================
     KG_BUILD_FAILED(2001, "知识图谱构建失败"),
