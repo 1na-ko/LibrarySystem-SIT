@@ -17,6 +17,17 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentLoginBinding;
 import com.library.android.viewmodel.LoginViewModel;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+/**
+ * 登录页面 Fragment.
+ *
+ * <p>使用 Hilt @AndroidEntryPoint，LoginViewModel 由 Hilt 自动注入依赖.
+ *
+ * @author LibrarySystem Team
+ * @since 1.0.0
+ */
+@AndroidEntryPoint
 public class LoginFragment extends Fragment {
 
     private static final String TAG = "LoginFragment";
@@ -64,7 +75,8 @@ public class LoginFragment extends Fragment {
             String username = binding.etUsername.getText().toString().trim();
             String password = binding.etPassword.getText().toString().trim();
             Log.d(TAG, "点击登录: username=" + username + ", password=" + (password.isEmpty() ? "空" : "已填写"));
-            viewModel.login(requireContext(), username, password);
+            // ViewModel 已通过 Hilt 注入 TokenManager，无需传 Context
+            viewModel.login(username, password);
         });
 
         binding.btnRegister.setOnClickListener(v ->

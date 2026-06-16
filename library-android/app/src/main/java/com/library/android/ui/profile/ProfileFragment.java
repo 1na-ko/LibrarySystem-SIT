@@ -14,9 +14,17 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentProfileBinding;
 import com.library.android.util.TokenManager;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * 个人中心 Fragment.
+ *
+ * <p>使用 Hilt @AndroidEntryPoint，后续可通过 @Inject 注入依赖.
+ *
+ * @author LibrarySystem Team
+ * @since 1.0.0
  */
+@AndroidEntryPoint
 public class ProfileFragment extends Fragment {
 
     private FragmentProfileBinding binding;

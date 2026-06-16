@@ -2,6 +2,7 @@ package com.library.android.network;
 
 import com.library.android.model.LoginRequest;
 import com.library.android.model.LoginResponse;
+import com.library.android.model.RegisterRequest;
 import com.library.android.model.Result;
 
 import io.reactivex.rxjava3.core.Single;
@@ -14,5 +15,5 @@ public interface AuthApiService {
     Single<Result<LoginResponse>> login(@Body LoginRequest request);
 
     @POST("auth/register")
-    Single<Result<Object>> register(@Body LoginRequest request);
+    Single<Result<Object>> register(@Body RegisterRequest request);
 }
