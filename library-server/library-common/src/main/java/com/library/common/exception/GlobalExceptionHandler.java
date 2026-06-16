@@ -5,8 +5,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -53,6 +56,47 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), msg));
+    }
+
+    /**
+     * 参数绑定校验失败（@Valid on GET query DTO / model attribute）.
+     * <p>
+     * Spring MVC 对非 @RequestBody 的 @Valid 校验抛出 BindException 而非 MethodArgumentNotValidException。
+     */
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<Result<Void>> handleBindException(
+            BindException e, HttpServletRequest request) {
+        String msg = e.getFieldErrors().stream()
+                .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        log.warn("参数绑定校验失败: {}, path={}", msg, request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), msg));
+    }
+
+    /**
+     * 缺少必需请求参数.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Result<Void>> handleMissingParam(
+            MissingServletRequestParameterException e, HttpServletRequest request) {
+        log.warn("缺少必需参数: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "缺少必需参数: " + e.getParameterName()));
+    }
+
+    /**
+     * 请求体 JSON 解析失败（格式错误、类型不匹配）.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Result<Void>> handleNotReadable(
+            HttpMessageNotReadableException e, HttpServletRequest request) {
+        log.warn("请求体解析失败: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "请求体格式错误"));
     }
 
     /**

@@ -3,6 +3,7 @@ package com.library.core.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -65,6 +66,7 @@ public class Book {
     private Integer borrowCount;
 
     /** 乐观锁版本号 */
+    @Version
     private Integer version;
 
     /** 逻辑删除（0=未删除, 1=已删除） */
