@@ -4,6 +4,7 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/searchFragment">
 
+    <!-- ======================== 主 Tab 目的地 ======================== -->
     <fragment
         android:id="@+id/searchFragment"
         android:name="com.library.android.ui.search.SearchFragment"
@@ -32,4 +33,53 @@
         android:id="@+id/registerFragment"
         android:name="com.library.android.ui.login.RegisterFragment"
         android:label="注册" />
+
+    <!-- ======================== 借阅管理（人员 B） ======================== -->
+    <fragment
+        android:id="@+id/borrowDetailFragment"
+        android:name="com.library.android.ui.borrow.BorrowDetailFragment"
+        android:label="借阅详情" />
+
+    <fragment
+        android:id="@+id/overdueFragment"
+        android:name="com.library.android.ui.borrow.OverdueFragment"
+        android:label="超期管理" />
+
+    <action
+        android:id="@+id/action_borrowFragment_to_borrowDetailFragment"
+        app:destination="@id/borrowDetailFragment" />
+
+    <!-- ======================== 预约管理（人员 B） ======================== -->
+    <fragment
+        android:id="@+id/reservationListFragment"
+        android:name="com.library.android.ui.reservation.ReservationListFragment"
+        android:label="我的预约" />
+
+    <!-- ======================== 知识图谱（人员 B） ======================== -->
+    <fragment
+        android:id="@+id/knowledgeGraphFragment"
+        android:name="com.library.android.ui.kg.KnowledgeGraphFragment"
+        android:label="知识图谱" />
+
+    <fragment
+        android:id="@+id/literatureTraceFragment"
+        android:name="com.library.android.ui.kg.LiteratureTraceFragment"
+        android:label="文献溯源" />
+
+    <fragment
+        android:id="@+id/subjectNetworkFragment"
+        android:name="com.library.android.ui.kg.SubjectNetworkFragment"
+        android:label="学科网络" />
+
+    <fragment
+        android:id="@+id/entitySearchFragment"
+        android:name="com.library.android.ui.kg.EntitySearchFragment"
+        android:label="实体搜索" />
+
+    <!-- ======================== 系统管理（人员 B） ======================== -->
+    <fragment
+        android:id="@+id/adminUserListFragment"
+        android:name="com.library.android.ui.admin.AdminUserListFragment"
+        android:label="用户管理" />
+
 </navigation>

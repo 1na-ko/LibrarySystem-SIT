@@ -824,6 +824,7 @@ components:
     # ---- 通用 ----
     ErrorResponse:
       type: object
+      description: 错误响应（与 Result 在错误场景等价：code/message/timestamp）
       properties:
         code:
           type: integer
@@ -836,12 +837,6 @@ components:
         timestamp:
           type: integer
           format: int64
-        path:
-          type: string
-          description: 请求路径
-        traceId:
-          type: string
-          description: 链路追踪 ID
 
   # ---- 请求头参数 ----
   parameters:
@@ -965,9 +960,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 401
+                code: 4003
                 message: "用户名或密码错误"
                 timestamp: 1718400000000
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/v1/auth/register:
     post:
@@ -982,17 +979,24 @@ paths:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
         "200":
-          description: 注册成功
+          description: 注册成功（注册即登录，返回令牌对）
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Result"
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginResponse"
         "409":
           description: 用户名已存在
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/v1/auth/refresh:
     post:
@@ -1020,6 +1024,8 @@ paths:
                         $ref: "#/components/schemas/RefreshResponse"
         "401":
           description: Refresh Token 无效或已过期
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/v1/auth/logout:
     post:
@@ -1032,6 +1038,12 @@ paths:
       responses:
         "200":
           description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        "401":
+          description: 未认证（缺少有效 Access Token）
 
   # ======================== 图书检索模块 ========================
   /api/v1/books/search:
@@ -1569,7 +1581,10 @@ paths:
     get:
       tags: [借阅管理]
       summary: 超期未还记录
-      description: 查询所有超期未还记录（管理员权限）
+      description: |
+        查询所有超期未还记录。
+
+        **角色权限**：LIBRARIAN / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: getOverdueRecords
       security:
         - BearerAuth: []
@@ -2082,6 +2097,8 @@ paths:
       description: |
         基于 ARIMA 时间序列 + 多元回归，预测未来月份的采购需求量。
         特征变量：历史借阅趋势、预约热度、复本率、季节因子、学科增长率
+
+        **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: predictDemand
       security:
         - BearerAuth: []
@@ -2148,6 +2165,8 @@ paths:
         1. ISBN 精确匹配（权重 1.0）
         2. 标题模糊匹配（ES More Like This，阈值 0.8）
         3. 作者+标题联合匹配（余弦相似度，阈值 0.7）
+
+        **角色权限**：ACQUISITOR / ADMIN；LIBRARIAN 可执行以辅助编目决策（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: checkDuplicate
       security:
         - BearerAuth: []
@@ -2197,7 +2216,10 @@ paths:
     get:
       tags: [智能采编]
       summary: 馆藏缺口分析
-      description: 基于学科核心书目清单（来自知识图谱高 PageRank 节点），识别馆藏缺失
+      description: |
+        基于学科核心书目清单（来自知识图谱高 PageRank 节点），识别馆藏缺失。
+
+        **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: analyzeGap
       security:
         - BearerAuth: []
@@ -2226,7 +2248,10 @@ paths:
     post:
       tags: [智能采编]
       summary: 创建谈判记录
-      description: 记录电子资源采购谈判信息，系统自动生成谈判建议
+      description: |
+        记录电子资源采购谈判信息，系统自动生成谈判建议。
+
+        **角色权限**：ACQUISITOR / ADMIN（详见系统架构设计文档 §2.3 权限矩阵）。
       operationId: createNegotiation
       security:
         - BearerAuth: []
@@ -2467,6 +2492,12 @@ paths:
     get:
       tags: [系统]
       summary: 健康检查
+      description: |
+        服务健康检查（Spring Boot Actuator，公开访问，无需认证）。
+
+        `components` 下各中间件的 `UP` 状态依赖对应 Spring Boot Starter 自动装配的
+        `HealthIndicator`。随各业务模块引入对应 starter，mysql / redis / elasticsearch /
+        neo4j / rabbitmq 将依次出现；在 starter 尚未就位前仅展示已装配的组件，属预期行为。
       operationId: healthCheck
       responses:
         "200":

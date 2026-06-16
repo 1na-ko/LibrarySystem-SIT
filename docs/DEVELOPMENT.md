@@ -170,9 +170,7 @@ cd f:/CodeforJAVA/LibrarySystem-SIT
 docker-compose up -d
 ```
 
-> **注意**：`docker-compose.yml` 已创建于项目根目录，内容与附录 A 一致。如尚未拉取最新代码，可参照附录 A 手动创建。
-
-**`docker-compose.yml`** 内容见 [附录 A](#附录-a-docker-composeyml)。
+> **注意**：`docker-compose.yml` 已提交于项目根目录，内容与[附录 A](#附录-a-docker-composeyml) 保持同步（含 MySQL / Redis / Elasticsearch / Neo4j / RabbitMQ 及 IK 分词器初始化容器）。直接 `docker-compose up -d` 即可，无需手动创建。
 
 **验证容器状态**：
 
@@ -360,7 +358,14 @@ cd library-system
 
 ### 4.2 配置环境变量
 
-在项目根目录创建 `.env` 文件（已加入 `.gitignore`）：
+> **⚠️ `.env` 生效机制**：Spring Boot **默认不读取** `.env` 文件。项目根目录的 `application.yml` 通过 `${VAR:默认值}` 占位符读取的是 **系统环境变量 / JVM 启动参数**，而非 `.env`。因此 `.env` 文件必须经下列任一方式注入才能真正生效：
+> - **IntelliJ IDEA**：安装 **EnvFile** 插件 → 在 Run Configuration 勾选并选择 `.env`；或直接在运行配置的 Environment Variables 中逐项填入。
+> - **命令行**：启动前 `export` 各变量，或用 `set -a; source .env; set +a`（bash）。
+> - **Docker Compose**：在服务下声明 `env_file: [.env]`。
+>
+> 若不使用上述方式，可忽略 `.env`，直接依赖 `application.yml` 里写好的 `${VAR:localhost}` 等本地默认值启动（开发环境足够）。`.env` 主要用于覆盖默认值（如填写 JWT_SECRET、LLM API Key）。
+
+在项目根目录创建 `.env` 文件（已加入 `.gitignore`），模板见 [.env.example](../.env.example)：
 
 ```properties
 # ========== 数据库 ==========
@@ -395,7 +400,8 @@ RABBITMQ_PASSWORD=guest
 #   openssl rand -base64 64
 # 或在 PowerShell 中：
 #   [Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
-# 注意：密钥长度至少 256 位（32 字节 Base64 编码后约 44 字符），此处使用 64 字节
+# 注意：HS256 要求密钥 >= 32 字节（启动时 fail-fast 校验，不满足则拒绝启动）
+# 生成命令：openssl rand -base64 48
 JWT_SECRET=
 
 # ========== LLM & Embedding ==========
@@ -415,7 +421,7 @@ LOG_LEVEL=DEBUG
 
 ### 4.3 初始化数据库
 
-首次启动时，Flyway 会自动执行数据库迁移脚本。基线迁移脚本 `V1__init_schema.sql` 已创建于 `library-server/library-bootstrap/src/main/resources/db/migration/`。后续各业务模块的完整 DDL 将在对应 feature 分支中补充。
+首次启动时，Flyway 会自动执行数据库迁移脚本。`V1__init_schema.sql`（已创建于 `library-server/library-bootstrap/src/main/resources/db/migration/`）建立了全部 10 张核心业务表（sys_user / category / book / borrow_record / reservation / fine_record / supplier / deal_record / electronic_resource / negotiation_record），含外键约束、索引与统一逻辑删除字段。后续按 feature 分支追加 `V2__*.sql`（种子数据）、`V3__*.sql`（全文索引等）。已落地迁移：`V2__insert_categories.sql`（36 条分类种子）、`V3__add_fulltext_index.sql`（8 个复合索引）、`V4__insert_initial_admin.sql`（初始管理员 admin/Admin@123456，生产首登须改密）。
 
 也可以通过 Maven 手动执行：
 
@@ -424,7 +430,7 @@ cd library-server
 mvn flyway:migrate -pl library-bootstrap
 ```
 
-> **注意**：Docker Compose 中 MySQL 容器挂载了 `./docs/db/init.sql` 作为初始化脚本。该文件尚未创建（`V1__init_schema.sql` 已由 Flyway 管理），若需 Docker 启动时预置数据，可在 `docs/db/` 下创建 `init.sql`。
+> **关于 `docs/db/init.sql`**：Docker Compose 中 MySQL 容器挂载了 `./docs/db/init.sql` 作为容器**首次初始化脚本**（仅数据卷为空时执行一次）。当前该文件只做 `ALTER DATABASE ... CHARACTER SET utf8mb4`，**不负责建表**——建表统一由 Flyway 在应用启动时管理，避免两处 DDL 维护（DRY）。若需在 Docker 首启时预置种子数据，可在此文件追加 INSERT 语句，但需与 Flyway 迁移脚本协调，避免冲突。
 
 ### 4.4 IDE 打开（IntelliJ IDEA）
 
@@ -446,7 +452,7 @@ mvn spring-boot:run -pl library-bootstrap -Dspring-boot.run.profiles=dev
 
 # 或者先打包再启动
 mvn clean package -DskipTests
-java -jar library-bootstrap/target/library-bootstrap-1.0.0.jar --spring.profiles.active=dev
+java -jar library-bootstrap/target/library-bootstrap-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
 ### 4.6 验证后端
@@ -457,30 +463,17 @@ curl http://localhost:8080/api/v1/health
 # 预期输出：
 # {
 #   "status": "UP",
-#   "components": {
-#     "mysql": "UP",
-#     "redis": "UP",
-#     "elasticsearch": "UP",
-#     "neo4j": "UP",
-#     "rabbitmq": "UP"
-#   }
+#   "components": { ... }
 # }
-
-# 测试登录接口
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin@123456"}'
-
-# Swagger UI（API 在线文档）
-# 浏览器访问：http://localhost:8080/swagger-ui.html
 ```
 
-### 4.7 初始化测试数据
+> **关于健康检查的组件明细**：`components` 下各中间件（mysql/redis/elasticsearch/neo4j/rabbitmq）的 `UP` 状态，依赖对应 Spring Boot Starter 自动装配的 `HealthIndicator`。当前仅有 datasource（mysql）、redis 的 starter 就位；ES / Neo4j / RabbitMQ 的 HealthIndicator 将随各模块引入对应 starter（参见 `application.yml` 中各配置的"生效前置"注释）逐步出现。在此之前 `components` 仅展示已就绪的组件，这是预期行为。
 
-```bash
-# 执行数据初始化脚本（插入测试用户、图书、借阅记录等）
-curl -X POST http://localhost:8080/api/v1/admin/init-test-data
-```
+> **关于登录与 Swagger 验证**：`library-security` 已实现，认证四端点（`/auth/register`、`/auth/login`、`/auth/refresh`、`/auth/logout`）可联调；初始管理员账号 `admin / Admin@123456`（V4 种子，生产首登须改密）。业务端点（books/borrows 等）待阶段 2+ 实现。
+
+### 4.7 （待实现）初始化测试数据
+
+测试数据初始化接口 `POST /api/v1/admin/init-test-data` 尚未实现，将在系统管理模块开发时补充。临时需要测试数据时，可通过 Flyway 的测试种子数据目录（`application-test.yml` 配置的 `classpath:db/test-data`）或在本地直接执行 SQL 插入。
 
 ---
 
@@ -513,18 +506,20 @@ sdk.dir=C\:\\Users\\<你的用户名>\\AppData\\Local\\Android\\Sdk
 
 ### 5.4 配置后端地址
 
-编辑 `library-android/app/src/main/java/com/library/android/config/ApiConfig.java`：
+后端 API 基地址在 `library-android/app/build.gradle.kts` 中通过 `buildConfigField` 定义：
 
-```java
-public class ApiConfig {
-    // 本地开发后端地址
+```kotlin
+defaultConfig {
+    // 后端 API 基地址
     // Android 模拟器使用 10.0.2.2 访问宿主机的 localhost
-    public static final String BASE_URL = "http://10.0.2.2:8080/";
+    buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
 
     // 真机调试时改为电脑局域网 IP（确保同一 WiFi 下）
-    // public static final String BASE_URL = "http://192.168.x.x:8080/";
+    // buildConfigField("String", "BASE_URL", "\"http://192.168.x.x:8080/api/v1/\"")
 }
 ```
+
+编译后通过 `BuildConfig.BASE_URL` 在代码中引用。
 
 ### 5.5 运行
 
@@ -556,7 +551,7 @@ public class ApiConfig {
 | 8 | 后端编译 | `mvn clean compile` | BUILD SUCCESS |
 | 9 | 后端启动 | 启动 `LibraryApplication` | 日志无 ERROR |
 | 10 | 健康检查 | `curl localhost:8080/api/v1/health` | 所有组件 UP |
-| 11 | Swagger | 浏览器 http://localhost:8080/swagger-ui.html | 显示 API 文档 |
+| 11 | Swagger | 浏览器 http://localhost:8080/api/v1/swagger-ui.html | 显示 API 文档 |
 | 12 | 登录接口 | POST `/api/v1/auth/login` | 返回 JWT Token |
 | 13 | Android 编译 | Android Studio `Run 'app'` | BUILD SUCCESSFUL |
 | 14 | Android 登录 | App 输入测试账号登录 | 进入主界面 |
@@ -644,7 +639,9 @@ ALTER DATABASE library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ## 8. 项目结构速览
 
-> **✅ 项目状态**：初始化框架已搭建完成（2026-06-15），Maven 多模块编译通过（7/7），Android 项目骨架就绪。以下目录树为系统架构设计所定义的**目标结构**，已与当前代码库一致。开发者可直接按此结构进行编码。
+> **项目状态**（2026-06-15）：初始化框架已搭建 —— 后端 Maven **7 模块结构已建并验证可编译（BUILD SUCCESS）**，`library-bootstrap` 启动类与全局配置就位；各业务模块（common/ai/core/kg/acquisition/security）目前仅含 `pom.xml` 与空 `src/main/java` 目录，**业务源码尚未编写**，将在对应 feature 分支按下列目标结构补全。Android 前端由前端组搭建中。
+>
+> 以下目录树为系统架构设计所定义的**目标结构**，开发者按此结构编码。当前已落地的部分用 ✅ 标注，尚未实现的用 📋 标注。
 
 ```
 LibrarySystem-SIT/
@@ -656,59 +653,65 @@ LibrarySystem-SIT/
 │   └── DEVELOPMENT.md                       #   本文档
 │
 ├── library-server/                          # ☕ 后端（Maven 多模块项目）
-│   ├── pom.xml                              #   父 POM（依赖管理 + 插件管理）
-│   ├── library-common/                      #   📦 公共模块
+│   ├── pom.xml                              #   父 POM（依赖管理 + 插件管理）✅
+│   ├── library-common/                      #   📦 公共模块（源码待实现）
 │   │   └── src/main/java/com/library/common/
-│   │       ├── exception/                   #     全局异常 + 错误码枚举
-│   │       ├── result/                      #     Result<T> + PageResult
-│   │       ├── dto/                         #     公共 DTO
-│   │       ├── utils/                       #     工具类
-│   │       └── annotation/                  #     自定义注解
-│   ├── library-ai/                          #   📦 AI 基础设施模块
+│   │       ├── exception/                   #     全局异常 + 错误码枚举 📋
+│   │       ├── result/                      #     Result<T> + PageResult 📋
+│   │       ├── dto/                         #     公共 DTO 📋
+│   │       ├── utils/                       #     工具类 📋
+│   │       └── annotation/                  #     自定义注解 📋
+│   ├── library-ai/                          #   📦 AI 基础设施模块（源码待实现）
 │   │   └── src/main/java/com/library/ai/
-│   │       ├── llm/                         #     DeepSeek API 封装
-│   │       ├── embedding/                   #     百炼 Embedding 封装
-│   │       ├── nlp/                         #     HanLP 本地 NLP
-│   │       └── config/                      #     AI 模块配置
-│   ├── library-core/                        #   📦 核心业务模块
+│   │       ├── llm/                         #     DeepSeek API 封装 📋
+│   │       ├── embedding/                   #     百炼 Embedding 封装 📋
+│   │       ├── nlp/                         #     HanLP 本地 NLP 📋
+│   │       └── config/                      #     AI 模块配置 📋
+│   ├── library-core/                        #   📦 核心业务模块（源码待实现）
 │   │   └── src/main/java/com/library/core/
-│   │       ├── controller/                  #     REST 控制器
-│   │       ├── service/                     #     业务逻辑层
-│   │       ├── mapper/                      #     MyBatis-Plus Mapper
-│   │       ├── entity/                      #     数据库实体
-│   │       ├── repository/                  #     ES / Redis 数据访问
-│   │       ├── event/                       #     领域事件
-│   │       └── config/                      #     模块配置
-│   ├── library-knowledge-graph/             #   📦 知识图谱模块
+│   │       ├── controller/                  #     REST 控制器 📋
+│   │       ├── service/                     #     业务逻辑层 📋
+│   │       ├── mapper/                      #     MyBatis-Plus Mapper 📋
+│   │       ├── entity/                      #     数据库实体 📋
+│   │       ├── repository/                  #     ES / Redis 数据访问 📋
+│   │       ├── event/                       #     领域事件 📋
+│   │       └── config/                      #     模块配置 📋
+│   ├── library-knowledge-graph/             #   📦 知识图谱模块（源码待实现）
 │   │   └── src/main/java/com/library/kg/
-│   │       ├── controller/                  #     知识图谱 API
-│   │       ├── service/                     #     图谱构建 / 查询 / 溯源
-│   │       ├── repository/                  #     Neo4j Cypher 查询
-│   │       ├── model/                       #     图节点 / 关系模型
-│   │       └── config/                      #     Neo4j 配置
-│   ├── library-acquisition/                 #   📦 智能采编模块
+│   │       ├── controller/                  #     知识图谱 API 📋
+│   │       ├── service/                     #     图谱构建 / 查询 / 溯源 📋
+│   │       ├── repository/                  #     Neo4j Cypher 查询 📋
+│   │       ├── model/                       #     图节点 / 关系模型 📋
+│   │       └── config/                      #     Neo4j 配置 📋
+│   ├── library-acquisition/                 #   📦 智能采编模块（源码待实现）
 │   │   └── src/main/java/com/library/acquisition/
-│   │       ├── controller/                  #     采编 API
-│   │       ├── service/                     #     预测 / 查重 / 谈判
-│   │       ├── ml/                          #     ML 模型（简化 ARIMA）
-│   │       └── repository/                  #     采编数据访问
-│   ├── library-security/                    #   📦 安全模块
+│   │       ├── controller/                  #     采编 API 📋
+│   │       ├── service/                     #     预测 / 查重 / 谈判 📋
+│   │       ├── ml/                          #     ML 模型（简化 ARIMA）📋
+│   │       └── repository/                  #     采编数据访问 📋
+│   ├── library-security/                    #   🔐 安全模块（认证/授权/限流）✅
 │   │   └── src/main/java/com/library/security/
-│   │       ├── filter/                      #     JWT 认证过滤器
-│   │       ├── handler/                     #     认证 / 授权处理器
-│   │       └── config/                      #     Spring Security 配置
-│   └── library-bootstrap/                   #   📦 启动模块（聚合入口）
+│   │       ├── jwt/                         #     JwtUtils 签发/解析 ✅
+│   │       ├── token/                       #     Refresh Token 轮换防重放 ✅
+│   │       ├── ratelimit/                   #     Redis 令牌桶限流 ✅
+│   │       ├── filter/                      #     Jwt/RateLimit 过滤器 ✅
+│   │       ├── handler/                     #     认证/授权 JSON 处理器 ✅
+│   │       ├── aspect/                      #     @RequireRole/@RequirePermission 切面 ✅
+│   │       ├── context/                     #     LoginUser + SecurityUtils ✅
+│   │       ├── config/                      #     SecurityConfig/JwtProperties ✅
+│   │       └── service/controller/          #     AuthService + AuthController ✅
+│   └── library-bootstrap/                   #   📦 启动模块（聚合入口）✅ 已就位
 │       └── src/main/
 │           ├── java/com/library/
-│           │   ├── LibraryApplication.java  #     🚀 Spring Boot 启动类
-│           │   └── config/                  #     全局配置
+│           │   ├── LibraryApplication.java  #     🚀 Spring Boot 启动类 ✅
+│           │   └── config/                  #     全局配置 📋
 │           └── resources/
-│               ├── application.yml          #     公共配置
-│               ├── application-dev.yml      #     开发环境配置
-│               ├── application-prod.yml     #     生产环境配置
-│               ├── application-test.yml     #     测试环境配置
-│               ├── logback-spring.xml       #     日志配置
-│               └── db/migration/            #     Flyway 迁移脚本
+│               ├── application.yml          #     公共配置 ✅
+│               ├── application-dev.yml      #     开发环境配置 ✅
+│               ├── application-prod.yml     #     生产环境配置 ✅
+│               ├── application-test.yml     #     测试环境配置 ✅
+│               ├── logback-spring.xml       #     日志配置 ✅
+│               └── db/migration/            #     Flyway 迁移脚本（V1 基线 ✅ / V2~V3 📋）
 │
 ├── library-android/                         # 📱 Android 前端（独立 Gradle 项目）
 │   ├── build.gradle.kts                     #   项目级 Gradle 构建
@@ -768,11 +771,9 @@ mvn test -pl library-core -Dtest=BookServiceTest
 # 打包
 mvn clean package -DskipTests
 
-# 代码格式化检查
-mvn spotless:check
-
-# 代码格式化自动修复
-mvn spotless:apply
+# 代码格式化（当前以 .editorconfig + IDE 格式化为准，尚未引入 Spotless 插件；
+# 若后续接入，命令为：mvn spotless:check / mvn spotless:apply）
+# 查看 IDEA 配置：Editor → Code Style → 勾选 "Enable EditorConfig support"
 
 # 查看依赖树
 mvn dependency:tree -pl library-core
@@ -843,9 +844,9 @@ git push origin feature/your-feature-name
 
 ## 附录 A — docker-compose.yml
 
-```yaml
-version: "3.8"
+> 以下内容与项目根目录 `docker-compose.yml` 保持同步。注：Compose V2 已废弃 `version` 字段，此处一并移除以消除告警（根目录文件已先行移除）。
 
+```yaml
 services:
   mysql:
     image: mysql:8.0.35
@@ -976,6 +977,8 @@ volumes:
 | 图书管理员 | `librarian01` | `Abc@123456` | 管理功能测试 |
 | 采编管理员 | `acquisitor01` | `Abc@123456` | 采编功能测试 |
 | 系统管理员 | `admin` | `Admin@123456` | 全部权限 |
+
+> 注：阶段 1 仅由 V4 迁移预置 `admin`。其余账号需通过 `/auth/register` 注册（仅创建 STUDENT）或后续阶段补充种子数据；生产环境首登后务必修改 admin 默认密码。
 
 ---
 

@@ -19,5 +19,6 @@ public class LibraryApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        // Hilt 自动注入，全局初始化逻辑在此处追加
     }
 }

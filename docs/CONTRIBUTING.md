@@ -757,13 +757,18 @@ class BookServiceTest {
 | 文件编码 | UTF-8 |
 | 缩进 | 4 个空格 |
 | Code Style | Google Java Style |
-| 最小 SDK | API 24 (Android 7.0) |
+| 最小 SDK | API 26 (Android 8.0) |
 | 目标 SDK | API 34 (Android 14) |
 | 编译 SDK | API 34 |
 
 ### 9.3 共享 EditorConfig
 
-项目根目录放置 `.editorconfig` 文件：
+项目根目录放置 `.editorconfig` 文件，配合 `.gitattributes`（强制 Git 行尾转换）共同保证跨平台换行符一致：
+
+- `.editorconfig` — 指导 IDE 在**编辑保存**时使用 LF、4 空格缩进、UTF-8
+- `.gitattributes` — 指导 Git 在 **checkout/commit** 时统一行尾（`* text=auto eol=lf`，Windows 脚本 `*.bat` 保留 CRLF）
+
+两者缺一不可：仅 `.editorconfig` 无法约束不用该插件的成员，仅 `.gitattributes` 无法约束编辑过程中的临时 CRLF。
 
 ```ini
 # EditorConfig is awesome: https://EditorConfig.org
@@ -787,11 +792,25 @@ indent_size = 2
 [*.yml]
 indent_size = 2
 
+[*.yaml]
+indent_size = 2
+
 [*.properties]
 indent_size = 2
 
 [*.java]
 max_line_length = 120
+
+[*.kt]
+indent_size = 4
+max_line_length = 120
+
+[*.kts]
+indent_size = 4
+max_line_length = 120
+
+[*.json]
+indent_size = 2
 ```
 
 ---

@@ -1,0 +1,37 @@
+# GitAttributes — 统一行尾与二进制识别规则
+# 配合 .editorconfig 的 end_of_line=lf，跨平台（Windows/macOS/Linux）协作时
+# 由 Git 在 checkout 时自动处理行尾，避免 CRLF/LF 混入导致 diff 噪声与脚本失效。
+
+# 默认：所有文本文件自动识别，检出/提交均使用 LF
+* text=auto eol=lf
+
+# Windows 专用脚本必须保留 CRLF（CMD 对 LF 脚本兼容性差）
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# 源码 / 标记 / 文档：强制 LF
+*.java   text eol=lf
+*.kt     text eol=lf
+*.kts    text eol=lf
+*.xml    text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.properties text eol=lf
+*.sql    text eol=lf
+*.md     text eol=lf
+*.json   text eol=lf
+
+# 二进制文件：禁止 Git 做任何行尾/内容转换，避免资源损坏
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.jar  binary
+*.class binary
+*.dex  binary
+*.apk  binary
+*.zip  binary

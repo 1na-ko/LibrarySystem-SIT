@@ -59,7 +59,11 @@ services:
       - es_data:/usr/share/elasticsearch/data
       - es_plugins:/usr/share/elasticsearch/plugins
 
-  # ---- IK 分词器安装（首次启动后需重启 ES） ----
+  # ---- IK 分词器安装 ----
+  # 设计说明：利用共享卷 es_plugins 将 IK 插件安装到 ES 容器可读取的位置。
+  # 由于 ES 在启动时加载插件，此安装器必须在 elasticsearch 容器首次运行之后执行。
+  # 首次安装完成后需手动重启 ES：docker-compose restart elasticsearch
+  # （depends_on 只保证容器启动顺序，不等待 ES 服务就绪，因此安装器可能在 ES 就绪前执行——若遇失败，等 ES healthy 后重试即可）
   es-ik-installer:
     image: elasticsearch:8.11.0
     container_name: library-es-ik-install
@@ -70,7 +74,7 @@ services:
         else
           echo 'Installing IK plugin...'
           bin/elasticsearch-plugin install --batch https://get.infini.cloud/elasticsearch/analysis-ik/8.11.0
-          echo 'IK plugin installed. Please restart elasticsearch container.'
+          echo 'IK plugin installed. Please restart elasticsearch container (docker-compose restart elasticsearch).'
         fi
       "
     volumes:

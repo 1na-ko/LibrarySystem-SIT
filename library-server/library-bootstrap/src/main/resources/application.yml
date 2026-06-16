@@ -10,8 +10,10 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   # ---- 数据源 ----
+  # 注：characterEncoding 合法值为 utf8（JDBC 驱动内部已映射为 MySQL 的 utf8mb4 四字节字符集），
+  #     不存在 "utf8mb4" 这一编码名，写 utf8mb4 会被驱动忽略回退。
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:library_db}?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:library_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -36,10 +38,15 @@ spring:
           min-idle: 4
 
   # ---- Elasticsearch ----
+  # 生效前置：library-core 需引入 spring-boot-starter-data-elasticsearch（自动配置 RestClient），
+  #          或在 library-core 的 config 包内手动声明 ElasticsearchClient Bean 读取本配置。
+  #          当前 library-core 仅依赖裸 elasticsearch-java 客户端，此配置键暂未生效，
+  #          待图书检索功能开发时补全 starter 或手动配置后启用。
   elasticsearch:
     uris: ${ES_HOST:localhost}:${ES_PORT:9200}
 
   # ---- Neo4j ----
+  # 生效前置：依赖由 library-knowledge-graph 提供的 spring-boot-starter-data-neo4j（已引入）。
   neo4j:
     uri: ${NEO4J_URI:bolt://localhost:7687}
     authentication:
@@ -47,6 +54,9 @@ spring:
       password: ${NEO4J_PASSWORD:neo4j123456}
 
   # ---- RabbitMQ ----
+  # 生效前置：需引入 spring-boot-starter-amqp（当前各模块尚未引入，待异步事件/ES 同步等
+  #          消息消费功能开发时在对应模块补全依赖后启用）。在此之前事件总线以 Spring
+  #          Application Events（同步/异步 @EventListener）替代，不影响现有功能。
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -54,13 +64,18 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
 
   # ---- Flyway 数据库迁移 ----
+  # baseline-on-migrate: 针对已有库（非空）首次接入 Flyway 时自动建立基线，避免报错。
+  # baseline-version: 设为 0，确保 V1__init_schema.sql 等所有 V1+ 迁移脚本都会被执行；
+  #                   若设为 1，则 V1 会被当作基线跳过（首个迁移脚本将不执行）。
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-    baseline-version: 1
+    baseline-version: 0
 
 # ---- MyBatis-Plus ----
+# 全局逻辑删除：V1__init_schema.sql 已为全部业务表统一建立 deleted 列（TINYINT NOT NULL DEFAULT 0），
+# 故全局启用 logic-delete-field，所有实体自动软删除，无需逐个加 @TableLogic。
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.library.core.entity
@@ -73,12 +88,22 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
+    # 枚举映射：显式声明 type-handler，无 @EnumValue 时按枚举 name() 与 DB ENUM 列互转
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
 
 # ---- JWT 认证 ----
 jwt:
   secret: ${JWT_SECRET:}
   access-token-expiration: 7200000      # 2 小时
   refresh-token-expiration: 604800000   # 7 天
+
+# ---- 限流（Redis 令牌桶，键定义见 RateLimitProperties）----
+# login/register 按客户端 IP 防爆破；authenticated 按 userId；anonymous 按 IP
+ratelimit:
+  login:         { capacity: 20, refill-per-min: 20 }
+  register:      { capacity: 20, refill-per-min: 20 }
+  authenticated: { capacity: 100, refill-per-min: 100 }
+  anonymous:     { capacity: 100, refill-per-min: 100 }
 
 # ---- SpringDoc OpenAPI ----
 springdoc:
@@ -105,6 +130,7 @@ logging:
 management:
   endpoints:
     web:
+      base-path: /
       exposure:
         include: health,info,metrics
   endpoint:

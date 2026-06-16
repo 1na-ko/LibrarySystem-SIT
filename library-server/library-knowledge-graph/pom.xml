@@ -20,6 +20,10 @@
         </dependency>
         <dependency>
             <groupId>com.library</groupId>
+            <artifactId>library-ai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.library</groupId>
             <artifactId>library-core</artifactId>
         </dependency>
         <dependency>
