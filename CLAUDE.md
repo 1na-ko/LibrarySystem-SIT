@@ -1,8 +1,8 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-1 ✅ | 阶段 2-11 📋 待实施
-> **最后更新**: 2026-06-15
+> **状态**: 阶段 0-2 ✅ | 阶段 3-11 📋 待实施
+> **最后更新**: 2026-06-16
 
 ---
 
@@ -158,8 +158,19 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - `library-security` 模块 62 项单元测试全绿 ✅
 - 初始管理员种子（admin/Admin@123456，V4 迁移）✅
 
+### 已落地（阶段 2：核心业务数据层）
+- 5 张核心表 Entity + Mapper：Category / Book / BorrowRecord / Reservation / FineRecord ✅
+- 2 个新增枚举：BorrowStatusEnum / ReservationStatusEnum ✅
+- 7 个 VO：CategoryVO(树形) / BookSimpleVO / BookDetailVO / BorrowRecordVO / ReservationVO / UserManageVO(脱敏) / UpdateUserDTO ✅
+- CategoryService：getTree() O(n) 内存组装 / listByParentId() / getById() ✅
+- BookService：getById() 含分类名联查 / getByIsbn() / listByIds() 批量 ✅
+- UserService：getProfile() 无密码泄露 / updateProfile() / getManageVO() 脱敏 ✅
+- CategoryController：3 个端点（GET /categories/tree / /categories / /categories/{id}）✅
+- `library-core` 模块 16 项单元测试全绿 ✅
+- 阶段间交叉审计修复：GlobalExceptionHandler 全量 37 个 ErrorCode→HTTP 映射修正 / CORS 路径修正 / @NoAuth 文档标注 ✅
+
 ### 待实现
-- 其余业务模块（图书检索/借阅/预约/推荐/知识图谱/智能采编）的 Controller/Service/Mapper/Entity 源码
+- 图书检索 / 借阅与预约 / 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller
 - 各中间件 Starter 引入（ES/Neo4j/RabbitMQ 的 auto-configuration）
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线
