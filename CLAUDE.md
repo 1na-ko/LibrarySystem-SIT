@@ -209,6 +209,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **分支**: `feature/<模块>-<简述>` / `fix/<模块>-<简述>`，Squash Merge → develop
 - **Java 编码**: 阿里巴巴 Java 开发手册 + 项目 `docs/CONTRIBUTING.md` 补充
 - **测试方法命名**: `should{预期行为}When{条件/输入}`
+- **测试统计口径**: 文档中"N 项测试全绿"指 `mvn surefire` 报告的**执行用例数**（含 `@ParameterizedTest` 参数化展开与 `@Nested` 嵌套类），而非 `@Test` 注解的物理方法数；归档记录一律以 surefire 执行用例数为准
 - **禁止**: Controller 直接调 Mapper、拼接 SQL、吞异常、push --force 到 main
 
 ---

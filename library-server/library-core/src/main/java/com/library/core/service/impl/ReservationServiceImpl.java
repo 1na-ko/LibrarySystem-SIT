@@ -23,7 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 预约管理服务实现.
@@ -118,17 +124,17 @@ public class ReservationServiceImpl implements ReservationService {
             throw new BizException(ErrorCode.CONFLICT);
         }
 
-        // 1. 先从 Redis ZSET 移除（失败则整个取消操作失败，避免残留）
+        // 1. 从 Redis ZSET 移除（失败降级：DB 为权威数据源，残留条目由 ReservationNotifier
+        //    的 popMin + findWaitingReservation 跳过非 WAITING 记录而安全忽略）
         String queueKey = QUEUE_KEY_PREFIX + reservation.getBookId();
         try {
             redisTemplate.opsForZSet().remove(queueKey, userId.toString());
         } catch (Exception e) {
-            log.error("Redis ZSET 移除失败，取消预约中止: bookId={}, error={}",
+            log.warn("Redis ZSET 移除失败，降级仅更新 DB（残留由通知器跳过）: bookId={}, error={}",
                     reservation.getBookId(), e.getMessage());
-            throw new BizException(ErrorCode.CONFLICT);
         }
 
-        // 2. 再更新 DB 状态（DB 为权威数据源）
+        // 2. 更新 DB 状态（DB 为权威数据源）
         reservation.setStatus(ReservationStatusEnum.CANCELLED);
         reservationMapper.updateById(reservation);
 
@@ -154,9 +160,8 @@ public class ReservationServiceImpl implements ReservationService {
         Page<Reservation> page = new Page<>(pageDTO.getPageNum(), pageDTO.getPageSize());
         IPage<Reservation> result = reservationMapper.selectPage(page, wrapper);
 
-        List<ReservationVO> records = result.getRecords().stream()
-                .map(this::toReservationVO)
-                .toList();
+        // 批量转换：一次查询关联图书，消除 N+1
+        List<ReservationVO> records = toReservationVOs(result.getRecords());
 
         return PageResult.of(records, result.getTotal(), pageDTO.getPageNum(), pageDTO.getPageSize());
     }
@@ -167,48 +172,92 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation == null) {
             throw new BizException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-
-        String queueKey = QUEUE_KEY_PREFIX + reservation.getBookId();
-        try {
-            Long rank = redisTemplate.opsForZSet().rank(queueKey, reservation.getUserId().toString());
-            if (rank == null) {
-                return null; // 不在队列中（可能已过期或取消）
-            }
-            return rank.intValue() + 1;
-        } catch (Exception e) {
-            log.warn("Redis ZSET 查询排队位置失败: reservationId={}, error={}",
-                    reservationId, e.getMessage());
-            return reservation.getQueuePosition(); // 降级返回上次记录的排队位置
-        }
+        return queryQueuePosition(reservation.getBookId(), reservation.getUserId(),
+                reservation.getQueuePosition());
     }
 
     // ==================== VO 转换 ====================
 
-    private ReservationVO toReservationVO(Reservation reservation) {
-        BookSimpleVO bookVO = null;
-        try {
-            List<BookSimpleVO> books = bookService.listByIds(List.of(reservation.getBookId()));
-            if (!books.isEmpty()) {
-                bookVO = books.get(0);
-            }
-        } catch (Exception e) {
-            log.warn("获取图书信息失败: bookId={}, error={}", reservation.getBookId(), e.getMessage());
+    /**
+     * 批量转换：一次查询所有关联图书，消除分页场景的 N+1 查询.
+     *
+     * @param reservations 预约记录列表
+     * @return 预约记录 VO 列表
+     */
+    private List<ReservationVO> toReservationVOs(List<Reservation> reservations) {
+        if (reservations.isEmpty()) {
+            return Collections.emptyList();
         }
+        Set<Long> bookIds = reservations.stream()
+                .map(Reservation::getBookId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, BookSimpleVO> bookMap = loadBookMap(bookIds);
+        return reservations.stream()
+                .map(r -> buildReservationVO(r, bookMap.get(r.getBookId())))
+                .toList();
+    }
 
-        // 实时获取排队位置
+    /**
+     * 单条转换（预约成功返回等单条场景）.
+     *
+     * @param reservation 预约记录
+     * @return 预约记录 VO
+     */
+    private ReservationVO toReservationVO(Reservation reservation) {
+        Set<Long> ids = reservation.getBookId() != null
+                ? Set.of(reservation.getBookId())
+                : Collections.emptySet();
+        return buildReservationVO(reservation, loadBookMap(ids).get(reservation.getBookId()));
+    }
+
+    /**
+     * 批量加载图书并以 ID 索引；查询失败降级为空 Map，不影响主流程.
+     *
+     * @param bookIds 图书 ID 集合
+     * @return id → BookSimpleVO 映射
+     */
+    private Map<Long, BookSimpleVO> loadBookMap(Set<Long> bookIds) {
+        if (bookIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            return bookService.listByIds(new ArrayList<>(bookIds)).stream()
+                    .collect(Collectors.toMap(BookSimpleVO::getId, b -> b, (a, b) -> a));
+        } catch (Exception e) {
+            log.warn("批量获取图书信息失败: bookIds={}, error={}", bookIds, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * 查询排队位置；Redis 不可用时降级返回上次持久化的位置.
+     *
+     * @param bookId   图书 ID
+     * @param userId   用户 ID
+     * @param fallback 持久化的排队位置（降级用）
+     * @return 实时排队位置（1-based），不在队列时返回 null
+     */
+    private Integer queryQueuePosition(Long bookId, Long userId, Integer fallback) {
+        String queueKey = QUEUE_KEY_PREFIX + bookId;
+        try {
+            Long rank = redisTemplate.opsForZSet().rank(queueKey, userId.toString());
+            return rank != null ? rank.intValue() + 1 : null;
+        } catch (Exception e) {
+            log.debug("查询排队位置失败，降级返回持久化值: bookId={}, userId={}", bookId, userId);
+            return fallback;
+        }
+    }
+
+    /**
+     * Reservation + 关联 BookSimpleVO → ReservationVO.
+     */
+    private ReservationVO buildReservationVO(Reservation reservation, BookSimpleVO bookVO) {
         Integer queuePosition = null;
         if (reservation.getStatus() == ReservationStatusEnum.WAITING) {
-            String queueKey = QUEUE_KEY_PREFIX + reservation.getBookId();
-            try {
-                Long rank = redisTemplate.opsForZSet().rank(queueKey, reservation.getUserId().toString());
-                if (rank != null) {
-                    queuePosition = rank.intValue() + 1;
-                }
-            } catch (Exception e) {
-                queuePosition = reservation.getQueuePosition();
-            }
+            queuePosition = queryQueuePosition(
+                    reservation.getBookId(), reservation.getUserId(), reservation.getQueuePosition());
         }
-
         return ReservationVO.builder()
                 .id(reservation.getId())
                 .userId(reservation.getUserId())
