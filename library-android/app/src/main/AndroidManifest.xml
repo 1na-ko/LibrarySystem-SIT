@@ -19,6 +19,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="34">
 
+        <!-- 启动页 -->
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true"
@@ -28,5 +29,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 图书编目 -->
+        <activity
+            android:name=".ui.admin.BookEditActivity"
+            android:exported="false"
+            android:label="@string/add_book_title"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <!-- 条码扫描 -->
+        <activity
+            android:name=".ui.scanner.ScanBarcodeActivity"
+            android:exported="false"
+            android:label="扫码"
+            android:theme="@style/Theme.LibrarySystem.Scan" />
+
     </application>
 </manifest>

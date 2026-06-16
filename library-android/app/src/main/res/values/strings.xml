@@ -1,7 +1,178 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">图书馆智能管理系统</string>
+
+    <!-- 底部导航 -->
     <string name="nav_search">搜索</string>
     <string name="nav_borrow">借阅</string>
     <string name="nav_profile">我的</string>
+
+    <!-- 借阅 -->
+    <string name="tab_all">全部</string>
+    <string name="tab_borrowing">借阅中</string>
+    <string name="tab_returned">已归还</string>
+    <string name="tab_overdue">已超期</string>
+    <string name="no_borrow_records">暂无借阅记录</string>
+    <string name="borrow_info">借阅信息</string>
+    <string name="borrow_date_label">借阅日期</string>
+    <string name="due_date_label">应还日期</string>
+    <string name="return_date_label">归还日期</string>
+    <string name="status_label">状态</string>
+    <string name="renew_count_label">续借次数</string>
+    <string name="fine_label">罚款金额</string>
+    <string name="renew_book">续借</string>
+    <string name="return_book">归还</string>
+    <string name="confirm_renew_title">确认续借</string>
+    <string name="confirm_renew_message">续借将延长借阅期限30天，确定要续借吗？</string>
+    <string name="confirm_return_title">确认归还</string>
+    <string name="confirm_return_message">确定要归还该书吗？</string>
+    <string name="return_success">归还成功</string>
+    <string name="renew_success_format">续借成功，新应还日期: %s</string>
+    <string name="borrow_date_format">借阅: %s</string>
+    <string name="due_date_format">应还: %s</string>
+    <string name="fine_format">罚款: ¥%.2f</string>
+    <string name="renew_count_format">%d/1</string>
+    <string name="isbn_format">ISBN: %s</string>
+    <string name="confirm_borrow_title">确认借阅</string>
+    <string name="confirm_borrow">确认借阅</string>
+    <string name="borrow_limit_hint">您当前已达到最大借阅数上限</string>
+    <string name="scan_borrow">扫码借书</string>
+    <string name="scanner_unavailable">扫码功能暂不可用</string>
+
+    <!-- 借阅状态 -->
+    <string name="status_borrowed">借阅中</string>
+    <string name="status_renewed">已续借</string>
+    <string name="status_returned">已归还</string>
+    <string name="status_overdue">已超期</string>
+
+    <!-- 预约 -->
+    <string name="tab_waiting">等待中</string>
+    <string name="tab_notified">已通知</string>
+    <string name="tab_reserved">已锁定</string>
+    <string name="tab_completed">已完成</string>
+    <string name="tab_cancelled">已取消</string>
+    <string name="no_reservations">暂无预约记录</string>
+    <string name="confirm_cancel_reservation">确认取消预约</string>
+    <string name="cannot_cancel">当前状态不可取消</string>
+    <string name="cancel_success">取消成功</string>
+    <string name="queue_position_format">排队第%d位</string>
+    <string name="status_waiting">等待中</string>
+    <string name="status_notified">已通知</string>
+    <string name="status_reserved">已锁定</string>
+    <string name="status_completed">已完成</string>
+    <string name="status_cancelled">已取消</string>
+    <string name="status_expired">已过期</string>
+
+    <!-- 知识图谱 -->
+    <string name="depth_label">深度:</string>
+    <string name="direction_label">方向:</string>
+    <string name="max_depth_label">深度:</string>
+    <string name="subject_name_hint">输入学科名称</string>
+    <string name="search_entity_hint">搜索知识实体</string>
+    <string name="chip_all">全部</string>
+    <string name="chip_book">图书</string>
+    <string name="chip_author">作者</string>
+    <string name="chip_keyword">关键词</string>
+    <string name="chip_subject">学科</string>
+
+    <!-- 系统管理 -->
+    <string name="search_user_hint">搜索用户名/姓名</string>
+    <string name="filter">筛选</string>
+    <string name="filter_users">筛选用户</string>
+    <string name="no_users">暂无用户数据</string>
+    <string name="status_updated">状态已更新</string>
+    <string name="freeze_user">冻结账户</string>
+    <string name="unfreeze_user">解冻账户</string>
+    <string name="disable_user">禁用账户</string>
+    <string name="status_active">正常</string>
+    <string name="status_frozen">已冻结</string>
+    <string name="status_disabled">已禁用</string>
+    <string name="role_student">学生</string>
+    <string name="role_teacher">教师</string>
+    <string name="role_librarian">图书管理员</string>
+    <string name="role_acquisitor">采编员</string>
+    <string name="role_admin">系统管理员</string>
+    <string name="borrow_count_format">借阅: %d</string>
+    <string name="overdue_count_format">超期: %d</string>
+
+    <!-- 图书编目 -->
+    <string name="add_book_title">新增图书</string>
+    <string name="edit_book_title">编辑图书</string>
+    <string name="save_book">保存</string>
+    <string name="delete_book">删除此书</string>
+    <string name="confirm_delete_title">确认删除</string>
+    <string name="confirm_delete_book_message">确定要删除此图书记录吗？此操作不可撤销。</string>
+    <string name="book_created">图书创建成功</string>
+    <string name="book_updated">图书更新成功</string>
+    <string name="book_deleted">图书已删除</string>
+    <string name="isbn_hint">ISBN</string>
+    <string name="book_title_hint">书名</string>
+    <string name="author_hint">作者</string>
+    <string name="publisher_hint">出版社</string>
+    <string name="pub_date_hint">出版日期</string>
+    <string name="total_copies_hint">总册数</string>
+    <string name="location_hint">馆藏位置</string>
+    <string name="description_hint">图书简介</string>
+    <string name="keywords_hint">关键词（逗号分隔）</string>
+
+    <!-- 条码扫描 -->
+    <string name="scan_isbn_hint">将 ISBN 条码置于取景框内</string>
+    <string name="scan_result_format">扫描结果: %s</string>
+
+    <!-- 超期管理 -->
+    <string name="no_overdue_records">无超期记录</string>
+
+    <!-- 通用 -->
+    <string name="load_error">加载失败，请检查网络</string>
+    <string name="retry">重试</string>
+    <string name="search">搜索</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="book_cover">图书封面</string>
+
+    <!-- 借阅确认弹窗 -->
+    <string name="borrow_success_format">《%s》借阅成功</string>
+    <string name="borrow_failed">借阅失败，请检查借阅资格</string>
+
+    <!-- 表单验证消息 -->
+    <string name="validation_title_required">书名不能为空</string>
+    <string name="validation_author_required">作者不能为空</string>
+    <string name="validation_isbn_required">ISBN 不能为空</string>
+    <string name="no_graph_data">暂无图谱数据</string>
+    <string name="no_trace_data">暂无溯源数据</string>
+    <string name="no_subject_data">暂无学科网络数据</string>
+    <string name="render_failed_format">渲染失败: %s</string>
+    <string name="default_subject">计算机科学</string>
+    <string name="trace_source_label">文献溯源: %s</string>
+    <string name="source_book_label">来源图书</string>
+    <string name="entity_type_book">图书</string>
+    <string name="entity_type_author">作者</string>
+    <string name="entity_type_keyword">关键词</string>
+    <string name="entity_type_subject">学科</string>
+    <string name="relation_authored_by">作者</string>
+    <string name="relation_has_keyword">关键词</string>
+    <string name="relation_belongs_to">属于</string>
+    <string name="relation_related_to">关联</string>
+    <string name="relation_published_in">出版</string>
+    <string name="relation_co_cited">共引</string>
+    <string name="relation_cites">引用</string>
+    <string name="all_filter">全部</string>
+    <string name="status_overdue_short">超期</string>
+    <string name="fine_overdue_format">罚款: ¥%.2f</string>
+    <string name="queue_detail_format">排队第 %d 位 / 共 %d 人等待</string>
+    <string name="notified_expire_hint">已通知，请在 48 小时内确认借阅，逾期自动释放</string>
+    <string name="cancel_reservation">取消预约</string>
+    <string name="filter_dialog_title">筛选用户</string>
+    <string name="user_action_title_format">%s (%s)</string>
+    <string name="no_subject_data_html">暂无学科网络数据</string>
+
+    <!-- 个人中心 -->
+    <string name="borrow_history">借阅历史</string>
+    <string name="borrow_stats">借阅统计</string>
+    <string name="recommendations">个性化推荐</string>
+    <string name="edit_profile">编辑资料</string>
+    <string name="logout">退出登录</string>
+    <string name="current_borrows_label">当前借阅</string>
+    <string name="total_borrows_label">历史借阅</string>
+    <string name="overdue_label">超期次数</string>
 </resources>
