@@ -1,16 +1,22 @@
 package com.library.core.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 图书详情视图对象.
  * <p>
- * 用于图书详情页展示，含全量字段。{@code reservationCount} 在 Phase 4 预约模块实现前暂为 0。
+ * 用于图书详情页展示，含全量字段。
+ * {@code reservationCount} 和 {@code relatedBooks} 在 Controller 层填充。
+ * {@code keywordsRaw} 内部存储为逗号分隔字符串，{@code keywords} 序列化为 JSON 数组以对齐 OpenAPI Schema。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -60,8 +66,18 @@ public class BookDetailVO {
     /** 馆藏位置 */
     private String location;
 
-    /** 关键词（逗号分隔） */
-    private String keywords;
+    /**
+     * 关键词（逗号分隔，内部存储用，序列化时隐藏）.
+     */
+    @JsonIgnore
+    private String keywordsRaw;
+
+    /**
+     * 关键词列表（用于 JSON 序列化，对齐 OpenAPI Schema: string[]）.
+     */
+    @JsonProperty("keywords")
+    @Builder.Default
+    private List<String> keywordList = Collections.emptyList();
 
     /** 累计借阅次数 */
     private Integer borrowCount;
@@ -69,4 +85,8 @@ public class BookDetailVO {
     /** 当前预约人数（Phase 4 实现，暂为 0） */
     @Builder.Default
     private Integer reservationCount = 0;
+
+    /** 相关图书列表（Controller 层填充） */
+    @Builder.Default
+    private List<BookSimpleVO> relatedBooks = Collections.emptyList();
 }

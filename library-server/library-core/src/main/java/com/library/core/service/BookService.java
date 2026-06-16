@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 图书基础服务接口.
  * <p>
- * 仅含纯 MySQL 查询，不含 ES 搜索（ES 搜索将在 Phase 3 的 BookSearchService 中实现）。
+ * 仅含纯 MySQL 查询，不含 ES 搜索（ES 搜索在 Phase 3 的 BookSearchService 中实现）。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -19,16 +19,27 @@ public interface BookService {
      * 根据 ID 获取图书详情.
      *
      * @param id 图书 ID
-     * @return 图书详情 VO（含 categoryName）
+     * @return 图书详情 VO（含 categoryName、reservationCount）
      * @throws com.library.common.exception.BizException 图书不存在时抛出 BOOK_NOT_FOUND
      */
     BookDetailVO getById(Long id);
 
     /**
+     * 根据 ID 获取图书详情（含预约人数）.
+     * <p>
+     * 相比 {@link #getById(Long)}，额外填充 {@code reservationCount} 字段。
+     *
+     * @param id 图书 ID
+     * @return 图书详情 VO（含 reservationCount）
+     */
+    BookDetailVO getDetail(Long id);
+
+    /**
      * 根据 ISBN 精确查询图书.
      *
      * @param isbn ISBN 号
-     * @return 图书详情 VO，不存在时返回 null
+     * @return 图书详情 VO
+     * @throws com.library.common.exception.BizException 图书不存在时抛出 BOOK_NOT_FOUND
      */
     BookDetailVO getByIsbn(String isbn);
 

@@ -5,15 +5,20 @@ import com.library.common.exception.BizException;
 import com.library.common.exception.ErrorCode;
 import com.library.core.entity.Book;
 import com.library.core.entity.Category;
+import com.library.core.entity.Reservation;
+import com.library.core.enums.ReservationStatusEnum;
 import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
+import com.library.core.mapper.ReservationMapper;
 import com.library.core.service.BookService;
 import com.library.core.vo.BookDetailVO;
 import com.library.core.vo.BookSimpleVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,8 +37,10 @@ public class BookServiceImpl implements BookService {
 
     private final BookMapper bookMapper;
     private final CategoryMapper categoryMapper;
+    private final ReservationMapper reservationMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public BookDetailVO getById(Long id) {
         Book book = bookMapper.selectById(id);
         if (book == null) {
@@ -43,18 +50,36 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public BookDetailVO getDetail(Long id) {
+        BookDetailVO vo = getById(id);
+
+        // 补充预约人数
+        long reservationCount = reservationMapper.selectCount(
+                new LambdaQueryWrapper<Reservation>()
+                        .eq(Reservation::getBookId, id)
+                        .eq(Reservation::getStatus, ReservationStatusEnum.WAITING)
+        );
+        vo.setReservationCount((int) reservationCount);
+
+        return vo;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public BookDetailVO getByIsbn(String isbn) {
         Book book = bookMapper.selectOne(
                 new LambdaQueryWrapper<Book>()
                         .eq(Book::getIsbn, isbn)
         );
         if (book == null) {
-            return null;
+            throw new BizException(ErrorCode.BOOK_NOT_FOUND);
         }
         return toDetailVO(book);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookSimpleVO> listByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
@@ -68,7 +93,7 @@ public class BookServiceImpl implements BookService {
     /**
      * Entity → BookDetailVO（含 categoryName 关联查询）.
      */
-    private BookDetailVO toDetailVO(Book book) {
+    BookDetailVO toDetailVO(Book book) {
         String categoryName = null;
         if (book.getCategoryId() != null) {
             Category category = categoryMapper.selectById(book.getCategoryId());
@@ -91,9 +116,23 @@ public class BookServiceImpl implements BookService {
                 .description(book.getDescription())
                 .coverUrl(book.getCoverUrl())
                 .location(book.getLocation())
-                .keywords(book.getKeywords())
+                .keywordsRaw(book.getKeywords())
+                .keywordList(buildKeywordList(book.getKeywords()))
                 .borrowCount(book.getBorrowCount())
                 .build();
+    }
+
+    /**
+     * 将逗号分隔的关键词字符串拆分为列表（trim 并过滤空串）.
+     */
+    static List<String> buildKeywordList(String keywords) {
+        if (keywords == null || keywords.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(keywords.split(","))
+                .map(String::trim)
+                .filter(k -> !k.isEmpty())
+                .toList();
     }
 
     /**

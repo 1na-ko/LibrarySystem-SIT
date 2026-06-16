@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-2 ✅ | 阶段 3-11 📋 待实施
+> **状态**: 阶段 0-3 ✅ | 阶段 4-11 📋 待实施
 > **最后更新**: 2026-06-16
 
 ---
@@ -169,9 +169,23 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - `library-core` 模块 16 项单元测试全绿 ✅
 - 阶段间交叉审计修复：GlobalExceptionHandler 全量 37 个 ErrorCode→HTTP 映射修正 / CORS 路径修正 / @NoAuth 文档标注 ✅
 
+### 已落地（阶段 3：核心业务—图书检索）
+- ES 客户端手动配置 `ElasticsearchClient` Bean（elasticsearch-java 8.11 + JacksonJsonpMapper）✅
+- ES 索引幂等初始化器 `EsIndexInitializer`（IK 分词 + Completion Suggester）✅
+- `BookDocument` ES 文档模型 + `BookESRepository`（全文搜索/高级搜索/自动补全/热门图书）✅
+- `BookSearchService`：Redis 缓存热点词（TTL 30min）+ ES 搜索 + 回写缓存 ✅
+- `RelatedBookService`：MySQL 同分类/同作者降级实现（KG 就绪后替换）✅
+- `BookController`：6 个端点（search / search/advanced / suggest / hot / {id} / {id}/related）✅
+- `AdminBookController`：3 个端点（POST/PUT/DELETE /admin/books），含乐观锁 + 事件发布 ✅
+- 领域事件：`BookCreatedEvent` / `BookUpdatedEvent` / `BookDeletedEvent`（Record）✅
+- `ESSyncListener`：`@Async @EventListener` 异步同步 MySQL → ES（3 次重试）✅
+- `BookDetailVO` 增强：keywordList（JSON 数组序列化）/ relatedBooks / reservationCount ✅
+- `BookRecommendVO` + `SuggestVO` 视图对象 ✅
+- 全量 254 项测试全绿（common 142 + core 40 + security 71 + bootstrap 1）✅
+
 ### 待实现
-- 图书检索 / 借阅与预约 / 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller
-- 各中间件 Starter 引入（ES/Neo4j/RabbitMQ 的 auto-configuration）
+- 借阅与预约 / 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller
+- 各中间件 Starter 引入（ES/Neo4j/RabbitMQ 的 auto-configuration）— ES 已通过手动配置启用
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线
 
