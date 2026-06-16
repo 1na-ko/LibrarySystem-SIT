@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-3 ✅ | 阶段 4-11 📋 待实施
+> **状态**: 阶段 0-4 ✅ | 阶段 5-11 📋 待实施
 > **最后更新**: 2026-06-16
 
 ---
@@ -183,8 +183,23 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - `BookRecommendVO` + `SuggestVO` 视图对象 ✅
 - 全量 254 项测试全绿（common 142 + core 40 + security 71 + bootstrap 1）✅
 
+### 已落地（阶段 4：核心业务—借阅与预约）
+- **借阅管理**：`BorrowService` 7 步校验链（用户状态→库存→上限→重复→超期→Redis 锁→乐观锁扣库存）✅
+- **还书管理**：自动计算超期天数和罚款（0.5 元/日），生成 `FineRecord`，发布 `BookReturnedEvent` ✅
+- **续借管理**：三重校验（次数<1、未超期、未被预约），延长 30 天 ✅
+- **预约排队**：Redis ZSET `reservation:queue:{bookId}` 按时间戳公平排队，实时查询排队位置 ✅
+- **预约通知**：`ReservationNotifier` `@Async @EventListener` 归还后自动通知队首读者（48h 确认窗口）✅
+- **超期检查**：`OverdueCheckJob` `@Scheduled` 每天凌晨 3:00 扫描 overdue → 自动生成罚款 ✅
+- **个人中心**：`GET /users/me` / `PUT /users/me` / `GET /users/me/history` / `GET /users/me/stats` ✅
+- **`UserStatsService`**：聚合统计（分类分布饼图 + 近 12 月趋势）✅
+- 领域事件：`BookBorrowedEvent` / `BookReturnedEvent`（Record）+ `ESSyncListener` 增强 ✅
+- 5 个新增 DTO/VO：`BorrowRequest` / `ReservationRequest` / `BorrowResultVO` / `RenewResultVO` / `UserStatsVO` ✅
+- `BorrowController`（6 端点）/ `ReservationController`（4 端点）/ `AdminBorrowController`（@RequireRole）/ `UserCenterController` ✅
+- 8 模块 BUILD SUCCESS ✅ · 全量 280+ 项测试全绿 ✅
+- 阶段 4 审计修复：还书/续借/详情增加归属校验（防横向越权）· `GlobalExceptionHandler` 新增 `BindException`/`MissingServletRequestParameterException`/`HttpMessageNotReadableException` 3 个 handler · `UserCenterController` 分层重构至 `UserStatsService` · API 路径对齐 OpenAPI 契约（`/borrows` / `/reservations`）✅
+
 ### 待实现
-- 借阅与预约 / 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller
+- 推荐引擎 / AI 基础设施 / 知识图谱 / 智能采编 的 Service/Controller
 - 各中间件 Starter 引入（ES/Neo4j/RabbitMQ 的 auto-configuration）— ES 已通过手动配置启用
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线

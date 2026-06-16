@@ -75,6 +75,24 @@ public class ESSyncListener {
     }
 
     /**
+     * 监听图书借出事件 → ES 更新 avail_copies 和 borrow_count.
+     */
+    @Async
+    @EventListener
+    public void onBookBorrowed(BookBorrowedEvent event) {
+        syncWithRetry(event.bookId(), "借出计数更新");
+    }
+
+    /**
+     * 监听图书归还事件 → ES 更新 avail_copies.
+     */
+    @Async
+    @EventListener
+    public void onBookReturned(BookReturnedEvent event) {
+        syncWithRetry(event.bookId(), "归还计数更新");
+    }
+
+    /**
      * 带重试的 ES 索引/更新同步.
      */
     private void syncWithRetry(Long bookId, String operation) {

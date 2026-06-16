@@ -23,6 +23,7 @@
 | [implementation/阶段1完成记录](implementation/阶段1完成记录.md) | 阶段 1（安全与认证）完成详情与架构决策记录 |
 | [implementation/阶段2完成记录](implementation/阶段2完成记录.md) | 阶段 2（核心业务—数据层 图书检索与服务）完成详情与架构决策记录 |
 | [implementation/阶段3完成记录](implementation/阶段3完成记录.md) | 阶段 3（核心业务—图书检索）完成详情与架构决策记录 |
+| [implementation/阶段4完成记录](implementation/阶段4完成记录.md) | 阶段 4（核心业务—借阅与预约）完成详情与架构决策记录 |
 | [implementation/前端人员B完成记录](implementation/前端人员B完成记录.md) | Android 前端人员 B — 借阅管理/预约管理/知识图谱/系统管理/条码扫描 完成详情 |
 
 ### 技术参考
