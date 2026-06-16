@@ -18,4 +18,18 @@
         android:id="@+id/profileFragment"
         android:name="com.library.android.ui.profile.ProfileFragment"
         android:label="我的" />
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.library.android.ui.login.LoginFragment"
+        android:label="登录">
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.library.android.ui.login.RegisterFragment"
+        android:label="注册" />
 </navigation>
