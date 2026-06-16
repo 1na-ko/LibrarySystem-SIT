@@ -5,6 +5,7 @@ import android.content.Context;
 import com.library.android.BuildConfig;
 import com.library.android.network.AuthApiService;
 import com.library.android.network.AuthInterceptor;
+import com.library.android.network.LibraryApi;
 import com.library.android.network.MockInterceptor;
 
 import java.util.concurrent.TimeUnit;
@@ -73,5 +74,11 @@ public class NetworkModule {
     @Singleton
     static AuthApiService provideAuthApiService(Retrofit retrofit) {
         return retrofit.create(AuthApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    static LibraryApi provideLibraryApi(Retrofit retrofit) {
+        return retrofit.create(LibraryApi.class);
     }
 }

@@ -8,7 +8,17 @@
     <fragment
         android:id="@+id/searchFragment"
         android:name="com.library.android.ui.search.SearchFragment"
-        android:label="搜索" />
+        android:label="搜索">
+        <action
+            android:id="@+id/action_searchFragment_to_bookDetailFragment"
+            app:destination="@id/bookDetailFragment" />
+        <action
+            android:id="@+id/action_searchFragment_to_advancedSearchFragment"
+            app:destination="@id/advancedSearchFragment" />
+        <action
+            android:id="@+id/action_searchFragment_to_categoryTreeFragment"
+            app:destination="@id/categoryTreeFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/borrowFragment"
@@ -18,8 +28,22 @@
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.library.android.ui.profile.ProfileFragment"
-        android:label="我的" />
+        android:label="我的">
+        <action
+            android:id="@+id/action_profileFragment_to_borrowHistoryFragment"
+            app:destination="@id/borrowHistoryFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_borrowStatsFragment"
+            app:destination="@id/borrowStatsFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_recommendationsFragment"
+            app:destination="@id/recommendationsFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
+    </fragment>
 
+    <!-- ======================== 认证模块（人员 A） ======================== -->
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.library.android.ui.login.LoginFragment"
@@ -33,6 +57,52 @@
         android:id="@+id/registerFragment"
         android:name="com.library.android.ui.login.RegisterFragment"
         android:label="注册" />
+
+    <!-- ======================== 图书检索模块（人员 A） ======================== -->
+    <fragment
+        android:id="@+id/bookDetailFragment"
+        android:name="com.library.android.ui.search.BookDetailFragment"
+        android:label="图书详情">
+        <argument
+            android:name="bookId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/advancedSearchFragment"
+        android:name="com.library.android.ui.search.AdvancedSearchFragment"
+        android:label="高级搜索" />
+
+    <fragment
+        android:id="@+id/categoryTreeFragment"
+        android:name="com.library.android.ui.search.CategoryTreeFragment"
+        android:label="分类浏览" />
+
+    <fragment
+        android:id="@+id/hotBooksFragment"
+        android:name="com.library.android.ui.search.HotBooksFragment"
+        android:label="热门图书" />
+
+    <!-- ======================== 个人中心（人员 A） ======================== -->
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.library.android.ui.profile.EditProfileFragment"
+        android:label="编辑资料" />
+
+    <fragment
+        android:id="@+id/borrowHistoryFragment"
+        android:name="com.library.android.ui.profile.BorrowHistoryFragment"
+        android:label="借阅历史" />
+
+    <fragment
+        android:id="@+id/borrowStatsFragment"
+        android:name="com.library.android.ui.profile.BorrowStatsFragment"
+        android:label="借阅统计" />
+
+    <fragment
+        android:id="@+id/recommendationsFragment"
+        android:name="com.library.android.ui.profile.RecommendationsFragment"
+        android:label="个性化推荐" />
 
     <!-- ======================== 借阅管理（人员 B） ======================== -->
     <fragment

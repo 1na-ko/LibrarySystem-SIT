@@ -42,4 +42,17 @@ public class BookRepository {
     public Single<Result<List<CategoryVO>>> getCategoryTree() {
         return Single.fromCallable(() -> api.getCategoryTree().execute().body());
     }
+
+    public Single<Result<List<Map<String, String>>>> getSuggestions(String prefix, int limit) {
+        return Single.fromCallable(() -> api.suggest(prefix, limit).execute().body());
+    }
+
+    public Single<Result<PageResult<BookVO>>> advancedSearch(
+            String title, String author, String isbn, String publisher,
+            Integer pubYearFrom, Integer pubYearTo, Long categoryId,
+            Boolean onlyAvailable, int pageNum, int pageSize) {
+        return Single.fromCallable(() -> api.advancedSearch(
+                title, author, isbn, publisher, pubYearFrom, pubYearTo,
+                categoryId, onlyAvailable, pageNum, pageSize).execute().body());
+    }
 }
