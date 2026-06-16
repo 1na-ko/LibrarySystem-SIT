@@ -44,6 +44,9 @@ public class BookDocument {
     /** 关键词（逗号分隔） */
     private String keywords;
 
+    /** 分类 ID（用于按分类精确筛选，与 categoryName 冗余存储以支持 term 查询） */
+    private Long categoryId;
+
     /** 分类名称 */
     private String categoryName;
 
@@ -52,6 +55,12 @@ public class BookDocument {
 
     /** 可借册数 */
     private Integer availCopies;
+
+    /** 封面 URL */
+    private String coverUrl;
+
+    /** 馆藏位置 */
+    private String location;
 
     /** 出版日期 */
     private LocalDate pubDate;

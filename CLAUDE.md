@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-5 ✅ | 阶段 6-11 📋 待实施
+> **状态**: 阶段 0-6 ✅ | 阶段 7-11 📋 待实施
 > **最后更新**: 2026-06-16
 
 ---
@@ -24,7 +24,7 @@
 |------|------|------|
 | Spring Boot | 3.5.0 | 核心框架 |
 | MyBatis-Plus | 3.5.5 | ORM |
-| MySQL | 8.0.35 | 关系存储 |
+| MySQL | 8.0.35（JDBC 驱动 8.0.33） | 关系存储 |
 | Redis | 7.2 | 缓存/分布式锁/预约队列 |
 | Elasticsearch | 8.11.0 | 全文搜索 |
 | Neo4j | 5.17.0 | 知识图谱 |
@@ -34,6 +34,9 @@
 | SpringDoc | 2.6.0 | OpenAPI 文档 |
 | HanLP | portable-1.8.5 | 中文分词（本地轻量） |
 | Commons Math | 3.6.1 | OLS 回归（简化 ARIMA） |
+| Redisson | 3.25.0 | 分布式锁/预约排队 |
+| Hutool | 5.8.25 | 通用工具集 |
+| MapStruct | 1.5.5.Final | 对象映射 |
 | DeepSeek API | - | LLM（NER/RE/谈判/推荐理由） |
 | 阿里云百炼 | - | Embedding 向量化 |
 
@@ -146,7 +149,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - `library-bootstrap` 启动类 + 4 个环境配置文件 ✅
 - logback-spring.xml 日志配置 ✅
 - Android Gradle 项目骨架（4 Fragment + 导航图）✅
-- Docker Compose 5 中间件编排 + IK 安装器 ✅
+- Docker Compose 4 中间件编排（MySQL/Redis/ES/RabbitMQ）+ IK 分词器安装脚本 ✅
 - `.editorconfig` + `.gitattributes` 跨平台代码风格 ✅
 
 ### 已落地（阶段 1：安全与认证）
@@ -155,7 +158,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - Redis Lua 令牌桶限流（认证 100/min·用户，登录注册 20/min·IP 防爆破）✅
 - RBAC 注解 `@RequireRole`/`@RequirePermission` + AOP 切面（KG Admin = LIBRARIAN + `kg:admin`）✅
 - 认证四端点（register/login/refresh/logout）+ BCrypt(12) ✅
-- `library-security` 模块 62 项单元测试全绿 ✅
+- `library-security` 模块 62 项单元测试全绿（管理端编目测试已于阶段 6 审计迁移至 library-core 的 BookAdminServiceTest）✅
 - 初始管理员种子（admin/Admin@123456，V4 迁移）✅
 
 ### 已落地（阶段 2：核心业务数据层）
@@ -178,7 +181,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - `BookController`：6 个端点（search / search/advanced / suggest / hot / {id} / {id}/related）✅
 - `AdminBookController`：3 个端点（POST/PUT/DELETE /admin/books），含乐观锁 + 事件发布 ✅
 - 领域事件：`BookCreatedEvent` / `BookUpdatedEvent` / `BookDeletedEvent`（Record）✅
-- `ESSyncListener`：`@Async @EventListener` 异步同步 MySQL → ES（3 次重试）✅
+- `ESSyncListener`：`@Async @TransactionalEventListener(AFTER_COMMIT)` 异步同步 MySQL → ES（3 次指数退避重试）✅
 - `BookDetailVO` 增强：keywordList（JSON 数组序列化）/ relatedBooks / reservationCount ✅
 - `BookRecommendVO` + `SuggestVO` 视图对象 ✅
 - 全量 254 项测试全绿（common 142 + core 40 + security 71 + bootstrap 1）✅
@@ -201,7 +204,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - 阶段 4 审计修复（第三轮——综合质量审计）：`getQueuePosition()` 横向越权修复（新增 `userId` 归属校验）· `@EventListener` → `@TransactionalEventListener(AFTER_COMMIT)` 修复事件时序竞态 · `AdminBorrowController` 路径 `/borrows` → `/admin/borrows`（消除与 `BorrowController` 路径重叠）· Job 独立 `REQUIRES_NEW` 事务组件（`OverdueBatchProcessor` / `ReservationExpireBatchProcessor`）· 搜索缓存失效（`BookSearchServiceImpl.evictAllSearchCache()`）· `ReservationZsetReconcileJob` 对账骨架 · ES 重试指数退避 · `RoleEnum` 文档补充 ✅
 
 ### 已落地（阶段 5：AI 基础设施）
-- `library-ai` 模块 13 个主源文件 + 28 项单元测试全绿 ✅
+- `library-ai` 模块 14 个主源文件（含 `AiExceptionHandler`）+ 28 项单元测试全绿 ✅
 - **LLM 服务**：`LlmService` / `LlmServiceImpl` — DeepSeek API（OpenAI-compatible），文本生成 + JSON Mode 结构化输出，reactor-retry 指数退避重试（最多 2 次），含 markdown 代码块剥离防御 ✅
 - **LLM 异常**：`LlmUnavailableException`（继承 RuntimeException），按故障类型分类（AUTH_FAILED / QUOTA_EXHAUSTED / SERVER_ERROR / NETWORK_ERROR / PARSE_ERROR / RETRY_EXHAUSTED）✅
 - **Embedding 服务**：`EmbeddingService` / `EmbeddingServiceImpl` — 阿里云百炼 DashScope API（text-embedding-v3，1024 维），批量自动拆批（≤25），空文本返回零向量 ✅
@@ -211,9 +214,32 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **DTO**：`LlmChatRequest` / `LlmChatResponse` / `EmbeddingRequest` / `EmbeddingResponse` — 完整 API 请求/响应映射 ✅
 - 8 模块 BUILD SUCCESS ✅ · 全量 313 项测试全绿（common 142 + ai 28 + core 71 + security 71 + bootstrap 1）✅
 
+### 已落地（阶段 6：图书推荐引擎）
+- **多路召回**：`CollaborativeFilteringService`（User-CF 余弦 + Item-CF Jaccard）+ `ContentBasedService`（Embedding 画像 + 余弦相似度）+ `KGBasedRecommendService`（桩，阶段 7 替换）✅
+- **加权融合**：`RecommendationService` 三路并行（CompletableFuture，5s 超时）+ CF 0.4/Content 0.3/KG 0.3 加权融合 ✅
+- **LLM 推荐理由**：批量 JSON Mode 生成个性化推荐理由 → `LlmUnavailableException` 降级至 5 条模板池 ✅
+- **Conditional 设计**：`EmbeddingService`/`LlmService` 条件注入（API Key 缺失时对应路径静默跳过/降级）✅
+- **配置化**：`RecommendationProperties` — 权重/Top-K/候选池上限/超时均可通过 `application.yml` 调参 ✅
+- **N+1 消除 / 全表扫描去重**：`RecommendationService` 顶层一次性加载全量借阅记录，分发 CF/Content 复用（单次请求全表扫描 4→1 次）；图书批量 `selectBatchIds` + 分类名 Map 回填 ✅
+- **工具类**：`SimilarityUtils`（cosine/jaccard/setCosine/normalize/mergeWithWeight）✅
+- `RecommendationController`（`GET /users/me/recommendations?limit=`，1-50，放 library-security）✅
+- 8 模块 BUILD SUCCESS ✅ · 全量 332 项测试全绿（common 143 + ai 28 + core 99 + security 62；bootstrap 1 项集成测试 @Disabled）✅
+- 阶段 6 完成记录归档至 `docs/implementation/阶段6完成记录.md` ✅
+
+### 已落地（阶段 6 后：跨阶段综合质量审计修复）
+
+> 对阶段 0-6 全量代码与文档进行四维度审计（实现质量/阶段配合/文档维护/架构落地）后，修复以下确认问题。详见 `docs/implementation/阶段6审计修复记录.md`。
+
+- **P0 ES 按分类筛选缺陷修复**：`BookDocument` / `EsIndexInitializer` / `ESSyncListener` 补 `categoryId`（+ `coverUrl` / `location`）字段，修复阶段 3 遗留的"按 categoryId 筛选静默返回空"功能缺陷（已存在 ES 索引需删除重建以生效新 mapping）✅
+- **P0 AdminBookController 分层合规**：提取 `BookAdminService`（`@Transactional`），Controller 不再直接调 Mapper（消除硬性禁止项①）；事件发布纳入事务边界，`AFTER_COMMIT` 时序保证真正生效；原 AdminBookControllerTest 9 项业务测试随逻辑下沉迁移至 library-core 的 BookAdminServiceTest ✅
+- **P1 推荐引擎优化**：并行召回改用隔离的 `taskExecutor`（替代 ForkJoinPool.commonPool，清理死代码 import）；顶层一次性加载全量借阅记录分发三路（单次请求全表扫描 4→1 次）；并行异常日志补堆栈 ✅
+- **P1 Redis 安全**：`evictAllSearchCache` 由 `KEYS` 改 `SCAN`（避免阻塞主线程），并上提至 `BookSearchService` 接口（消除 `ESSyncListener` 对具体实现类的依赖）✅
+- **P2 借阅健壮性**：还书恢复库存增加乐观锁对称防护（与借书一致，冲突重试一次）；`getHistory` 的 `YEAR()` 函数改为 `between` 日期范围（避免索引失效）；`V5__fine_record_unique_borrow.sql` 为 `fine_record.borrow_id` 加唯一约束（防 OverdueJob 与还书并发产生重复罚款）✅
+- **借书锁事务边界修复**：`BorrowServiceImpl.borrow()` 的 Redis 锁原在 `@Transactional` 方法 finally 内释放（早于事务提交，存在提交窗口竞态）；改用 `TransactionSynchronizationManager` 注册 `AFTER_COMMIT` 回调，锁延迟至事务提交后释放；无事务上下文时降级立即释放（单测兼容）；新增事务激活场景测试验证延迟释放路径 ✅
+
 ### 待实现
-- 推荐引擎 / 知识图谱 / 智能采编 的 Service/Controller
-- 各中间件 Starter 引入（Neo4j/RabbitMQ 的 auto-configuration）— ES 已通过手动配置启用
+- 知识图谱 / 智能采编 的 Service/Controller
+- 各中间件 Starter 引入（RabbitMQ auto-configuration）— Neo4j Starter 已由 library-knowledge-graph 引入，ES 已通过手动配置启用
 - 测试种子数据（`db/test-data/`）
 - CI/CD 流水线
 

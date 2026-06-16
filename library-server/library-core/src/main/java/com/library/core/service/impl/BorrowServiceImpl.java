@@ -34,6 +34,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -179,20 +181,56 @@ public class BorrowServiceImpl implements BorrowService {
             // 9. 发布事件（ES 同步）
             eventPublisher.publishEvent(new BookBorrowedEvent(bookId));
 
-            return BorrowResultVO.builder()
+            BorrowResultVO result = BorrowResultVO.builder()
                     .borrowId(record.getId())
                     .bookTitle(book.getTitle())
                     .dueDate(record.getDueDate())
                     .status(record.getStatus().name())
                     .build();
 
-        } finally {
-            // 10. 释放 Redis 锁
-            try {
-                redisTemplate.delete(lockKey);
-            } catch (Exception e) {
-                log.warn("释放 Redis 锁失败: key={}, error={}", lockKey, e.getMessage());
-            }
+            // 10. 锁延迟至事务提交后释放（@Transactional 提交发生在方法返回之后；
+            //     若在 finally 内提前释放，其他线程可能在提交窗口内抢锁读到旧库存）
+            deferLockRelease(lockKey);
+            return result;
+        } catch (Exception e) {
+            // 异常：事务将回滚，立即释放锁
+            releaseLockSafely(lockKey);
+            throw e;
+        }
+    }
+
+    /**
+     * 延迟释放 Redis 锁至事务提交后.
+     * <p>
+     * 事务激活时注册 {@link TransactionSynchronization} 的 AFTER_COMMIT 回调，
+     * 确保锁覆盖事务提交窗口；无事务上下文（如纯 Mockito 单测）时立即释放，保持单测行为不变。
+     *
+     * @param lockKey 锁键
+     */
+    private void deferLockRelease(String lockKey) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    releaseLockSafely(lockKey);
+                }
+            });
+        } else {
+            // 无事务上下文（单测场景），立即释放
+            releaseLockSafely(lockKey);
+        }
+    }
+
+    /**
+     * 安全释放 Redis 锁（吞掉 Redis 异常，仅记日志）.
+     *
+     * @param lockKey 锁键
+     */
+    private void releaseLockSafely(String lockKey) {
+        try {
+            redisTemplate.delete(lockKey);
+        } catch (Exception e) {
+            log.warn("释放 Redis 锁失败: key={}, error={}", lockKey, e.getMessage());
         }
     }
 
@@ -217,7 +255,17 @@ public class BorrowServiceImpl implements BorrowService {
         Book book = bookMapper.selectById(record.getBookId());
         if (book != null) {
             book.setAvailCopies(book.getAvailCopies() + 1);
-            bookMapper.updateById(book);
+            // 乐观锁防护（与借书对称）：version 冲突时刷新实体重试一次，仍失败抛 CONFLICT
+            if (bookMapper.updateById(book) == 0) {
+                Book fresh = bookMapper.selectById(record.getBookId());
+                if (fresh != null) {
+                    fresh.setAvailCopies(fresh.getAvailCopies() + 1);
+                    if (bookMapper.updateById(fresh) == 0) {
+                        log.warn("还书恢复库存乐观锁冲突（重试仍失败）: bookId={}", record.getBookId());
+                        throw new BizException(ErrorCode.CONFLICT);
+                    }
+                }
+            }
         } else {
             log.warn("归还时图书不存在（可能已被删除）: borrowId={}, bookId={}", borrowId, record.getBookId());
         }
@@ -373,7 +421,9 @@ public class BorrowServiceImpl implements BorrowService {
                 .orderByDesc(BorrowRecord::getCreateTime);
 
         if (year != null) {
-            wrapper.apply("YEAR(borrow_date) = {0}", year);
+            // 使用日期范围而非 YEAR() 函数，避免函数式条件导致索引失效（便于利用 user_id 索引定位后范围比较）
+            wrapper.between(BorrowRecord::getBorrowDate,
+                    LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
         }
 
         Page<BorrowRecord> page = new Page<>(pageDTO.getPageNum(), pageDTO.getPageSize());

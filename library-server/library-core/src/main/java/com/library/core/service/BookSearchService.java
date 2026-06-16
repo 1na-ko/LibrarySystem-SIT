@@ -53,4 +53,12 @@ public interface BookSearchService {
      * @return 热门图书列表
      */
     List<BookSimpleVO> hotBooks(Long categoryId, int limit);
+
+    /**
+     * 清除全部搜索缓存.
+     * <p>
+     * 图书变更（新增/修改/删除）时调用，通过 Redis SCAN 匹配 {@code search:*} 键并批量删除。
+     * Redis 不可用时静默降级，缓存将在 TTL（30min）后自然过期。
+     */
+    void evictAllSearchCache();
 }

@@ -10,11 +10,16 @@ import com.library.core.vo.BookSimpleVO;
 import com.library.core.vo.SuggestVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -151,15 +156,25 @@ public class BookSearchServiceImpl implements BookSearchService {
     /**
      * 清除全部搜索缓存.
      * <p>
-     * 图书变更（新增/修改/删除）时调用，通过 Redis SCAN 匹配 {@code search:*} 键并批量删除。
-     * Redis 不可用时静默降级，缓存将在 TTL（30min）后自然过期。
+     * 图书变更（新增/修改/删除）时调用，通过 Redis SCAN（非 KEYS，避免阻塞主线程）
+     * 匹配 {@code search:*} 键并批量删除。Redis 不可用时静默降级，缓存将在 TTL（30min）后自然过期。
      */
+    @Override
     public void evictAllSearchCache() {
         try {
-            Set<String> keys = redisTemplate.keys(CACHE_KEY_PREFIX + "*");
-            if (keys != null && !keys.isEmpty()) {
+            Set<String> keys = new HashSet<>();
+            redisTemplate.execute((RedisCallback<Void>) connection -> {
+                Cursor<byte[]> cursor = connection.keyCommands().scan(
+                        ScanOptions.scanOptions().match(CACHE_KEY_PREFIX + "*").count(500).build());
+                while (cursor.hasNext()) {
+                    keys.add(new String(cursor.next(), StandardCharsets.UTF_8));
+                }
+                cursor.close();
+                return null;
+            });
+            if (!keys.isEmpty()) {
                 redisTemplate.delete(keys);
-                log.info("搜索缓存已全局清除: {} 个键", keys.size());
+                log.info("搜索缓存已全局清除: {} 个键（SCAN）", keys.size());
             }
         } catch (Exception e) {
             log.warn("清除搜索缓存失败（Redis 不可用，缓存在 TTL 后自动过期）: {}", e.getMessage());

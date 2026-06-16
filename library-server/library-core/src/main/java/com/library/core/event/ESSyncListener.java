@@ -6,7 +6,7 @@ import com.library.core.mapper.BookMapper;
 import com.library.core.mapper.CategoryMapper;
 import com.library.core.repository.BookDocument;
 import com.library.core.repository.BookESRepository;
-import com.library.core.service.impl.BookSearchServiceImpl;
+import com.library.core.service.BookSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -34,7 +34,7 @@ public class ESSyncListener {
     private final BookESRepository bookESRepository;
     private final BookMapper bookMapper;
     private final CategoryMapper categoryMapper;
-    private final BookSearchServiceImpl bookSearchService;
+    private final BookSearchService bookSearchService;
 
     private static final int MAX_RETRIES = 3;
 
@@ -183,9 +183,12 @@ public class ESSyncListener {
                 .publisher(book.getPublisher())
                 .description(book.getDescription())
                 .keywords(book.getKeywords())
+                .categoryId(book.getCategoryId())
                 .categoryName(categoryName)
                 .borrowCount(book.getBorrowCount())
                 .availCopies(book.getAvailCopies())
+                .coverUrl(book.getCoverUrl())
+                .location(book.getLocation())
                 .pubDate(book.getPubDate())
                 .suggest(suggestInputs)
                 .build();

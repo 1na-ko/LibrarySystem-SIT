@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.core.mapper.BorrowRecordMapper">
+
+    <!--
+      协同过滤全量活跃借阅查询.
+      仅返回 user_id 和 book_id 用于构建用户-图书交互矩阵，
+      其余字段为 null（或默认值），调用方不应访问非 userId/bookId 字段.
+    -->
+    <select id="selectAllActiveForCF"
+            resultType="com.library.core.entity.BorrowRecord">
+        SELECT user_id, book_id
+        FROM borrow_record
+        WHERE deleted = 0
+          AND status IN ('BORROWED', 'RENEWED', 'RETURNED')
+    </select>
+
+</mapper>
