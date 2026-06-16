@@ -38,6 +38,10 @@ public final class StringUtils {
         if (str == null || str.length() <= maxLength) {
             return str;
         }
+        if (maxLength <= 3) {
+            // 省略号占位不足时直接截断，避免 substring 越界
+            return str.substring(0, Math.max(0, maxLength));
+        }
         return str.substring(0, maxLength - 3) + "...";
     }
 

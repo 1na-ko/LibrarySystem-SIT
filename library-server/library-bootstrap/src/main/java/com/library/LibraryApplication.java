@@ -1,5 +1,6 @@
 package com.library;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -21,6 +22,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 1.0.0
  */
 @SpringBootApplication(scanBasePackages = "com.library")
+@MapperScan("com.library.core.mapper")
 public class LibraryApplication {
 
     public static void main(String[] args) {
