@@ -2,7 +2,9 @@ package com.library.core.service;
 
 import com.library.common.exception.BizException;
 import com.library.core.entity.Book;
+import com.library.core.entity.Category;
 import com.library.core.mapper.BookMapper;
+import com.library.core.mapper.CategoryMapper;
 import com.library.core.service.impl.RelatedBookServiceImpl;
 import com.library.core.vo.BookRecommendVO;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -35,18 +39,34 @@ class RelatedBookServiceTest {
     @Mock
     private BookMapper bookMapper;
 
+    @Mock
+    private CategoryMapper categoryMapper;
+
     @InjectMocks
     private RelatedBookServiceImpl relatedBookService;
 
     private Book targetBook;
     private Book sameCategoryBook;
     private Book sameAuthorBook;
+    private Category category1;
+    private Category category2;
 
     @BeforeEach
     void setUp() {
         targetBook = buildBook(1L, "深入理解Java虚拟机", "周志明", 1L, 100);
         sameCategoryBook = buildBook(2L, "Java并发编程实战", "Brian Goetz", 1L, 80);
         sameAuthorBook = buildBook(3L, "深入理解计算机系统", "周志明", 2L, 60);
+
+        category1 = new Category();
+        category1.setId(1L);
+        category1.setName("计算机科学");
+        category2 = new Category();
+        category2.setId(2L);
+        category2.setName("操作系统");
+
+        // 为 toRecommendVO 中的分类名称查詢提供默认 Mock
+        lenient().when(categoryMapper.selectById(1L)).thenReturn(category1);
+        lenient().when(categoryMapper.selectById(2L)).thenReturn(category2);
     }
 
     @Nested

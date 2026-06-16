@@ -340,7 +340,7 @@ public class BorrowServiceImpl implements BorrowService {
                 BorrowStatusEnum statusEnum = BorrowStatusEnum.valueOf(status.toUpperCase());
                 wrapper.eq(BorrowRecord::getStatus, statusEnum);
             } catch (IllegalArgumentException e) {
-                // ignore invalid status filter
+                log.debug("无效的借阅状态筛选参数: {}", status);
             }
         }
 

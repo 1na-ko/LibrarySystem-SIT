@@ -21,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 图书基础服务实现.
@@ -85,8 +89,21 @@ public class BookServiceImpl implements BookService {
             return Collections.emptyList();
         }
         List<Book> books = bookMapper.selectBatchIds(ids);
+
+        // 批量查询分类名称，避免 N+1
+        Set<Long> categoryIds = books.stream()
+                .map(Book::getCategoryId)
+                .filter(cid -> cid != null)
+                .collect(Collectors.toSet());
+        Map<Long, String> categoryNameMap = Collections.emptyMap();
+        if (!categoryIds.isEmpty()) {
+            categoryNameMap = categoryMapper.selectBatchIds(categoryIds).stream()
+                    .collect(Collectors.toMap(Category::getId, Category::getName));
+        }
+
+        final Map<Long, String> nameMap = categoryNameMap;
         return books.stream()
-                .map(this::toSimpleVO)
+                .map(book -> toSimpleVO(book, nameMap.get(book.getCategoryId())))
                 .toList();
     }
 
@@ -137,8 +154,11 @@ public class BookServiceImpl implements BookService {
 
     /**
      * Entity → BookSimpleVO.
+     *
+     * @param book         图书实体
+     * @param categoryName 分类名称（可为 null）
      */
-    private BookSimpleVO toSimpleVO(Book book) {
+    private BookSimpleVO toSimpleVO(Book book, String categoryName) {
         return BookSimpleVO.builder()
                 .id(book.getId())
                 .isbn(book.getIsbn())
@@ -148,6 +168,7 @@ public class BookServiceImpl implements BookService {
                 .coverUrl(book.getCoverUrl())
                 .pubDate(book.getPubDate())
                 .availCopies(book.getAvailCopies())
+                .categoryName(categoryName)
                 .build();
     }
 }

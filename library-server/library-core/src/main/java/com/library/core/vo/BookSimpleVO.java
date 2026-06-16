@@ -45,4 +45,7 @@ public class BookSimpleVO {
 
     /** 可借册数 */
     private Integer availCopies;
+
+    /** 分类名称（用于搜索/列表展示） */
+    private String categoryName;
 }

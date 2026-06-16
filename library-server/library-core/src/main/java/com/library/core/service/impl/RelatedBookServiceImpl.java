@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.library.common.exception.BizException;
 import com.library.common.exception.ErrorCode;
 import com.library.core.entity.Book;
+import com.library.core.entity.Category;
 import com.library.core.mapper.BookMapper;
+import com.library.core.mapper.CategoryMapper;
 import com.library.core.service.RelatedBookService;
 import com.library.core.vo.BookRecommendVO;
 import com.library.core.vo.BookSimpleVO;
@@ -16,7 +18,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 相关图书服务实现.
@@ -33,6 +37,7 @@ import java.util.Set;
 public class RelatedBookServiceImpl implements RelatedBookService {
 
     private final BookMapper bookMapper;
+    private final CategoryMapper categoryMapper;
 
     private static final int MAX_LIMIT = 20;
     private static final double CATEGORY_SCORE = 0.7;
@@ -97,9 +102,18 @@ public class RelatedBookServiceImpl implements RelatedBookService {
     }
 
     /**
-     * Entity → BookRecommendVO.
+     * Entity → BookRecommendVO（含分类名称批量查詢）.
      */
     private BookRecommendVO toRecommendVO(Book book, double score, String reason) {
+        // 批量预加载已于 getRelated() 中完成一次 category 查询；
+        // 此处按需补充单个分类名称
+        String categoryName = null;
+        if (book.getCategoryId() != null) {
+            Category category = categoryMapper.selectById(book.getCategoryId());
+            if (category != null) {
+                categoryName = category.getName();
+            }
+        }
         return BookRecommendVO.builder()
                 .book(BookSimpleVO.builder()
                         .id(book.getId())
@@ -110,6 +124,7 @@ public class RelatedBookServiceImpl implements RelatedBookService {
                         .coverUrl(book.getCoverUrl())
                         .pubDate(book.getPubDate())
                         .availCopies(book.getAvailCopies())
+                        .categoryName(categoryName)
                         .build())
                 .score(score)
                 .reason(reason)
