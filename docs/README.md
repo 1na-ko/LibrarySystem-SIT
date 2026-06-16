@@ -20,6 +20,9 @@
 |------|------|
 | [implementation/后端分阶段实施计划](implementation/后端分阶段实施计划.md) | 11 阶段的完整实施路线图，含 126 项具体任务、依赖关系、验证清单 |
 | [implementation/阶段0完成记录](implementation/阶段0完成记录.md) | 阶段 0（基础设施底座）完成详情与架构决策记录 |
+| [implementation/阶段1完成记录](implementation/阶段1完成记录.md) | 阶段 1（安全与认证）完成详情与架构决策记录 |
+| [implementation/阶段2完成记录](implementation/阶段2完成记录.md) | 阶段 2（图书检索与服务）完成详情与架构决策记录 |
+| [implementation/前端人员B完成记录](implementation/前端人员B完成记录.md) | Android 前端人员 B — 借阅管理/预约管理/知识图谱/系统管理/条码扫描 完成详情 |
 
 ### 技术参考
 
@@ -44,7 +47,10 @@ docs/
 │   └── init.sql                       # Docker MySQL 初始化
 └── implementation/                     # 实施计划与进度记录
     ├── 后端分阶段实施计划.md            # 11 阶段实施路线图
-    └── 阶段0完成记录.md                 # 阶段 0 完成详情
+    ├── 阶段0完成记录.md                 # 阶段 0 完成详情
+    ├── 阶段1完成记录.md                 # 阶段 1 完成详情
+    ├── 阶段2完成记录.md                 # 阶段 2 完成详情
+    └── 前端人员B完成记录.md             # Android 前端人员 B 完成详情
 ```
 
 ---
