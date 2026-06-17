@@ -10,7 +10,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.library.android.R;
 import com.library.android.databinding.ActivityMainBinding;
-import com.library.android.util.TokenManager;
+import com.library.android.network.TokenManager;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     TokenManager tokenManager;
 
     private ActivityMainBinding binding;
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
         NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
-        NavController navController = navHost.getNavController();
+        navController = navHost.getNavController();
         NavigationUI.setupWithNavController(
                 binding.bottomNavigation, navController);
 
@@ -58,6 +59,14 @@ public class MainActivity extends AppCompatActivity {
 
         if (!tokenManager.isLoggedIn()) {
             navController.navigate(R.id.loginFragment);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        // 优先由 NavController 处理返回，当前已是最顶层时才退出
+        if (!navController.navigateUp()) {
+            super.onBackPressed();
         }
     }
 }

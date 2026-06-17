@@ -55,6 +55,8 @@ public class BorrowStatsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+
         viewModel.getBorrowStats().observe(getViewLifecycleOwner(), stats -> {
             if (stats != null) {
                 bindStats(stats);

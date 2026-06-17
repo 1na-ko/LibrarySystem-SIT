@@ -67,7 +67,30 @@ public class SearchFragment extends Fragment {
         setupSearchBar();
         setupObservers();
 
-        viewModel.loadHomeData();
+        // 检查是否携带了高级搜索参数
+        Bundle args = getArguments();
+        if (args != null && (args.containsKey("title") || args.containsKey("author")
+                || args.containsKey("isbn") || args.containsKey("publisher"))) {
+            handleAdvancedSearchArgs(args);
+        } else {
+            viewModel.loadHomeData();
+        }
+    }
+
+    private void handleAdvancedSearchArgs(Bundle args) {
+        String title = args.getString("title");
+        String author = args.getString("author");
+        String isbn = args.getString("isbn");
+        String publisher = args.getString("publisher");
+        Integer pubYearFrom = args.containsKey("pubYearFrom") ? args.getInt("pubYearFrom") : null;
+        Integer pubYearTo = args.containsKey("pubYearTo") ? args.getInt("pubYearTo") : null;
+        Boolean onlyAvailable = args.containsKey("onlyAvailable") ? args.getBoolean("onlyAvailable") : null;
+
+        binding.scrollHome.setVisibility(View.GONE);
+        binding.layoutSearchResults.setVisibility(View.VISIBLE);
+        binding.layoutResultHeader.setVisibility(View.GONE);
+
+        viewModel.searchAdvanced(title, author, isbn, publisher, pubYearFrom, pubYearTo, onlyAvailable);
     }
 
     private void setupAdapters() {
@@ -101,13 +124,24 @@ public class SearchFragment extends Fragment {
         binding.rvHotBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvHotBooks.setAdapter(hotBookAdapter);
 
+        // 返回首页按钮
+        binding.btnBackToHome.setOnClickListener(v -> {
+            binding.scrollHome.setVisibility(View.VISIBLE);
+            binding.layoutSearchResults.setVisibility(View.GONE);
+            binding.layoutResultHeader.setVisibility(View.GONE);
+            binding.etSearch.setText("");
+            binding.rvSuggestions.setVisibility(View.GONE);
+            binding.tvResultInfo.setText("");
+        });
+
         // 分类导航适配器
         categoryAdapter = new CategoryAdapter(category -> {
-            Bundle bundle = new Bundle();
-            bundle.putLong("categoryId", category.getId());
-            bundle.putString("categoryName", category.getName());
-            Navigation.findNavController(requireView())
-                    .navigate(R.id.action_searchFragment_to_bookDetailFragment, bundle);
+            binding.scrollHome.setVisibility(View.GONE);
+            binding.layoutSearchResults.setVisibility(View.VISIBLE);
+            binding.layoutResultHeader.setVisibility(View.VISIBLE);
+            binding.tvResultTitle.setText(category.getName());
+            binding.etSearch.setText(category.getName());
+            viewModel.searchByCategory(category.getId(), category.getName());
         });
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvCategories.setAdapter(categoryAdapter);
@@ -144,6 +178,9 @@ public class SearchFragment extends Fragment {
                 String keyword = binding.etSearch.getText().toString().trim();
                 if (!keyword.isEmpty()) {
                     binding.rvSuggestions.setVisibility(View.GONE);
+                    binding.scrollHome.setVisibility(View.GONE);
+                    binding.layoutSearchResults.setVisibility(View.VISIBLE);
+                    binding.layoutResultHeader.setVisibility(View.GONE);
                     viewModel.search(keyword);
                 }
                 return true;

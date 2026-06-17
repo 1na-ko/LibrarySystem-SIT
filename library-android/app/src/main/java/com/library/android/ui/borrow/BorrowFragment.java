@@ -177,7 +177,7 @@ public class BorrowFragment extends Fragment {
                 b.textFine.setVisibility(View.GONE);
             }
 
-            b.itemView.setOnClickListener(v -> {
+            b.getRoot().setOnClickListener(v -> {
                 Bundle args = new Bundle();
                 args.putLong("borrowId", item.getId());
                 Navigation.findNavController(v).navigate(
@@ -196,7 +196,7 @@ public class BorrowFragment extends Fragment {
             }
         }
 
-        class DiffCallback extends androidx.recyclerview.widget.DiffUtil.ItemCallback<BorrowRecordVO> {
+        static class DiffCallback extends androidx.recyclerview.widget.DiffUtil.ItemCallback<BorrowRecordVO> {
             @Override
             public boolean areItemsTheSame(@NonNull BorrowRecordVO old, @NonNull BorrowRecordVO n) {
                 return old.getId() == n.getId();

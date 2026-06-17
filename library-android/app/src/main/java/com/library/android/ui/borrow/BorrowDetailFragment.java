@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowDetailBinding;
 import com.library.android.model.BorrowRecordVO;
 import com.library.android.viewmodel.BorrowDetailViewModel;
@@ -43,6 +44,8 @@ public class BorrowDetailFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(BorrowDetailViewModel.class);
+
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
 
         if (getArguments() != null) {
             borrowId = getArguments().getLong("borrowId", 0);

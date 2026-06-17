@@ -71,7 +71,11 @@
     <fragment
         android:id="@+id/advancedSearchFragment"
         android:name="com.library.android.ui.search.AdvancedSearchFragment"
-        android:label="高级搜索" />
+        android:label="高级搜索">
+        <action
+            android:id="@+id/action_advancedSearchFragment_to_searchFragment"
+            app:destination="@id/searchFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/categoryTreeFragment"

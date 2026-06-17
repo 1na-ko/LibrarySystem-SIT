@@ -13,7 +13,7 @@
         android:id="@+id/ivExpand"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:src="@android:drawable/arrow_right_light"
+        android:src="@drawable/ic_arrow_right"
         android:visibility="gone" />
 
     <TextView

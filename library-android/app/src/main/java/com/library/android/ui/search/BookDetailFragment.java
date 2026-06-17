@@ -50,6 +50,8 @@ public class BookDetailFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(BookDetailViewModel.class);
 
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+
         bookId = getArguments() != null ? getArguments().getLong("bookId", 0) : 0;
 
         // 相关推荐

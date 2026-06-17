@@ -316,12 +316,10 @@
         <!-- 登录按钮 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_login"
-            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:text="登录"
-            app:backgroundTint="@color/primary"
-            app:iconTint="@color/white" />
+            app:backgroundTint="@color/primary" />
 
         <!-- 退出登录按钮 -->
         <com.google.android.material.button.MaterialButton

@@ -17,6 +17,7 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowHistoryBinding;
 import com.library.android.databinding.ItemHistoryBinding;
 import com.library.android.model.BorrowRecordVO;
+import com.library.android.model.PageResult;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.viewmodel.ProfileViewModel;
 
@@ -99,8 +100,8 @@ public class BorrowHistoryFragment extends Fragment {
 
     private void setupObservers() {
         viewModel.getBorrowHistory().observe(getViewLifecycleOwner(), page -> {
-            if (page != null && page.getList() != null && !page.getList().isEmpty()) {
-                adapter.submitList(page.getList());
+            if (page != null && page.getRecords() != null && !page.getRecords().isEmpty()) {
+                adapter.submitList(page.getRecords());
                 binding.layoutEmpty.setVisibility(View.GONE);
             } else {
                 adapter.submitList(new ArrayList<>());

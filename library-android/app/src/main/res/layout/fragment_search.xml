@@ -161,6 +161,37 @@
             android:orientation="vertical"
             android:visibility="gone">
 
+            <!-- 分类/搜索结果头部（含返回按钮） -->
+            <LinearLayout
+                android:id="@+id/layoutResultHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:visibility="gone"
+                android:background="@color/white">
+
+                <ImageButton
+                    android:id="@+id/btnBackToHome"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@android:drawable/ic_menu_revert"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="返回首页" />
+
+                <TextView
+                    android:id="@+id/tvResultTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/gray" />
+
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/tvResultInfo"
                 android:layout_width="match_parent"

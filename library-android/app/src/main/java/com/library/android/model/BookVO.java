@@ -2,10 +2,12 @@ package com.library.android.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
+
 /**
  * 图书完整信息.
  */
-public class BookVO {
+public class BookVO implements Serializable {
 
     @SerializedName("id")
     private long id;

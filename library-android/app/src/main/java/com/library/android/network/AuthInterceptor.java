@@ -3,7 +3,7 @@ package com.library.android.network;
 import android.content.Context;
 import android.util.Log;
 
-import com.library.android.util.TokenManager;
+import com.library.android.network.TokenManager;
 
 import java.io.IOException;
 

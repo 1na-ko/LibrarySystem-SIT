@@ -10,7 +10,7 @@ import com.library.android.model.LoginRequest;
 import com.library.android.model.LoginResponse;
 import com.library.android.model.Result;
 import com.library.android.network.AuthApiService;
-import com.library.android.util.TokenManager;
+import com.library.android.network.TokenManager;
 
 import javax.inject.Inject;
 

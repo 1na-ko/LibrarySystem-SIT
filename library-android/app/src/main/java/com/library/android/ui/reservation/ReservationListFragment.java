@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -58,6 +59,8 @@ public class ReservationListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ReservationViewModel.class);
 
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+
         setupTabs();
         setupRecyclerView();
         observeViewModel();
@@ -95,7 +98,7 @@ public class ReservationListFragment extends Fragment {
 
             @Override
             public void onSwiped(@NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder, int direction) {
-                int pos = viewHolder.getBindingAdapterPosition();
+                int pos = viewHolder.getAdapterPosition();
                 ReservationVO item = adapter.getCurrentList().get(pos);
                 if (item.canCancel()) {
                     new MaterialAlertDialogBuilder(requireContext())
@@ -204,7 +207,7 @@ public class ReservationListFragment extends Fragment {
             }
         }
 
-        class DiffCallback extends androidx.recyclerview.widget.DiffUtil.ItemCallback<ReservationVO> {
+        static class DiffCallback extends androidx.recyclerview.widget.DiffUtil.ItemCallback<ReservationVO> {
             @Override
             public boolean areItemsTheSame(@NonNull ReservationVO o, @NonNull ReservationVO n) {
                 return o.getId() == n.getId();

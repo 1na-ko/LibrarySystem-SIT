@@ -34,6 +34,8 @@ public class AdvancedSearchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+
         binding.btnSearch.setOnClickListener(v -> {
             String title = binding.etTitle.getText().toString().trim();
             String author = binding.etAuthor.getText().toString().trim();

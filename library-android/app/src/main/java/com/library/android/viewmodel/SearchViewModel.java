@@ -48,7 +48,13 @@ public class SearchViewModel extends ViewModel {
     private final CompositeDisposable disposables = new CompositeDisposable();
 
     private String currentKeyword;
+    private Long currentCategoryId;
     private int currentPage = 1;
+
+    // 高级搜索参数
+    private String advTitle, advAuthor, advIsbn, advPublisher;
+    private Integer advPubYearFrom, advPubYearTo;
+    private Boolean advOnlyAvailable;
 
     @Inject
     public SearchViewModel(BookRepository bookRepository) {
@@ -100,9 +106,44 @@ public class SearchViewModel extends ViewModel {
         );
     }
 
+    /** 按分類搜索图书. */
+    public void searchByCategory(long categoryId, String categoryName) {
+        currentKeyword = null;
+        currentCategoryId = categoryId;
+        currentPage = 1;
+        hasMore.setValue(true);
+        loading.setValue(true);
+
+        disposables.add(
+            bookRepository.searchBooks(null, null, categoryId, null, currentPage, PAGE_SIZE)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    result -> {
+                        loading.setValue(false);
+                        if (result.isSuccess() && result.getData() != null) {
+                            PageResult<BookVO> page = result.getData();
+                            searchResults.setValue(page.getList());
+                            totalResults.setValue((int) page.getTotal());
+                            hasMore.setValue(currentPage < page.getPages());
+                        } else {
+                            errorMessage.setValue(result.getMessage());
+                        }
+                    },
+                    throwable -> {
+                        loading.setValue(false);
+                        Log.e(TAG, "分类搜索失败", throwable);
+                        errorMessage.setValue("分类搜索失败：" + throwable.getMessage());
+                    }
+                )
+        );
+    }
+
     /** 搜索图书（首次搜索或切换关键词）. */
     public void search(String keyword) {
         currentKeyword = keyword;
+        currentCategoryId = null;
+        clearAdvancedParams();
         currentPage = 1;
         hasMore.setValue(true);
         loading.setValue(true);
@@ -117,7 +158,7 @@ public class SearchViewModel extends ViewModel {
                         if (result.isSuccess() && result.getData() != null) {
                             PageResult<BookVO> page = result.getData();
                             searchResults.setValue(page.getList());
-                            totalResults.setValue(page.getTotal());
+                            totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());
                         } else {
                             errorMessage.setValue(result.getMessage());
@@ -140,8 +181,18 @@ public class SearchViewModel extends ViewModel {
         currentPage++;
         loading.setValue(true);
 
+        io.reactivex.rxjava3.core.Single<Result<PageResult<BookVO>>> source;
+        if (isAdvancedMode()) {
+            source = bookRepository.advancedSearch(
+                    advTitle, advAuthor, advIsbn, advPublisher,
+                    advPubYearFrom, advPubYearTo, null, advOnlyAvailable,
+                    currentPage, PAGE_SIZE);
+        } else {
+            source = bookRepository.searchBooks(currentKeyword, null, currentCategoryId, null, currentPage, PAGE_SIZE);
+        }
+
         disposables.add(
-            bookRepository.searchBooks(currentKeyword, null, null, null, currentPage, PAGE_SIZE)
+            source
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -167,6 +218,67 @@ public class SearchViewModel extends ViewModel {
                     }
                 )
         );
+    }
+
+    /** 高级搜索. */
+    public void searchAdvanced(String title, String author, String isbn, String publisher,
+                               Integer pubYearFrom, Integer pubYearTo, Boolean onlyAvailable) {
+        currentKeyword = null;
+        currentCategoryId = null;
+        this.advTitle = title;
+        this.advAuthor = author;
+        this.advIsbn = isbn;
+        this.advPublisher = publisher;
+        this.advPubYearFrom = pubYearFrom;
+        this.advPubYearTo = pubYearTo;
+        this.advOnlyAvailable = onlyAvailable;
+        currentPage = 1;
+        hasMore.setValue(true);
+        loading.setValue(true);
+
+        disposables.add(
+            bookRepository.advancedSearch(
+                    advTitle, advAuthor, advIsbn, advPublisher,
+                    advPubYearFrom, advPubYearTo, null, advOnlyAvailable,
+                    currentPage, PAGE_SIZE)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    result -> {
+                        loading.setValue(false);
+                        if (result.isSuccess() && result.getData() != null) {
+                            PageResult<BookVO> page = result.getData();
+                            searchResults.setValue(page.getList());
+                            totalResults.setValue((int) page.getTotal());
+                            hasMore.setValue(currentPage < page.getPages());
+                        } else {
+                            errorMessage.setValue(result.getMessage());
+                        }
+                    },
+                    throwable -> {
+                        loading.setValue(false);
+                        Log.e(TAG, "高级搜索失败", throwable);
+                        errorMessage.setValue("高级搜索失败：" + throwable.getMessage());
+                    }
+                )
+        );
+    }
+
+    private void clearAdvancedParams() {
+        advTitle = null;
+        advAuthor = null;
+        advIsbn = null;
+        advPublisher = null;
+        advPubYearFrom = null;
+        advPubYearTo = null;
+        advOnlyAvailable = null;
+    }
+
+    /** 判断当前是否为高级搜索模式. */
+    private boolean isAdvancedMode() {
+        return advTitle != null || advAuthor != null || advIsbn != null
+                || advPublisher != null || advPubYearFrom != null
+                || advPubYearTo != null || advOnlyAvailable != null;
     }
 
     /** 获取搜索建议. */

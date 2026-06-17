@@ -51,6 +51,8 @@ public class AdminUserListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(AdminViewModel.class);
 
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+
         setupRecyclerView();
         setupSearch();
         observeViewModel();
@@ -157,14 +159,15 @@ public class AdminUserListFragment extends Fragment {
             b.textBorrows.setText(getString(R.string.borrow_count_format, item.getCurrentBorrows()));
             b.textOverdue.setText(getString(R.string.overdue_count_format, item.getTotalOverdue()));
 
-            b.itemView.setOnClickListener(v -> showUserActionDialog(item));
+            b.getRoot().setOnClickListener(v -> showUserActionDialog(item));
         }
 
         private void showUserActionDialog(UserManageVO user) {
+            String status = user.getStatus();
             String[] actions;
-            if (user.isActive()) {
+            if ("ACTIVE".equals(status)) {
                 actions = new String[]{getString(R.string.freeze_user), getString(R.string.disable_user)};
-            } else if (user.isFrozen()) {
+            } else if ("FROZEN".equals(status)) {
                 actions = new String[]{getString(R.string.unfreeze_user), getString(R.string.disable_user)};
             } else {
                 actions = new String[]{getString(R.string.unfreeze_user)};
@@ -175,9 +178,9 @@ public class AdminUserListFragment extends Fragment {
                             user.getRealName(), user.getUsername()))
                     .setItems(actions, (dialog, which) -> {
                         String newStatus;
-                        if (user.isActive()) {
+                        if ("ACTIVE".equals(status)) {
                             newStatus = which == 0 ? "FROZEN" : "DISABLED";
-                        } else if (user.isFrozen()) {
+                        } else if ("FROZEN".equals(status)) {
                             newStatus = which == 0 ? "ACTIVE" : "DISABLED";
                         } else {
                             newStatus = "ACTIVE";
@@ -210,7 +213,7 @@ public class AdminUserListFragment extends Fragment {
             }
         }
 
-        class DiffCallback extends androidx.recyclerview.widget.DiffUtil.ItemCallback<UserManageVO> {
+        static class DiffCallback extends androidx.recyclerview.widget.DiffUtil.ItemCallback<UserManageVO> {
             @Override
             public boolean areItemsTheSame(@NonNull UserManageVO o, @NonNull UserManageVO n) {
                 return o.getId() == n.getId();

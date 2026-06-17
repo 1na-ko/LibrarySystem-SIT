@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.library.android.R;
 import com.library.android.databinding.FragmentOverdueBinding;
 import com.library.android.databinding.ItemBorrowRecordBinding;
 import com.library.android.model.BorrowRecordVO;
@@ -62,6 +63,7 @@ public class OverdueFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         adapter = new OverdueAdapter();
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
         binding.recyclerView.setLayoutManager(layoutManager);
         binding.recyclerView.setAdapter(adapter);
@@ -113,7 +115,7 @@ public class OverdueFragment extends Fragment {
                         List<BorrowRecordVO> current = new ArrayList<>(adapter.getCurrentList());
                         current.addAll(result.getData().getRecords());
                         adapter.submitListSync(current);
-                        scrollListener.setHasMore(result.getData().hasNextPage());
+                        scrollListener.setHasMore(currentPage < result.getData().getTotalPages());
                     }
                 }, throwable -> {
                     isLoading = false;

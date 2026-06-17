@@ -13,8 +13,9 @@ import androidx.navigation.Navigation;
 
 import com.library.android.R;
 import com.library.android.databinding.FragmentProfileBinding;
+import com.library.android.model.BorrowStatsVO;
 import com.library.android.model.UserProfile;
-import com.library.android.util.TokenManager;
+import com.library.android.network.TokenManager;
 import com.library.android.viewmodel.ProfileViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -75,6 +76,9 @@ public class ProfileFragment extends Fragment {
 
         // 监听用户数据
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), this::updateUI);
+
+        // 监听借阅统计，填充概览数字
+        viewModel.getBorrowStats().observe(getViewLifecycleOwner(), this::updateBorrowOverview);
     }
 
     @Override
@@ -84,7 +88,11 @@ public class ProfileFragment extends Fragment {
         TokenManager tm = TokenManager.getInstance(requireContext());
         if (tm.isLoggedIn() && viewModel.getUserProfile().getValue() == null) {
             viewModel.loadProfile();
-        } else if (!tm.isLoggedIn()) {
+            viewModel.loadBorrowStats();
+        } else if (viewModel.getBorrowStats().getValue() == null && tm.isLoggedIn()) {
+            viewModel.loadBorrowStats();
+        }
+        if (!tm.isLoggedIn()) {
             updateUI(null);
         } else {
             updateUI(viewModel.getUserProfile().getValue());
@@ -127,6 +135,13 @@ public class ProfileFragment extends Fragment {
             binding.btnLogin.setVisibility(View.VISIBLE);
             binding.btnLogout.setVisibility(View.GONE);
         }
+    }
+
+    private void updateBorrowOverview(BorrowStatsVO stats) {
+        if (stats == null) return;
+        binding.tvCurrentBorrows.setText(String.valueOf(stats.getCurrentBorrows()));
+        binding.tvHistoryCount.setText(String.valueOf(stats.getTotalBorrows()));
+        binding.tvOverdueCount.setText(String.valueOf(stats.getTotalOverdue()));
     }
 
     @Override

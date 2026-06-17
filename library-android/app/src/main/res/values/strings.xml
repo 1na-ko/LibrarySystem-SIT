@@ -159,11 +159,11 @@
     <string name="all_filter">全部</string>
     <string name="status_overdue_short">超期</string>
     <string name="fine_overdue_format">罚款: ¥%.2f</string>
-    <string name="queue_detail_format">排队第 %d 位 / 共 %d 人等待</string>
+    <string name="queue_detail_format">排队第 %1$d 位 / 共 %2$d 人等待</string>
     <string name="notified_expire_hint">已通知，请在 48 小时内确认借阅，逾期自动释放</string>
     <string name="cancel_reservation">取消预约</string>
     <string name="filter_dialog_title">筛选用户</string>
-    <string name="user_action_title_format">%s (%s)</string>
+    <string name="user_action_title_format">%1$s (%2$s)</string>
     <string name="no_subject_data_html">暂无学科网络数据</string>
 
     <!-- 个人中心 -->

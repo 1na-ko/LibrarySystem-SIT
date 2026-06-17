@@ -3,7 +3,7 @@ package com.library.android.di;
 import android.content.Context;
 
 import com.library.android.LibraryApplication;
-import com.library.android.util.TokenManager;
+import com.library.android.network.TokenManager;
 
 import dagger.Module;
 import dagger.Provides;
