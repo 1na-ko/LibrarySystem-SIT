@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-9 ✅ | 阶段 10-11 📋 待实施
+> **状态**: 阶段 0-9 ✅ | 阶段 10 ✅（代码完成 + 审计修复，集成测试运行待 Docker Desktop 29 兼容修复）| 阶段 11 📋 待实施
 > **最后更新**: 2026-06-17
 
 ---
@@ -28,7 +28,7 @@
 | Redis | 7.2 | 缓存/分布式锁/预约队列 |
 | Elasticsearch | 8.11.0 | 全文搜索 |
 | Neo4j | 5.17.0 | 知识图谱 |
-| RabbitMQ | 3.12 | 异步消息（待引入 Starter） |
+| RabbitMQ | 3.12 | 异步消息（阶段10 事件总线已启用） |
 | Flyway | 9.22.3 | 数据库迁移 |
 | JJWT | 0.12.5 | JWT 令牌 |
 | SpringDoc | 2.6.0 | OpenAPI 文档 |
@@ -133,11 +133,11 @@ open http://localhost:8080/api/v1/swagger-ui.html
 
 ## 5. 关键设计决策
 
-1. **Modular Monolith** — 非微服务；按领域边界拆模块，通过 Spring Events 通信，未来可按需拆分
+1. **Modular Monolith** — 非微服务；按领域边界拆模块，通过 RabbitMQ 事件总线（领域事件 → `EventBusBridge` 在 `AFTER_COMMIT` 桥接 → `@RabbitListener` 消费）通信，未来可按需拆分
 2. **Flyway 管理 DDL** — `V1__init_schema.sql` 为基线，`V2__*.sql`/`V3__*.sql` 按 feature 分支追加；`docs/db/init.sql` 仅做 Docker 首启字符集设置
 3. **全局逻辑删除** — 所有业务表含 `deleted TINYINT NOT NULL DEFAULT 0`，MyBatis-Plus `logic-delete-field: deleted` 全局配置
 4. **LLM 降级策略** — 所有 DeepSeek API 调用含降级路径（API 不可用时回退至本地模板/规则）
-5. **ES 最终一致性** — MySQL 为主存储，ES 为搜索从存储，通过 Spring Events 异步同步（< 1s 延迟）
+5. **ES 最终一致性** — MySQL 为主存储，ES 为搜索从存储，通过 RabbitMQ 事件总线异步同步（< 1s 延迟，阶段10 由 Spring Events 迁移至 MQ）
 6. **`server.servlet.context-path: /api/v1`** — 全局路径前缀，Actuator `base-path: /` 使健康检查位于 `/api/v1/health`
 7. **环境变量** — `.env.example` 模板，实际 `.env` 不入库；`application.yml` 通过 `${VAR:默认值}` 读取
 
@@ -322,10 +322,40 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **9.6 定时任务总控增强**：`SchedulingConfig` 自定义 4 线程池 + `ReservationZsetReconcileJob` 骨架→完整（幽灵删除+孤儿补回）+ `EsRebuildJob` 每周日 4:00 全量重建（游标分批+批量写入+缓存清除）✅
 - **P3 技术债清理**：`SecurityConfig` 删除 `@EnableMethodSecurity` 死配置 / `application.yml` ES URI 补齐 `http://` scheme / `CorsConfig` 生产 `CORS_ALLOWED_ORIGINS` 白名单支持 ✅
 
+### 已落地（阶段 10：事件总线引入 + 集成测试与加固）
+
+> 引入 RabbitMQ 事件总线替代 Spring Application Events + Testcontainers 集成测试体系。详见 `docs/implementation/阶段10完成记录.md`。
+> 单元测试全绿 **368 项**（common 146 + ai 29 + core 105 + security 75 + kg 3 + acquisition 10；含 EventBusBridgeTest 6 项，core 99→105）；集成测试代码完成，运行受 Docker Desktop 29 兼容问题阻塞（待开 TCP 2375）。
+
+- **RabbitMQ 事件总线**：`EventBusBridge`（`@TransactionalEventListener(AFTER_COMMIT)` 桥接转发 5 领域事件到 MQ）+ `RabbitMqConfig`（Topic Exchange `library.events`/业务队列/死信 `library.events.dlx`）+ `EventBusConstants`（常量集中 core，依赖方向正确）+ 3 个 Listener 改 `@RabbitListener`（ESSyncListener/ReservationNotifier/KgBuildListener，移除手写重试统一 Spring AMQP RetryTemplate）；**业务发布点零改动** ✅
+- **双写一致性**：afterCommit 发 MQ + 持久化（不上 Outbox），EsRebuildJob 周级兜底 ✅
+- **文档冲突消除**：架构 §3.1 统一 RabbitMQ 事件总线，删除"Spring Events 替代"措辞 ✅
+- **Testcontainers 集成测试**：父 POM 引入 BOM 1.21.3 + 5 容器（MySQL/Redis/ES+IK/Neo4j/RabbitMQ）+ `@ServiceConnection`；`AbstractIntegrationTest` 基类；ES+IK 用 `Dockerfile.es-ik` 定制镜像（`ImageFromDockerfile` 自动构建） ✅
+- **JaCoCo 覆盖率**：父 POM `prepare-agent` + 单模块 `report`（excludes 排除非业务类）+ library-bootstrap `report-aggregate` 聚合报告（`target/site/jacoco-aggregate/`）✅
+- **integration profile**：`mvn test` 仅单元测试（默认排除 `**/integration/**`），`mvn test -Pintegration` 跑集成测试 ✅
+- **V100 种子数据**：`db/test-data/V100__test_seed.sql`（20 书/5 用户/50 借阅/10 预约/2 供应商/2 电子资源），三重隔离防污染生产（物理+配置+版本号） ✅
+- **16 个集成测试类**：10.1-10.16 + `EventBusReliabilityIntegrationTest`，代码完成编译通过 ✅
+- **本地 Makefile**：`make test`/`itest`/`itest-tcp`/`coverage`/`verify-all`（`.RECIPEPREFIX` 避免 tab） ✅
+
+### 已落地（阶段 10 后：综合质量审计修复）
+
+> 阶段 10 落地后，五并行子代理对阶段 0-10 全量做四维度回溯审计（实现质量/阶段配合/文档维护/契约一致性）+ 父代理核验，修复 7 项确认缺陷（5 P1 实现 + 2 P1 文档/工具）。详见 [`阶段10后审计修复记录.md`](docs/implementation/阶段10后审计修复记录.md)。
+> 全量 **370 项测试全绿**（common 146 + ai 29 + core 107 + security 75 + kg 3 + acquisition 10；core 105→107，新增 ESSyncListener borrowed/returned 不清缓存的 2 个测试）。
+
+- **P1 ESSyncListener evict 顺序与白名单**：原入口先 `evictAllSearchCache` 再写 ES → ES 失败重试 7s 期间出现"缓存空+ES 旧数据"窗口击穿；同时 `book.*` 队列接收所有事件（含借/还），借还高峰期每次都全量 SCAN+DELETE 缓存命中率塌陷。改为：① 先成功写/删 ES 再 evict（一致性）；② 仅 `created/updated/deleted` 触发 evict，`borrowed/returned` 仅改 availCopies/borrowCount，对全文检索无影响不参与失效 ✅
+- **P1 ReservationNotifier 异常隔离**：原全局 `try-catch (Exception)` 吞噬所有异常致 RetryTemplate 无法识别失败、3 次重试 + DLQ 兜底架构承诺彻底失效（DLQ 永远空）。改为业务级异常（NumberFormatException）catch+continue 不重试，基础设施异常（Redis/DB 不可达）自然抛出由 RetryTemplate 接管 ✅
+- **P1 EventBusBridge 移除 fallbackExecution=true**：5 个 `@TransactionalEventListener` 原 `fallbackExecution=true` 隐性削弱"AFTER_COMMIT 才发 MQ"不变量——未来若新增非事务发布点（容易疏漏）会致消费者读到脏数据。恢复默认 `false`（无事务时 Spring 输出 WARN 并丢弃事件，强制要求所有发布点必须在 `@Transactional` 内）✅
+- **P1 KgRelatedBookQueryService Cypher 1 跳→2 跳**：原 `MATCH (b:Book {id})-[*1]-(neighbor:Book)` 仅匹配 Book→Book 直接边（CITES），但 `GraphBuildService` 实际只创建 HAS_KEYWORD/AUTHORED_BY/BELONGS_TO（Book→中间实体），从不构建 CITES。**该 Port 实现长期返回空列表**，KG 相关推荐永远走 MySQL 降级。改为 2 跳通过中间实体：`-[:HAS_KEYWORD|AUTHORED_BY|BELONGS_TO]-()-[同上]-(neighbor:Book)` ✅
+- **P1 DuplicateCheckResultVO Jackson 字段名修正**：Lombok 为 `boolean isDuplicate` 生成 `isDuplicate()` getter，Jackson 默认序列化为 `"duplicate"`（剥离 is 前缀），与 OpenAPI 契约 `isDuplicate` 不一致——前端反序列化永远拿不到该字段，重复图书无法被识别拦截。加 `@JsonProperty("isDuplicate")` 强制 JSON 字段名 ✅
+- **P1 Makefile 补 itest-tcp**：CLAUDE.md / 阶段10完成记录 §5.2 均承诺 `make itest-tcp` 用于 Docker Desktop 29 兼容方案，但实际 Makefile 未定义该 target。补 `.PHONY` + 规则 `DOCKER_HOST=tcp://localhost:2375 mvn test -Pintegration` ✅
+- **P1 CLAUDE.md "Spring Events" 措辞修正**：§5 关键设计决策 #1 "通过 Spring Events 通信" 与阶段10 RabbitMQ 引入直接矛盾。改为"通过 RabbitMQ 事件总线（领域事件 → EventBusBridge 在 AFTER_COMMIT 桥接 → @RabbitListener 消费）通信" ✅
+- **登记保留项**（详见审计修复记录 §2）：RabbitListenerContainerFactory 显式声明（Spring Boot 自动装配已用 Jackson，子代理误判 P0 → 实际 P2）、OverdueBatchProcessor DuplicateKey rollback-only（核验后无实际影响）、BorrowService OVERDUE 24h 窗口（待业务确认）、`borrow_record` 同用户同书唯一约束（成本/收益权衡）、Publisher Confirms（设计上以周级兜底替代）、RBAC 测试 403 旁路（待集成测试运行后治理）
+
 ### 待实现
-- RabbitMQ Starter 正式引入（当前仅 docker-compose 编排）
-- 测试种子数据（`db/test-data/`）
-- CI/CD 流水线
+- ~~RabbitMQ Starter 正式引入~~ ✅ 阶段 10 已引入事件总线（`RabbitMqConfig`/`EventBusBridge`）
+- ~~测试种子数据（`db/test-data/`）~~ ✅ 阶段 10 已完成（`V100__test_seed.sql`）
+- ~~CI/CD 流水线~~ → 改为本地 Makefile 一键验证（不搭 GitHub Actions，费用约束）
+- 集成测试运行：受 Docker Desktop 29 兼容问题阻塞，需开启 TCP 2375（详见 `docs/implementation/阶段10完成记录.md` §5）
 
 ### 编码约定
 - **Commit**: [Conventional Commits](https://www.conventionalcommits.org/)，中文 subject
@@ -375,5 +405,5 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **文档优先** — `docs/系统架构设计文档.md` 是开发蓝本，优先以文档为准
 - **OpenAPI 契约** — `docs/api/library-api.yaml` 是前后端数据契约，修改 API 需同步更新
 - **健康检查路径** — `/api/v1/health`（非 `/actuator/health`）
-- **配置文件注释** — `application.yml` 中对暂未生效的配置项有详细说明（ES/RabbitMQ 等待引入 Starter）
+- **配置文件注释** — `application.yml` 中对配置项有详细说明（阶段10 RabbitMQ 事件总线已启用，ES/Neo4j/Redis/MySQL 均已生效）
 - **环境变量注入** — `.env` 文件仅作本地覆盖，所有配置键在 `application.yml` 中已有 `${VAR:默认值}` 默认值

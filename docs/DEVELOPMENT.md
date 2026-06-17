@@ -703,7 +703,7 @@ LibrarySystem-SIT/
 │   │       ├── config/                      #     SecurityConfig / JwtProperties / LuaScriptConfig ✅
 │   │       ├── service/                     #     AuthService ✅
 │   │       └── controller/                  #     Auth / Borrow / Reservation / UserCenter / Admin / Recommend ✅
-│   └── library-bootstrap/                   #   📦 启动聚合 ✅（1 项集成测试 @Disabled）
+│   └── library-bootstrap/                   #   📦 启动聚合 ✅（阶段10 集成测试启用，make itest）
 │       └── src/main/
 │           ├── java/com/library/
 │           │   ├── LibraryApplication.java  #     🚀 Spring Boot 启动类 ✅
@@ -714,7 +714,7 @@ LibrarySystem-SIT/
 │               ├── application-prod.yml     #     生产环境配置 ✅
 │               ├── application-test.yml     #     测试环境配置 ✅
 │               ├── logback-spring.xml       #     日志配置 ✅
-│               └── db/migration/            #     Flyway V1–V6 迁移脚本 ✅
+│               └── db/migration/            #     Flyway V1–V7 迁移脚本 ✅
 │
 ├── library-android/                         # 📱 Android 前端（独立 Gradle 项目）
 │   ├── build.gradle.kts                     #   项目级 Gradle 构建
