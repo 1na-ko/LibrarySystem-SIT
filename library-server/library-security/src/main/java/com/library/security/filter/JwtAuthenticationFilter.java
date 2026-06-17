@@ -7,6 +7,7 @@ import com.library.core.enums.RoleEnum;
 import com.library.core.enums.UserStatusEnum;
 import com.library.security.context.LoginUser;
 import com.library.security.jwt.JwtUtils;
+import com.library.security.token.TokenService;
 import com.library.security.util.SecurityResponseUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -53,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final ObjectMapper objectMapper;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -66,6 +68,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtUtils.parse(token);
             if (!jwtUtils.isAccess(claims)) {
+                writeError(response, ErrorCode.TOKEN_INVALID);
+                return;
+            }
+            // 校验 AT 是否在用户 logout 时间戳之前签发——若是则视为已撤销
+            // （无状态 AT 设计下的撤销机制，详见 TokenServiceImpl LOGOUT_KEY_PREFIX）
+            long userId = Long.parseLong(claims.getSubject());
+            long iatEpochSeconds = claims.getIssuedAt().toInstant().getEpochSecond();
+            if (tokenService.isAccessTokenLoggedOut(userId, iatEpochSeconds)) {
+                log.debug("Access Token 已被登出撤销: userId={}, iat={}", userId, iatEpochSeconds);
                 writeError(response, ErrorCode.TOKEN_INVALID);
                 return;
             }
