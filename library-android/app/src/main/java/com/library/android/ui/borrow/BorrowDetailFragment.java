@@ -15,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowDetailBinding;
 import com.library.android.model.BorrowRecordVO;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.BorrowDetailViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -45,7 +46,7 @@ public class BorrowDetailFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(BorrowDetailViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("借阅详情");
 
         if (getArguments() != null) {
             borrowId = getArguments().getLong("borrowId", 0);

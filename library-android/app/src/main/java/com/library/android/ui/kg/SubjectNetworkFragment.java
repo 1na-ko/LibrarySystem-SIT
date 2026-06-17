@@ -18,6 +18,8 @@ import com.library.android.databinding.FragmentSubjectNetworkBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.KnowledgeGraphVO;
+import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
 import org.json.JSONArray;
@@ -43,7 +45,9 @@ public class SubjectNetworkFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        binding = FragmentSubjectNetworkBinding.inflate(inflater, container, false);
+        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
+        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
+        binding = FragmentSubjectNetworkBinding.inflate(themedInflater, container, false);
         return binding.getRoot();
     }
 
@@ -52,7 +56,7 @@ public class SubjectNetworkFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("学科主题网络");
 
         setupWebView();
         observeViewModel();
@@ -82,7 +86,7 @@ public class SubjectNetworkFragment extends Fragment {
     private void observeViewModel() {
         viewModel.getSubjectNetwork().observe(getViewLifecycleOwner(), this::renderNetwork);
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
     }
 
     private void renderNetwork(KnowledgeGraphVO graph) {

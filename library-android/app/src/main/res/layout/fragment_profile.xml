@@ -3,151 +3,80 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/bg_primary">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/space_lg">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/nav_profile"
-            android:textSize="24sp"
-            android:textColor="@color/primary"
-            android:fontFamily="sans-serif-medium"
-            android:layout_marginBottom="16dp" />
-
-        <!-- 用户信息卡片 -->
+        <!-- ================================================================
+             User Info Card
+             ================================================================ -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardUserInfo"
+            style="@style/Widget.Library.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardElevation="2dp"
-            app:cardCornerRadius="12dp"
             android:layout_marginBottom="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvLoginStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="未登录"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/gray" />
+                <!-- Avatar placeholder — circle -->
+                <View
+                    android:id="@+id/ivAvatar"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_avatar_circle" />
 
-                <TextView
-                    android:id="@+id/tvUsername"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="@color/gray"
-                    android:layout_marginTop="4dp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/tvRealName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="@color/gray"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/tvEmail"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="@color/gray"
-                    android:visibility="gone" />
-
-                <!-- 借阅概览 -->
                 <LinearLayout
-                    android:id="@+id/layoutBorrowOverview"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="12dp"
-                    android:visibility="gone">
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:gravity="center_vertical">
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:id="@+id/tvLoginStatus"
+                        style="@style/TextAppearance.Library.Title"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:orientation="vertical">
+                        android:text="未登录" />
 
-                        <TextView
-                            android:id="@+id/tvCurrentBorrows"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primary" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/current_borrows_label"
-                            android:textSize="12sp"
-                            android:textColor="@color/gray" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:id="@+id/tvUsername"
+                        style="@style/TextAppearance.Library.BodySecondary"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:orientation="vertical">
+                        android:layout_marginTop="2dp"
+                        android:visibility="gone" />
 
-                        <TextView
-                            android:id="@+id/tvHistoryCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/gray" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/total_borrows_label"
-                            android:textSize="12sp"
-                            android:textColor="@color/gray" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:id="@+id/tvRole"
+                        style="@style/TextAppearance.Library.BodySecondary"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:orientation="vertical">
+                        android:visibility="gone" />
 
-                        <TextView
-                            android:id="@+id/tvOverdueCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/error" />
+                    <TextView
+                        android:id="@+id/tvRealName"
+                        style="@style/TextAppearance.Library.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/overdue_label"
-                            android:textSize="12sp"
-                            android:textColor="@color/gray" />
-
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/tvEmail"
+                        style="@style/TextAppearance.Library.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 
@@ -155,157 +84,121 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 功能入口列表 -->
+        <!-- ================================================================
+             Borrow Overview Row — three stat cards equally weighted
+             ================================================================ -->
         <LinearLayout
-            android:id="@+id/layoutFunctionEntries"
+            android:id="@+id/layoutBorrowOverview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
             android:visibility="gone">
 
+            <!-- Card 1: Current Borrows -->
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
+                android:id="@+id/cardCurrentBorrows"
+                style="@style/Widget.Library.Card"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground">
+                android:layout_weight="1"
+                android:layout_marginEnd="@dimen/space_sm">
 
                 <LinearLayout
-                    android:id="@+id/layoutBorrowHistory"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md"
+                    android:gravity="center">
 
                     <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/borrow_history"
-                        android:textSize="16sp"
-                        android:textColor="@color/gray" />
-
-                    <TextView
+                        android:id="@+id/tvCurrentBorrows"
+                        style="@style/TextAppearance.Library.Display"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="›"
-                        android:textSize="20sp"
-                        android:textColor="@color/gray" />
+                        android:textColor="@color/accent_available"
+                        android:gravity="center"
+                        android:text="0" />
+
+                    <TextView
+                        style="@style/TextAppearance.Library.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="当前借阅"
+                        android:gravity="center" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Card 2: Total Borrows -->
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
+                android:id="@+id/cardTotalBorrows"
+                style="@style/Widget.Library.Card"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground">
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/space_xs"
+                android:layout_marginEnd="@dimen/space_xs">
 
                 <LinearLayout
-                    android:id="@+id/layoutBorrowStats"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md"
+                    android:gravity="center">
 
                     <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/borrow_stats"
-                        android:textSize="16sp"
-                        android:textColor="@color/gray" />
-
-                    <TextView
+                        android:id="@+id/tvHistoryCount"
+                        style="@style/TextAppearance.Library.Display"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="›"
-                        android:textSize="20sp"
-                        android:textColor="@color/gray" />
+                        android:textColor="@color/text_primary"
+                        android:gravity="center"
+                        android:text="0" />
+
+                    <TextView
+                        style="@style/TextAppearance.Library.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="累计借阅"
+                        android:gravity="center" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Card 3: Overdue -->
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
+                android:id="@+id/cardOverdue"
+                style="@style/Widget.Library.Card"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground">
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/space_sm">
 
                 <LinearLayout
-                    android:id="@+id/layoutRecommendations"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md"
+                    android:gravity="center">
 
                     <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/recommendations"
-                        android:textSize="16sp"
-                        android:textColor="@color/gray" />
-
-                    <TextView
+                        android:id="@+id/tvOverdueCount"
+                        style="@style/TextAppearance.Library.Display"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="›"
-                        android:textSize="20sp"
-                        android:textColor="@color/gray" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground">
-
-                <LinearLayout
-                    android:id="@+id/layoutEditProfile"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                        android:textColor="@color/accent_cta"
+                        android:gravity="center"
+                        android:text="0" />
 
                     <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/edit_profile"
-                        android:textSize="16sp"
-                        android:textColor="@color/gray" />
-
-                    <TextView
+                        style="@style/TextAppearance.Library.Caption"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="›"
-                        android:textSize="20sp"
-                        android:textColor="@color/gray" />
+                        android:text="超期"
+                        android:gravity="center" />
 
                 </LinearLayout>
 
@@ -313,24 +206,246 @@
 
         </LinearLayout>
 
-        <!-- 登录按钮 -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_login"
+        <!-- ================================================================
+             Function Entry List — flat clickable rows (no MaterialCardView)
+             ================================================================ -->
+        <LinearLayout
+            android:id="@+id/layoutFunctionEntries"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="登录"
-            app:backgroundTint="@color/primary" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/bg_card"
+            android:visibility="gone">
 
-        <!-- 退出登录按钮 -->
+            <!-- Row 1: 借阅历史 -->
+            <LinearLayout
+                android:id="@+id/layoutBorrowHistory"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:background="@color/bg_card">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_nav_borrow"
+                    android:tint="@color/text_tertiary" />
+
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:text="借阅历史" />
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@color/text_tertiary" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/divider_thickness"
+                android:background="@color/border_light"
+                android:layout_marginStart="56dp" />
+
+            <!-- Row 2: 借阅统计 -->
+            <LinearLayout
+                android:id="@+id/layoutBorrowStats"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:background="@color/bg_card">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_nav_search"
+                    android:tint="@color/text_tertiary" />
+
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:text="借阅统计" />
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@color/text_tertiary" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/divider_thickness"
+                android:background="@color/border_light"
+                android:layout_marginStart="56dp" />
+
+            <!-- Row 3: 推荐书目 -->
+            <LinearLayout
+                android:id="@+id/layoutRecommendations"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:background="@color/bg_card">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_book_placeholder"
+                    android:tint="@color/text_tertiary" />
+
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:text="推荐书目" />
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@color/text_tertiary" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/divider_thickness"
+                android:background="@color/border_light"
+                android:layout_marginStart="56dp" />
+
+            <!-- Row 4: 编辑资料 -->
+            <LinearLayout
+                android:id="@+id/layoutEditProfile"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:background="@color/bg_card">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_nav_profile"
+                    android:tint="@color/text_tertiary" />
+
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:text="编辑资料" />
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@color/text_tertiary" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/divider_thickness"
+                android:background="@color/border_light"
+                android:layout_marginStart="56dp" />
+
+            <!-- Row 5: 我的预约 -->
+            <LinearLayout
+                android:id="@+id/layoutReservations"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:background="@color/bg_card">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_book_placeholder"
+                    android:tint="@color/text_tertiary" />
+
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:text="我的预约" />
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@color/text_tertiary" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ================================================================
+             Action Buttons
+             ================================================================ -->
+
+        <!-- Login button -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_logout"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:id="@+id/btnLogin"
+            style="@style/Widget.Library.Button.Primary"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="12dp"
-            android:text="@string/logout"
-            android:visibility="gone"
-            app:strokeColor="@color/red" />
+            android:layout_height="wrap_content"
+            android:text="登录"
+            android:layout_marginTop="@dimen/space_xl" />
+
+        <!-- Logout button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogout"
+            style="@style/Widget.Library.Button.Text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="退出登录"
+            android:textColor="@color/text_tertiary"
+            android:layout_marginTop="@dimen/space_md"
+            android:visibility="gone" />
 
     </LinearLayout>
 

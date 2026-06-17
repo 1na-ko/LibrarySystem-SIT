@@ -16,8 +16,8 @@ import com.library.android.databinding.ItemBorrowRecordBinding;
 import com.library.android.model.BorrowRecordVO;
 import com.library.android.repository.BorrowRepository;
 import com.library.android.ui.common.BaseAdapter;
-import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.main.MainActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +63,7 @@ public class OverdueFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         adapter = new OverdueAdapter();
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("超期管理");
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
         binding.recyclerView.setLayoutManager(layoutManager);
         binding.recyclerView.setAdapter(adapter);
@@ -81,13 +81,14 @@ public class OverdueFragment extends Fragment {
 
     private void loadData() {
         currentPage = 1;
-        binding.progressBar.setVisibility(View.VISIBLE);
+        binding.textLoading.setVisibility(View.VISIBLE);
 
         disposables.add(borrowRepository.getOverdueRecords(currentPage, 20)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    binding.progressBar.setVisibility(View.GONE);
+                    if (binding == null) return;
+                    binding.textLoading.setVisibility(View.GONE);
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         List<BorrowRecordVO> records = result.getData().getRecords();
                         adapter.submitListSync(records);
@@ -96,7 +97,8 @@ public class OverdueFragment extends Fragment {
                         scrollListener.setHasMore(!records.isEmpty());
                     }
                 }, throwable -> {
-                    binding.progressBar.setVisibility(View.GONE);
+                    if (binding == null) return;
+                    binding.textLoading.setVisibility(View.GONE);
                 }));
     }
 

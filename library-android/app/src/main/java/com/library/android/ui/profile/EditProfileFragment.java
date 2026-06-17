@@ -1,11 +1,9 @@
 package com.library.android.ui.profile;
 
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.library.android.databinding.FragmentEditProfileBinding;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.ProfileViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -42,7 +41,7 @@ public class EditProfileFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("编辑资料");
 
         // 加载当前用户信息
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {

@@ -2,6 +2,8 @@ package com.library.android.ui.reservation;
 
 import android.content.Context;
 import android.util.AttributeSet;
+
+import androidx.core.content.ContextCompat;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -56,9 +58,10 @@ public class ReservationStatusCard extends MaterialCardView {
     }
 
     private void init(Context context) {
-        setCardElevation(2);
-        setRadius(12);
-        setStrokeWidth(0);
+        setCardElevation(0);
+        setRadius(getResources().getDimensionPixelSize(R.dimen.radius_md));
+        setStrokeWidth(1);
+        setStrokeColor(ContextCompat.getColor(getContext(), R.color.border_light));
 
         LinearLayout root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);

@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="@color/dark_bg_primary">
 
     <!-- ZXing 扫码视图将通过代码动态添加 -->
     <com.journeyapps.barcodescanner.DecoratedBarcodeView
@@ -18,7 +18,7 @@
         android:layout_gravity="center_horizontal|bottom"
         android:layout_marginBottom="48dp"
         android:text="@string/scan_isbn_hint"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/dark_text_primary"
         android:textSize="14sp"
         android:alpha="0.8" />
 

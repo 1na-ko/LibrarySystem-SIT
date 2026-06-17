@@ -5,16 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:title="实体搜索"
-        app:titleTextColor="@color/gray"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+    android:background="@color/dark_bg_primary">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,14 +19,18 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="@string/search_entity_hint"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense">
+            android:textColorHint="@color/dark_text_secondary"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            app:boxBackgroundColor="@color/dark_bg_input">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editSearch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
-                android:imeOptions="actionSearch" />
+                android:imeOptions="actionSearch"
+                android:textColor="@color/dark_text_primary"
+                android:textColorHint="@color/dark_text_secondary" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -106,11 +101,14 @@
             android:clipToPadding="false"
             android:padding="8dp" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
+        <TextView
+            android:id="@+id/textLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:text="— 加载中 —"
+            android:textColor="@color/dark_text_placeholder"
+            android:textSize="15sp"
             android:visibility="gone" />
 
     </FrameLayout>

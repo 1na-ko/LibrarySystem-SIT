@@ -1,7 +1,8 @@
 package com.library.android.ui.profile;
 
-import android.graphics.Color;
 import android.os.Bundle;
+
+import androidx.core.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,8 +22,10 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowStatsBinding;
 import com.library.android.model.BorrowStatsVO;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.ProfileViewModel;
 
 import java.util.ArrayList;
@@ -55,7 +58,7 @@ public class BorrowStatsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("借阅统计");
 
         viewModel.getBorrowStats().observe(getViewLifecycleOwner(), stats -> {
             if (stats != null) {
@@ -83,9 +86,12 @@ public class BorrowStatsFragment extends Fragment {
             List<PieEntry> pieEntries = new ArrayList<>();
             List<Integer> colors = new ArrayList<>();
             int[] colorSet = {
-                    Color.parseColor("#1565C0"), Color.parseColor("#42A5F5"),
-                    Color.parseColor("#7CB342"), Color.parseColor("#FFA726"),
-                    Color.parseColor("#EF5350"), Color.parseColor("#AB47BC")
+                    ContextCompat.getColor(requireContext(), R.color.chart_color_1),
+                    ContextCompat.getColor(requireContext(), R.color.chart_color_2),
+                    ContextCompat.getColor(requireContext(), R.color.chart_color_3),
+                    ContextCompat.getColor(requireContext(), R.color.chart_color_4),
+                    ContextCompat.getColor(requireContext(), R.color.chart_color_5),
+                    ContextCompat.getColor(requireContext(), R.color.chart_color_6)
             };
 
             for (int i = 0; i < stats.getCategoryDistribution().size(); i++) {
@@ -122,9 +128,9 @@ public class BorrowStatsFragment extends Fragment {
             }
 
             LineDataSet lineDataSet = new LineDataSet(lineEntries, "月度借阅趋势");
-            lineDataSet.setColor(Color.parseColor("#1565C0"));
+            lineDataSet.setColor(ContextCompat.getColor(requireContext(), R.color.chart_color_1));
             lineDataSet.setLineWidth(2f);
-            lineDataSet.setCircleColor(Color.parseColor("#1565C0"));
+            lineDataSet.setCircleColor(ContextCompat.getColor(requireContext(), R.color.chart_color_1));
             lineDataSet.setCircleRadius(3f);
             lineDataSet.setValueTextSize(10f);
 

@@ -18,8 +18,8 @@ import com.library.android.model.BookVO;
 import com.library.android.model.CategoryVO;
 import com.library.android.repository.BookRepository;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.main.MainActivity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -59,7 +59,7 @@ public class HotBooksFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("热门图书");
 
         adapter = new BookAdapter();
         binding.rvHotBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -76,6 +76,7 @@ public class HotBooksFragment extends Fragment {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
+                        if (binding == null) return;
                         if (result.isSuccess() && result.getData() != null) {
                             // 添加"全部"选项
                             Chip allChip = new Chip(requireContext());
@@ -104,7 +105,10 @@ public class HotBooksFragment extends Fragment {
                             }
                         }
                     },
-                    throwable -> {}
+                    throwable -> {
+                        if (binding == null) return;
+                        binding.layoutEmpty.setVisibility(View.VISIBLE);
+                    }
                 )
         );
     }
@@ -117,13 +121,17 @@ public class HotBooksFragment extends Fragment {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
+                        if (binding == null) return;
                         if (result.isSuccess() && result.getData() != null) {
                             adapter.submitList(result.getData());
                         } else {
                             binding.layoutEmpty.setVisibility(View.VISIBLE);
                         }
                     },
-                    throwable -> binding.layoutEmpty.setVisibility(View.VISIBLE)
+                    throwable -> {
+                        if (binding == null) return;
+                        binding.layoutEmpty.setVisibility(View.VISIBLE);
+                    }
                 )
         );
     }
@@ -160,11 +168,9 @@ public class HotBooksFragment extends Fragment {
 
         @Override
         protected void bind(com.library.android.databinding.ItemBookBinding binding, BookVO item, int position) {
-            binding.tvTitle.setText((position + 1) + ". " + item.getTitle());
+            binding.tvTitle.setText(item.getTitle());
             binding.tvAuthor.setText(item.getAuthor());
-            binding.tvPublisher.setText(item.getPublisher());
             binding.tvAvailCopies.setText("可借 " + item.getAvailCopies() + "/" + item.getTotalCopies());
-            binding.tvBorrowCount.setText(item.getBorrowCount() + " 人借过");
         }
     }
 }

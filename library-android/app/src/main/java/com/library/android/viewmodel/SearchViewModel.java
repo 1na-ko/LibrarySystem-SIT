@@ -44,6 +44,7 @@ public class SearchViewModel extends ViewModel {
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> hasMore = new MutableLiveData<>(true);
     private final MutableLiveData<Integer> totalResults = new MutableLiveData<>(0);
+    private final MutableLiveData<String> resultTitle = new MutableLiveData<>();
 
     private final CompositeDisposable disposables = new CompositeDisposable();
 
@@ -69,6 +70,7 @@ public class SearchViewModel extends ViewModel {
     public LiveData<Boolean> isLoading() { return loading; }
     public LiveData<Boolean> hasMore() { return hasMore; }
     public LiveData<Integer> getTotalResults() { return totalResults; }
+    public LiveData<String> getResultTitle() { return resultTitle; }
 
     /** 加载首页数据（热门图书 + 分类导航）. */
     public void loadHomeData() {
@@ -110,7 +112,9 @@ public class SearchViewModel extends ViewModel {
     public void searchByCategory(long categoryId, String categoryName) {
         currentKeyword = null;
         currentCategoryId = categoryId;
+        suggestions.setValue(null);
         currentPage = 1;
+        resultTitle.setValue(categoryName);
         hasMore.setValue(true);
         loading.setValue(true);
 
@@ -143,6 +147,8 @@ public class SearchViewModel extends ViewModel {
     public void search(String keyword) {
         currentKeyword = keyword;
         currentCategoryId = null;
+        suggestions.setValue(null);
+        resultTitle.setValue(null);
         clearAdvancedParams();
         currentPage = 1;
         hasMore.setValue(true);
@@ -232,10 +238,11 @@ public class SearchViewModel extends ViewModel {
         this.advPubYearFrom = pubYearFrom;
         this.advPubYearTo = pubYearTo;
         this.advOnlyAvailable = onlyAvailable;
+        suggestions.setValue(null);
+        resultTitle.setValue("高级搜索结果");
         currentPage = 1;
         hasMore.setValue(true);
         loading.setValue(true);
-
         disposables.add(
             bookRepository.advancedSearch(
                     advTitle, advAuthor, advIsbn, advPublisher,
@@ -279,6 +286,17 @@ public class SearchViewModel extends ViewModel {
         return advTitle != null || advAuthor != null || advIsbn != null
                 || advPublisher != null || advPubYearFrom != null
                 || advPubYearTo != null || advOnlyAvailable != null;
+    }
+
+    /** 清除搜索状态，回到首页视图. */
+    public void clearSearchState() {
+        resultTitle.setValue(null);
+        searchResults.setValue(null);
+        suggestions.setValue(null);
+        totalResults.setValue(0);
+        currentKeyword = null;
+        currentCategoryId = null;
+        clearAdvancedParams();
     }
 
     /** 获取搜索建议. */

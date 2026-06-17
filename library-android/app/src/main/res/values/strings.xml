@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">图书馆智能管理系统</string>
+    <string name="appbar_scrolling_view_behavior" translatable="false">com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior</string>
 
     <!-- 底部导航 -->
     <string name="nav_search">搜索</string>
@@ -12,7 +13,6 @@
     <string name="tab_borrowing">借阅中</string>
     <string name="tab_returned">已归还</string>
     <string name="tab_overdue">已超期</string>
-    <string name="no_borrow_records">暂无借阅记录</string>
     <string name="borrow_info">借阅信息</string>
     <string name="borrow_date_label">借阅日期</string>
     <string name="due_date_label">应还日期</string>
@@ -51,7 +51,6 @@
     <string name="tab_reserved">已锁定</string>
     <string name="tab_completed">已完成</string>
     <string name="tab_cancelled">已取消</string>
-    <string name="no_reservations">暂无预约记录</string>
     <string name="confirm_cancel_reservation">确认取消预约</string>
     <string name="cannot_cancel">当前状态不可取消</string>
     <string name="cancel_success">取消成功</string>
@@ -119,11 +118,7 @@
     <string name="scan_isbn_hint">将 ISBN 条码置于取景框内</string>
     <string name="scan_result_format">扫描结果: %s</string>
 
-    <!-- 超期管理 -->
-    <string name="no_overdue_records">无超期记录</string>
-
     <!-- 通用 -->
-    <string name="load_error">加载失败，请检查网络</string>
     <string name="retry">重试</string>
     <string name="search">搜索</string>
     <string name="confirm">确定</string>
@@ -140,31 +135,20 @@
     <string name="validation_isbn_required">ISBN 不能为空</string>
     <string name="no_graph_data">暂无图谱数据</string>
     <string name="no_trace_data">暂无溯源数据</string>
-    <string name="no_subject_data">暂无学科网络数据</string>
     <string name="render_failed_format">渲染失败: %s</string>
     <string name="default_subject">计算机科学</string>
-    <string name="trace_source_label">文献溯源: %s</string>
     <string name="source_book_label">来源图书</string>
     <string name="entity_type_book">图书</string>
     <string name="entity_type_author">作者</string>
     <string name="entity_type_keyword">关键词</string>
     <string name="entity_type_subject">学科</string>
-    <string name="relation_authored_by">作者</string>
-    <string name="relation_has_keyword">关键词</string>
-    <string name="relation_belongs_to">属于</string>
-    <string name="relation_related_to">关联</string>
-    <string name="relation_published_in">出版</string>
-    <string name="relation_co_cited">共引</string>
-    <string name="relation_cites">引用</string>
     <string name="all_filter">全部</string>
     <string name="status_overdue_short">超期</string>
     <string name="fine_overdue_format">罚款: ¥%.2f</string>
     <string name="queue_detail_format">排队第 %1$d 位 / 共 %2$d 人等待</string>
     <string name="notified_expire_hint">已通知，请在 48 小时内确认借阅，逾期自动释放</string>
     <string name="cancel_reservation">取消预约</string>
-    <string name="filter_dialog_title">筛选用户</string>
     <string name="user_action_title_format">%1$s (%2$s)</string>
-    <string name="no_subject_data_html">暂无学科网络数据</string>
 
     <!-- 个人中心 -->
     <string name="borrow_history">借阅历史</string>

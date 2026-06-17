@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.textfield.TextInputLayout;
 import com.library.android.R;
 import com.library.android.databinding.ActivityBookEditBinding;
+import com.library.android.ui.theme.ThemeManager;
 import com.library.android.model.BookCreateRequest;
 import com.library.android.model.BookUpdateRequest;
 import com.library.android.model.BookVO;
@@ -38,6 +39,8 @@ public class BookEditActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeManager.getInstance().setDarkMode(true);
+        setTheme(R.style.Theme_LibrarySystem_Dark);
         super.onCreate(savedInstanceState);
         binding = ActivityBookEditBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

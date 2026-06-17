@@ -22,6 +22,7 @@ import com.library.android.databinding.ItemReservationBinding;
 import com.library.android.model.ReservationVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.ReservationViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -59,7 +60,7 @@ public class ReservationListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ReservationViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("我的预约");
 
         setupTabs();
         setupRecyclerView();
@@ -84,8 +85,8 @@ public class ReservationListFragment extends Fragment {
     private void setupRecyclerView() {
         adapter = new ReservationAdapter();
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
-        binding.recyclerView.setLayoutManager(layoutManager);
-        binding.recyclerView.setAdapter(adapter);
+        binding.rvReservationList.setLayoutManager(layoutManager);
+        binding.rvReservationList.setAdapter(adapter);
 
         // 左滑删除（取消预约）
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
@@ -113,7 +114,7 @@ public class ReservationListFragment extends Fragment {
                     Snackbar.make(binding.getRoot(), R.string.cannot_cancel, Snackbar.LENGTH_SHORT).show();
                 }
             }
-        }).attachToRecyclerView(binding.recyclerView);
+        }).attachToRecyclerView(binding.rvReservationList);
 
         scrollListener = new PagingScrollListener(layoutManager) {
             @Override
@@ -121,7 +122,7 @@ public class ReservationListFragment extends Fragment {
                 viewModel.loadMore();
             }
         };
-        binding.recyclerView.addOnScrollListener(scrollListener);
+        binding.rvReservationList.addOnScrollListener(scrollListener);
 
         binding.swipeRefresh.setOnRefreshListener(() -> {
             int pos = binding.tabLayout.getSelectedTabPosition();
@@ -131,7 +132,7 @@ public class ReservationListFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getLoadingState().observe(getViewLifecycleOwner(), state -> {
-            binding.progressBar.setVisibility(
+            binding.textLoading.setVisibility(
                     state == com.library.android.ui.common.LoadingState.LOADING
                             && adapter.getCurrentList().isEmpty() ? View.VISIBLE : View.GONE);
             binding.layoutEmpty.setVisibility(
@@ -179,18 +180,18 @@ public class ReservationListFragment extends Fragment {
         @Override
         protected void bind(ItemReservationBinding b, ReservationVO item, int position) {
             if (item.getBook() != null) {
-                b.textBookTitle.setText(item.getBook().getTitle());
-                b.textAuthor.setText(item.getBook().getAuthor());
+                b.tvBookTitle.setText(item.getBook().getTitle());
+                b.tvAuthor.setText(item.getBook().getAuthor());
             }
-            b.textReserveTime.setText(item.getReserveTime() != null
+            b.tvReserveTime.setText(item.getReserveTime() != null
                     ? item.getReserveTime().substring(0, Math.min(10, item.getReserveTime().length())) : "");
-            b.textStatus.setText(getStatusText(item.getStatus()));
+            b.tvStatus.setText(getStatusText(item.getStatus()));
 
             if (item.getQueuePosition() > 0) {
-                b.textQueuePosition.setText(getString(R.string.queue_position_format, item.getQueuePosition()));
-                b.textQueuePosition.setVisibility(View.VISIBLE);
+                b.tvQueuePosition.setText(getString(R.string.queue_position_format, item.getQueuePosition()));
+                b.tvQueuePosition.setVisibility(View.VISIBLE);
             } else {
-                b.textQueuePosition.setVisibility(View.GONE);
+                b.tvQueuePosition.setVisibility(View.GONE);
             }
         }
 

@@ -5,16 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:title="文献溯源"
-        app:titleTextColor="@color/gray"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+    android:background="@color/dark_bg_primary">
 
     <!-- 控制面板 -->
     <LinearLayout
@@ -28,7 +19,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/direction_label"
-            android:textAppearance="?attr/textAppearanceLabelMedium" />
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="@color/dark_text_secondary" />
 
         <Spinner
             android:id="@+id/spinnerDirection"
@@ -36,37 +28,47 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_marginHorizontal="8dp"
-            android:entries="@array/trace_directions" />
+            android:entries="@array/trace_directions"
+            android:textColor="@color/dark_text_primary"
+            android:backgroundTint="@color/dark_text_secondary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/max_depth_label"
-            android:textAppearance="?attr/textAppearanceLabelMedium" />
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="@color/dark_text_secondary" />
 
         <Spinner
             android:id="@+id/spinnerDepth"
             android:layout_width="80dp"
             android:layout_height="48dp"
             android:layout_marginStart="8dp"
-            android:entries="@array/trace_depths" />
+            android:entries="@array/trace_depths"
+            android:textColor="@color/dark_text_primary"
+            android:backgroundTint="@color/dark_text_secondary" />
 
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/dark_bg_primary">
 
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
+        <TextView
+            android:id="@+id/textLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:text="— 加载中 —"
+            android:textColor="@color/dark_text_placeholder"
+            android:textSize="15sp"
+            android:visibility="gone" />
 
     </FrameLayout>
 

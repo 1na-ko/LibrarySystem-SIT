@@ -4,156 +4,169 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
+    android:background="@color/bg_primary">
 
-    <!-- 搜索栏区域 -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- ═══ 搜索输入区域（默认隐藏，由全局搜索图标展开） ═══ -->
+    <LinearLayout
+        android:id="@+id/layoutSearchInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardElevation="2dp"
-        app:cardCornerRadius="0dp">
+        android:orientation="vertical"
+        android:background="@color/bg_input"
+        android:visibility="gone">
 
+        <!-- 搜索栏 v2.1：flat, 52dp, 底部仅 1dp 下划线 -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/searchLayout"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/search_bar_height"
+            style="@style/Widget.Library.SearchBar"
+            android:hint="搜索图书、作者、ISBN"
+            app:startIconDrawable="@drawable/ic_search_vector"
+            app:startIconTint="@color/text_tertiary"
+            app:endIconMode="clear_text"
+            app:endIconTint="@color/text_tertiary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1"
+                android:imeOptions="actionSearch" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 底部下划线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/search_bar_bottom_line"
+            android:background="@color/border_light" />
+
+        <!-- 高级搜索 / 分类浏览 快捷链接 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_md"
+            android:paddingEnd="@dimen/space_md"
+            android:paddingTop="@dimen/space_sm"
+            android:paddingBottom="@dimen/space_sm">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/searchLayout"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tvAdvancedSearch"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:hint="搜索图书、作者、ISBN">
+                android:text="高级搜索"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:padding="@dimen/space_xs" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etSearch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1"
-                    android:imeOptions="actionSearch" />
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- 快捷筛选行 -->
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tvCategoryBrowse"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
-
-                <TextView
-                    android:id="@+id/tvAdvancedSearch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="高级搜索"
-                    android:textColor="@color/primary"
-                    android:textSize="14sp"
-                    android:padding="4dp" />
-
-                <Space
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1" />
-
-                <TextView
-                    android:id="@+id/tvCategoryBrowse"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="分类浏览"
-                    android:textColor="@color/primary"
-                    android:textSize="14sp"
-                    android:padding="4dp" />
-
-            </LinearLayout>
-
+                android:text="分类浏览"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:padding="@dimen/space_xs" />
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-    <!-- 自动补全下拉建议 -->
+    <!-- 输入建议下拉 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvSuggestions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        android:background="@color/white"
-        android:elevation="4dp" />
+        android:background="@color/bg_card"
+        android:elevation="0dp" />
 
-    <!-- 主内容区域：搜索前显示热门/搜索后显示结果 -->
+    <!-- 0.5dp 分割线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/divider_thickness"
+        android:background="@color/border_light" />
+
+    <!-- ═══ 主内容区域 ═══ -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- 搜索前：首页内容 -->
-        <ScrollView
+        <!-- 首页内容：默认可见 -->
+        <LinearLayout
             android:id="@+id/scrollHome"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="@android:color/transparent"
+            android:padding="@dimen/space_lg">
 
-            <LinearLayout
+            <!-- 热门搜索 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="热门搜索"
+                android:fontFamily="serif"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:layout_marginBottom="@dimen/space_md" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupHotTags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                app:singleLine="false"
+                android:layout_marginBottom="@dimen/space_xl" />
 
-                <!-- 热门搜索标签 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="热门搜索"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/gray"
-                    android:layout_marginBottom="12dp" />
+            <!-- 分类导航（可折叠） -->
+            <TextView
+                android:id="@+id/tvCategoryHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="分类导航 ▸"
+                android:fontFamily="serif"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:layout_marginBottom="@dimen/space_md"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chipGroupHotTags"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:singleLine="false"
-                    android:layout_marginBottom="24dp" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginBottom="@dimen/space_xl"
+                android:visibility="gone" />
 
-                <!-- 分类快捷入口 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="分类导航"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/gray"
-                    android:layout_marginBottom="12dp" />
+            <!-- 热门图书 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="热门图书"
+                android:fontFamily="serif"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:layout_marginBottom="@dimen/space_md" />
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvCategories"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    android:layout_marginBottom="24dp" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHotBooks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
 
-                <!-- 热门图书 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="热门图书"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/gray"
-                    android:layout_marginBottom="12dp" />
+        </LinearLayout>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvHotBooks"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false" />
-
-            </LinearLayout>
-
-        </ScrollView>
-
-        <!-- 搜索后：搜索结果列表 -->
+        <!-- 搜索结果：默认隐藏 -->
         <LinearLayout
             android:id="@+id/layoutSearchResults"
             android:layout_width="match_parent"
@@ -161,45 +174,35 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- 分类/搜索结果头部（含返回按钮） -->
+            <!-- 结果头部：标题 -->
             <LinearLayout
                 android:id="@+id/layoutResultHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="12dp"
+                android:padding="@dimen/space_md"
                 android:visibility="gone"
-                android:background="@color/white">
-
-                <ImageButton
-                    android:id="@+id/btnBackToHome"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@android:drawable/ic_menu_revert"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="返回首页" />
+                android:background="@color/bg_card">
 
                 <TextView
                     android:id="@+id/tvResultTitle"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="@color/gray" />
-
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
             </LinearLayout>
 
+            <!-- 结果信息 -->
             <TextView
                 android:id="@+id/tvResultInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:textSize="14sp"
-                android:textColor="@color/gray" />
+                android:padding="@dimen/space_md"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary" />
 
+            <!-- 搜索结果列表 -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvSearchResults"
                 android:layout_width="match_parent"

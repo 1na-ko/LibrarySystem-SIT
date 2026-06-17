@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ============================================================
+         Design Tokens v2.1 — 间距与尺寸系统
+         以 8px 为基数：8, 16, 24, 32, 48
+         ============================================================ -->
+
+    <!-- ── 基础间距网格（8px 基数） ── -->
+    <dimen name="space_xxs">2dp</dimen>
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_lg">16dp</dimen>
+    <dimen name="space_xl">24dp</dimen>
+    <dimen name="space_xxl">32dp</dimen>
+    <dimen name="space_xxxl">48dp</dimen>
+
+    <!-- ── 圆角（硬上限 4dp） ── -->
+    <dimen name="radius_sm">2dp</dimen>
+    <dimen name="radius_md">4dp</dimen>
+
+    <!-- ── 分割线 ── -->
+    <dimen name="divider_thickness">0.5dp</dimen>
+    <dimen name="stroke_thickness">1dp</dimen>
+
+    <!-- ── 搜索栏 ── -->
+    <dimen name="search_bar_height">52dp</dimen>
+    <dimen name="search_bar_bottom_line">1dp</dimen>
+
+    <!-- ── 书本条目 ── -->
+    <dimen name="book_item_min_height">80dp</dimen>
+    <dimen name="book_cover_width">40dp</dimen>
+    <dimen name="book_cover_height">56dp</dimen>
+    <dimen name="book_status_bar_width">2dp</dimen>
+
+    <!-- ── 详细封面 ── -->
+    <dimen name="detail_cover_width">160dp</dimen>
+    <dimen name="detail_cover_height">220dp</dimen>
+    <dimen name="borrow_detail_cover_width">80dp</dimen>
+    <dimen name="borrow_detail_cover_height">120dp</dimen>
+
+    <!-- ── Tab 指示器 ── -->
+    <dimen name="tab_indicator_height">2dp</dimen>
+
+    <!-- ── 时间线 ── -->
+    <dimen name="timeline_date_width">60dp</dimen>
+    <dimen name="timeline_dot_size">6dp</dimen>
+
+    <!-- ── 按钮 ── -->
+    <dimen name="button_min_height">48dp</dimen>
+
+    <!-- ── 图标 ── -->
+    <dimen name="icon_size_sm">16dp</dimen>
+    <dimen name="icon_size_md">24dp</dimen>
+    <dimen name="icon_size_lg">32dp</dimen>
+
+</resources>

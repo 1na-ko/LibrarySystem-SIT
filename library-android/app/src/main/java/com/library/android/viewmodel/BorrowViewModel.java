@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.BorrowRecordVO;
-import com.library.android.model.BorrowResultVO;
 import com.library.android.model.PageResult;
 import com.library.android.model.Result;
 import com.library.android.repository.BorrowRepository;

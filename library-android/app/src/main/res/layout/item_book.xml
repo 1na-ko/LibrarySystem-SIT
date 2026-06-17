@@ -1,93 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardElevation="1dp"
-    app:cardCornerRadius="8dp"
+    android:minHeight="@dimen/book_item_min_height"
+    android:orientation="vertical"
+    android:background="@color/bg_card"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground">
 
+    <!-- 主行：状态色条 + 封面 + 文字信息 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="@dimen/space_md">
 
-        <!-- 封面占位 -->
+        <!-- 左侧状态色条（adapter 按状态着色：绿/灰/金） -->
+        <View
+            android:id="@+id/statusBar"
+            android:layout_width="@dimen/book_status_bar_width"
+            android:layout_height="match_parent"
+            android:background="@color/border_light" />
+
+        <!-- 封面 -->
         <ImageView
             android:id="@+id/ivCover"
-            android:layout_width="72dp"
-            android:layout_height="96dp"
-            android:background="@color/surface_variant"
+            android:layout_width="@dimen/book_cover_width"
+            android:layout_height="@dimen/book_cover_height"
+            android:layout_marginStart="@dimen/space_md"
+            android:background="@color/border_light"
             android:scaleType="centerCrop"
             android:contentDescription="@string/book_cover" />
 
+        <!-- 右侧文字列 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:layout_marginStart="12dp">
+            android:layout_marginStart="@dimen/space_md">
 
+            <!-- 书名 -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/gray"
+                style="@style/TextAppearance.Library.Title"
                 android:maxLines="2"
                 android:ellipsize="end" />
 
+            <!-- 作者 · 分类 -->
             <TextView
                 android:id="@+id/tvAuthor"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="@color/gray"
-                android:layout_marginTop="4dp"
+                style="@style/TextAppearance.Library.BodySecondary"
+                android:layout_marginTop="@dimen/space_xs"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
+            <!-- ISBN -->
             <TextView
-                android:id="@+id/tvPublisher"
+                android:id="@+id/tvIsbn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="@color/gray"
-                android:layout_marginTop="2dp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                style="@style/TextAppearance.Library.Mono"
+                android:layout_marginTop="@dimen/space_xxs" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <!-- 可借册数 / 已借出 -->
+            <TextView
+                android:id="@+id/tvAvailCopies"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="6dp">
-
-                <TextView
-                    android:id="@+id/tvAvailCopies"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="@color/primary" />
-
-                <TextView
-                    android:id="@+id/tvBorrowCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="@color/gray"
-                    android:layout_marginStart="12dp" />
-
-            </LinearLayout>
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                android:layout_marginTop="@dimen/space_xs" />
 
         </LinearLayout>
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+    <!-- 底部分割线：0.5dp -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/divider_thickness"
+        android:background="@color/border_light" />
+
+</LinearLayout>

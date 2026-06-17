@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.library.android.R;
 import com.library.android.databinding.FragmentRecommendationsBinding;
 import com.library.android.databinding.ItemRecommendationBinding;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.model.BookRecommendVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.viewmodel.ProfileViewModel;
@@ -49,7 +50,7 @@ public class RecommendationsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("个性化推荐");
 
         adapter = new RecommendationAdapter();
         binding.rvRecommendations.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -108,8 +109,7 @@ public class RecommendationsFragment extends Fragment {
         protected void bind(ItemRecommendationBinding binding, BookRecommendVO item, int position) {
             binding.tvTitle.setText(item.getBook().getTitle());
             binding.tvAuthor.setText(item.getBook().getAuthor());
-            binding.tvReason.setText("推荐理由: " + item.getReason());
-            binding.tvScore.setText(String.format("%.0f", item.getScore()));
+            binding.tvReason.setText(item.getReason());
         }
     }
 }

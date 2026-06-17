@@ -1,5 +1,6 @@
 package com.library.android.ui.search;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,7 +18,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
 import com.library.android.R;
@@ -25,6 +26,7 @@ import com.library.android.model.BookVO;
 import com.library.android.model.CategoryVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.SearchViewModel;
 
 import java.util.List;
@@ -34,6 +36,8 @@ import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * 图书搜索 Fragment — 首页 + 搜索 + 结果分页.
+ * v2.1: 搜索图标移至全局顶部栏（activity_main.xml），
+ *       点击后展开搜索输入区域并弹出键盘.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -50,6 +54,12 @@ public class SearchFragment extends Fragment {
     private SuggestionAdapter suggestionAdapter;
     private PagingScrollListener pagingScrollListener;
 
+    /** 搜索输入区域是否展开 */
+    private boolean searchExpanded = false;
+
+    /** 分类导航是否展开 */
+    private boolean isCategoryExpanded = false;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -61,20 +71,121 @@ public class SearchFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // CRITICAL: Reset state to prevent stale text from leaking on tab switch
+        searchExpanded = false;
+        binding.layoutSearchInput.setVisibility(View.GONE);
+
         viewModel = new ViewModelProvider(this).get(SearchViewModel.class);
 
         setupAdapters();
         setupSearchBar();
         setupObservers();
 
-        // 检查是否携带了高级搜索参数
+        // 检查是否需自动展开搜索（由全局搜索图标触发）
         Bundle args = getArguments();
+        if (args != null && args.getBoolean("expandSearch", false)) {
+            expandSearch();
+            // 清除标记，避免旋转屏幕时再次触发
+            args.remove("expandSearch");
+        }
+
         if (args != null && (args.containsKey("title") || args.containsKey("author")
                 || args.containsKey("isbn") || args.containsKey("publisher"))) {
             handleAdvancedSearchArgs(args);
-        } else {
+        } else if (!searchExpanded) {
             viewModel.loadHomeData();
+            addHotSearchChips();
         }
+    }
+
+    /**
+     * 由 MainActivity 全局搜索图标调用 —— 展开搜索栏并弹出键盘.
+     * 若此 Fragment 尚未创建，会通过 arguments 延迟到 onViewCreated 展开.
+     */
+    public void expandSearchFromGlobal() {
+        if (binding != null && isAdded()) {
+            expandSearch();
+        } else {
+            Bundle args = getArguments() != null ? getArguments() : new Bundle();
+            args.putBoolean("expandSearch", true);
+            setArguments(args);
+        }
+    }
+
+    /** 展开搜索栏并弹出键盘. */
+    private void expandSearch() {
+        if (binding == null) return;
+        searchExpanded = true;
+        binding.layoutSearchInput.setVisibility(View.VISIBLE);
+        binding.etSearch.requestFocus();
+
+        binding.etSearch.postDelayed(() -> {
+            InputMethodManager imm = (InputMethodManager) requireContext()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT);
+        }, 150);
+    }
+
+    /** 收起搜索栏并隐藏键盘. */
+    private void collapseSearch() {
+        if (binding == null) return;
+        searchExpanded = false;
+        InputMethodManager imm = (InputMethodManager) requireContext()
+                .getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+
+        binding.etSearch.setText("");
+        binding.rvSuggestions.setVisibility(View.GONE);
+        binding.layoutSearchInput.setVisibility(View.GONE);
+    }
+
+    /**
+     * 处理返回键：展开状态下收起搜索；搜索结果页中返回首页；
+     * 否则由 Activity 处理.
+     */
+    public boolean onBackPressed() {
+        if (searchExpanded) {
+            collapseSearch();
+            if (binding.layoutSearchResults.getVisibility() == View.VISIBLE) {
+                backToHome();
+            }
+            return true;
+        }
+        if (binding.layoutSearchResults.getVisibility() == View.VISIBLE
+                && binding.scrollHome.getVisibility() != View.VISIBLE) {
+            backToHome();
+            return true;
+        }
+        return false;
+    }
+
+    /** 控制全局返回按钮（通过 MainActivity）. */
+    private void setGlobalBack(boolean visible) {
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setGlobalBackVisible(visible);
+        }
+    }
+
+    /** 隐藏首页内容（热门搜索、分类导航、热门图书）. */
+    private void hideHomeContent() {
+        binding.scrollHome.setVisibility(View.GONE);
+        binding.chipGroupHotTags.removeAllViews();
+        binding.rvSuggestions.setVisibility(View.GONE);
+    }
+
+    /** 返回首页视图. */
+    private void backToHome() {
+        setGlobalBack(false);
+        binding.scrollHome.setVisibility(View.VISIBLE);
+        binding.layoutSearchResults.setVisibility(View.GONE);
+        binding.layoutResultHeader.setVisibility(View.GONE);
+        binding.etSearch.setText("");
+        binding.rvSuggestions.setVisibility(View.GONE);
+        binding.tvResultInfo.setText("");
+        viewModel.clearSearchState();
+        viewModel.loadHomeData();
+        addHotSearchChips();
     }
 
     private void handleAdvancedSearchArgs(Bundle args) {
@@ -86,9 +197,12 @@ public class SearchFragment extends Fragment {
         Integer pubYearTo = args.containsKey("pubYearTo") ? args.getInt("pubYearTo") : null;
         Boolean onlyAvailable = args.containsKey("onlyAvailable") ? args.getBoolean("onlyAvailable") : null;
 
-        binding.scrollHome.setVisibility(View.GONE);
+        binding.layoutSearchInput.setVisibility(View.VISIBLE);
+        searchExpanded = true;
+        hideHomeContent();
         binding.layoutSearchResults.setVisibility(View.VISIBLE);
         binding.layoutResultHeader.setVisibility(View.GONE);
+        setGlobalBack(true);
 
         viewModel.searchAdvanced(title, author, isbn, publisher, pubYearFrom, pubYearTo, onlyAvailable);
     }
@@ -124,23 +238,13 @@ public class SearchFragment extends Fragment {
         binding.rvHotBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvHotBooks.setAdapter(hotBookAdapter);
 
-        // 返回首页按钮
-        binding.btnBackToHome.setOnClickListener(v -> {
-            binding.scrollHome.setVisibility(View.VISIBLE);
-            binding.layoutSearchResults.setVisibility(View.GONE);
-            binding.layoutResultHeader.setVisibility(View.GONE);
-            binding.etSearch.setText("");
-            binding.rvSuggestions.setVisibility(View.GONE);
-            binding.tvResultInfo.setText("");
-        });
-
         // 分类导航适配器
         categoryAdapter = new CategoryAdapter(category -> {
-            binding.scrollHome.setVisibility(View.GONE);
+            hideHomeContent();
             binding.layoutSearchResults.setVisibility(View.VISIBLE);
             binding.layoutResultHeader.setVisibility(View.VISIBLE);
             binding.tvResultTitle.setText(category.getName());
-            binding.etSearch.setText(category.getName());
+            setGlobalBack(true);
             viewModel.searchByCategory(category.getId(), category.getName());
         });
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -153,6 +257,10 @@ public class SearchFragment extends Fragment {
                 binding.etSearch.setText(text);
                 binding.etSearch.setSelection(text.length());
                 binding.rvSuggestions.setVisibility(View.GONE);
+                InputMethodManager imm = (InputMethodManager) requireContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+                setGlobalBack(true);
                 viewModel.search(text);
             }
         });
@@ -164,7 +272,19 @@ public class SearchFragment extends Fragment {
                 Navigation.findNavController(requireView())
                         .navigate(R.id.action_searchFragment_to_advancedSearchFragment));
 
-        // 分类浏览点击
+        // 分类导航可折叠标题点击
+        binding.tvCategoryHeader.setOnClickListener(v -> {
+            isCategoryExpanded = !isCategoryExpanded;
+            if (isCategoryExpanded) {
+                binding.rvCategories.setVisibility(View.VISIBLE);
+                binding.tvCategoryHeader.setText("分类导航 ▾");
+            } else {
+                binding.rvCategories.setVisibility(View.GONE);
+                binding.tvCategoryHeader.setText("分类导航 ▸");
+            }
+        });
+
+        // 分类浏览点击（搜索栏内链接 → 跳转分类树页面）
         binding.tvCategoryBrowse.setOnClickListener(v ->
                 Navigation.findNavController(requireView())
                         .navigate(R.id.action_searchFragment_to_categoryTreeFragment));
@@ -177,10 +297,13 @@ public class SearchFragment extends Fragment {
                     && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
                 String keyword = binding.etSearch.getText().toString().trim();
                 if (!keyword.isEmpty()) {
-                    binding.rvSuggestions.setVisibility(View.GONE);
-                    binding.scrollHome.setVisibility(View.GONE);
+                    InputMethodManager imm = (InputMethodManager) requireContext()
+                            .getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+                    hideHomeContent();
                     binding.layoutSearchResults.setVisibility(View.VISIBLE);
                     binding.layoutResultHeader.setVisibility(View.GONE);
+                    setGlobalBack(true);
                     viewModel.search(keyword);
                 }
                 return true;
@@ -209,8 +332,8 @@ public class SearchFragment extends Fragment {
 
     private void setupObservers() {
         viewModel.getSearchResults().observe(getViewLifecycleOwner(), books -> {
-            if (books != null && !books.isEmpty()) {
-                binding.scrollHome.setVisibility(View.GONE);
+            if (books != null) {
+                hideHomeContent();
                 binding.layoutSearchResults.setVisibility(View.VISIBLE);
                 searchResultAdapter.submitList(books);
                 pagingScrollListener.setLoading(false);
@@ -230,6 +353,11 @@ public class SearchFragment extends Fragment {
         });
 
         viewModel.getSuggestions().observe(getViewLifecycleOwner(), suggestions -> {
+            // 搜索结果可见时禁止显示建议词（防止建议 API 后返回覆盖搜索结果）
+            if (binding.layoutSearchResults.getVisibility() == View.VISIBLE) {
+                binding.rvSuggestions.setVisibility(View.GONE);
+                return;
+            }
             if (suggestions != null && !suggestions.isEmpty()) {
                 suggestionAdapter.submitList(suggestions);
                 binding.rvSuggestions.setVisibility(View.VISIBLE);
@@ -241,6 +369,19 @@ public class SearchFragment extends Fragment {
         viewModel.getTotalResults().observe(getViewLifecycleOwner(), total ->
                 binding.tvResultInfo.setText("找到 " + total + " 条结果"));
 
+        // 观察结果标题：Fragment 重建时自动恢复头部返回按钮
+        viewModel.getResultTitle().observe(getViewLifecycleOwner(), title -> {
+            if (title != null && !title.isEmpty()) {
+                hideHomeContent();
+                binding.layoutSearchResults.setVisibility(View.VISIBLE);
+                binding.layoutResultHeader.setVisibility(View.VISIBLE);
+                binding.tvResultTitle.setText(title);
+                setGlobalBack(true);
+            } else {
+                binding.layoutResultHeader.setVisibility(View.GONE);
+            }
+        });
+
         viewModel.isLoading().observe(getViewLifecycleOwner(), loading -> {
             if (!loading) {
                 pagingScrollListener.setLoading(false);
@@ -249,6 +390,35 @@ public class SearchFragment extends Fragment {
 
         viewModel.hasMore().observe(getViewLifecycleOwner(), hasMore ->
                 pagingScrollListener.setHasMore(hasMore));
+    }
+
+    /**
+     * 填充热门搜索标签（ChipGroup），每项点击后填入搜索框并执行搜索。
+     */
+    private void addHotSearchChips() {
+        if (binding == null) return;
+        binding.chipGroupHotTags.removeAllViews();
+        String[] hotTags = {"Java", "Python", "机器学习", "数据结构", "人工智能", "数据库", "操作系统", "计算机网络"};
+        for (String tag : hotTags) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(tag);
+            chip.setChipBackgroundColorResource(R.color.bg_card);
+            chip.setChipStrokeColorResource(R.color.border_light);
+            chip.setChipStrokeWidth(1f);
+            chip.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            chip.setChipCornerRadiusResource(R.dimen.radius_sm);
+            chip.setCheckable(false);
+            chip.setClickable(true);
+            chip.setOnClickListener(v -> {
+                expandSearch();
+                binding.etSearch.setText(tag);
+                binding.etSearch.setSelection(tag.length());
+                binding.rvSuggestions.setVisibility(View.GONE);
+                setGlobalBack(true);
+                viewModel.search(tag);
+            });
+            binding.chipGroupHotTags.addView(chip);
+        }
     }
 
     @Override
@@ -292,9 +462,7 @@ public class SearchFragment extends Fragment {
         protected void bind(com.library.android.databinding.ItemBookBinding binding, BookVO item, int position) {
             binding.tvTitle.setText(item.getTitle());
             binding.tvAuthor.setText(item.getAuthor());
-            binding.tvPublisher.setText(item.getPublisher());
             binding.tvAvailCopies.setText("可借 " + item.getAvailCopies() + "/" + item.getTotalCopies());
-            binding.tvBorrowCount.setText(item.getBorrowCount() + " 人借过");
             binding.getRoot().setOnClickListener(v -> listener.onClick(item));
         }
     }

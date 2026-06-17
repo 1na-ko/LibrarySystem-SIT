@@ -20,6 +20,8 @@ import com.library.android.databinding.ItemUserManageBinding;
 import com.library.android.model.UserManageVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.AdminViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -42,7 +44,9 @@ public class AdminUserListFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        binding = FragmentAdminUserListBinding.inflate(inflater, container, false);
+        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
+        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
+        binding = FragmentAdminUserListBinding.inflate(themedInflater, container, false);
         return binding.getRoot();
     }
 
@@ -51,7 +55,7 @@ public class AdminUserListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(AdminViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("用户管理");
 
         setupRecyclerView();
         setupSearch();
@@ -105,7 +109,7 @@ public class AdminUserListFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getUserLoadingState().observe(getViewLifecycleOwner(), state -> {
-            binding.progressBar.setVisibility(
+            binding.textLoading.setVisibility(
                     state == com.library.android.ui.common.LoadingState.LOADING
                             && adapter.getCurrentList().isEmpty() ? View.VISIBLE : View.GONE);
             binding.layoutEmpty.setVisibility(

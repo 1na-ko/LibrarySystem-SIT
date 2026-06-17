@@ -87,7 +87,7 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
 
         binding.btnConfirm.setOnClickListener(v -> {
             if (book != null) {
-                viewModel.borrowBook(book.getId()).observe(this, success -> {
+                viewModel.borrowBook(book.getId()).observe(getViewLifecycleOwner(), success -> {
                     if (Boolean.TRUE.equals(success)) {
                         Snackbar.make(binding.getRoot(),
                                 getString(R.string.borrow_success_format, book.getTitle()),

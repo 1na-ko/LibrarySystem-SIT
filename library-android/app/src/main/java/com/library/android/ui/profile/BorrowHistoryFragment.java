@@ -16,8 +16,8 @@ import com.google.android.material.chip.Chip;
 import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowHistoryBinding;
 import com.library.android.databinding.ItemHistoryBinding;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.model.BorrowRecordVO;
-import com.library.android.model.PageResult;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.viewmodel.ProfileViewModel;
 
@@ -54,7 +54,7 @@ public class BorrowHistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("借阅历史");
 
         adapter = new BorrowHistoryAdapter();
         binding.rvHistory.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -144,8 +144,9 @@ public class BorrowHistoryFragment extends Fragment {
             if (item.getBook() != null) {
                 binding.tvBookTitle.setText(item.getBook().getTitle());
             }
-            binding.tvBorrowDate.setText("借阅: " + item.getBorrowDate());
-            binding.tvDueDate.setText("应还: " + item.getDueDate());
+            binding.tvDate.setText(item.getBorrowDate() != null
+                    ? item.getBorrowDate().substring(0, Math.min(7, item.getBorrowDate().length())) : "");
+            binding.tvDuration.setText("借阅: " + item.getBorrowDate() + " — " + item.getDueDate());
 
             String statusText;
             int statusColorRes;
