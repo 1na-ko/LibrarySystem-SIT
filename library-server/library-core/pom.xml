@@ -44,6 +44,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- RabbitMQ：阶段10 事件总线。ESSyncListener/ReservationNotifier 改为 @RabbitListener 消费，
+             EventBusBridge 在事务提交后桥接转发领域事件至 MQ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>

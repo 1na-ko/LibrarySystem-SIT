@@ -26,8 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
  * 管理端图书编目服务实现.
  * <p>
  * 内聚 ISBN 唯一校验、活跃借阅检查、CRUD、乐观锁判断与领域事件发布。
- * 所有写方法标注 {@link Transactional}，确保领域事件在事务内发布，
- * 由 {@code @TransactionalEventListener(AFTER_COMMIT)} 在提交后异步消费，
+ * 所有写方法标注 {@link Transactional}，确保领域事件在事务内发布，事务提交后由
+ * {@link com.library.core.event.EventBusBridge}（{@code @TransactionalEventListener(AFTER_COMMIT)}）
+ * 桥接转发至 RabbitMQ 事件总线，再由各 {@code @RabbitListener} 消费者异步消费，
  * 避免"事务未提交即发事件"的时序竞态。
  *
  * @author LibrarySystem Team

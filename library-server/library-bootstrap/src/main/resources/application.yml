@@ -51,15 +51,29 @@ spring:
       username: ${NEO4J_USERNAME:neo4j}
       password: ${NEO4J_PASSWORD:neo4j123456}
 
-  # ---- RabbitMQ ----
-  # 生效前置：需引入 spring-boot-starter-amqp（当前各模块尚未引入，待异步事件/ES 同步等
-  #          消息消费功能开发时在对应模块补全依赖后启用）。在此之前事件总线以 Spring
-  #          Application Events（同步/异步 @EventListener）替代，不影响现有功能。
+  # ---- RabbitMQ 事件总线 ----
+  # 阶段10 已引入 spring-boot-starter-amqp，事件总线正式启用（替代 Spring Application Events）。
+  # 架构：领域事件 → EventBusBridge（@TransactionalEventListener AFTER_COMMIT 桥接）
+  #      → library.events Topic Exchange → 业务队列 → @RabbitListener 消费。
+  # 可靠性：消息持久化 + 消费端 3 次指数退避重试 + 死信队列（耗尽进 q.library.events.dlq）。
+  # Exchange/Queue/Binding 声明见 RabbitMqConfig；常量见 EventBusConstants。
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        # auto 模式：方法正常返回即 ack；抛异常由 retry interceptor 重试
+        acknowledge-mode: auto
+        # 消费失败重试：3 次指数退避（1s/2s/4s），耗尽后 reject 不 requeue，进入死信队列
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+          multiplier: 2
+          max-interval: 4000
+        default-requeue-rejected: false
 
   # ---- Flyway 数据库迁移 ----
   # baseline-on-migrate: 针对已有库（非空）首次接入 Flyway 时自动建立基线，避免报错。

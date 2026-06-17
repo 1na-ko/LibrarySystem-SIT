@@ -8,7 +8,7 @@
 
 INSERT INTO sys_user (username, password_hash, real_name, role, email, status, max_books, deleted)
 VALUES ('admin',
-        '$2a$12$jUYkKnNwsNRkA0RKsMl5f.E1Vk5VWhWphbwqjroE7aTvrvGj.IuBe',
+        '$2a$12$iGyQQQ.H73/MlWq4W48u3.61AigwkI0izcREV1l2oyJgBMRXzyKja',
         '系统管理员',
         'ADMIN',
         'admin@library.edu.cn',

@@ -87,7 +87,7 @@ public class EsIndexInitializer {
                         .properties("publisher", p -> p.text(t -> t.analyzer("ik_smart_analyzer")))
                         .properties("description", p -> p.text(t -> t.analyzer("ik_smart_analyzer")))
                         .properties("keywords", p -> p
-                                .text(t -> t.analyzer("ik_smart_analyzer").boost(2.0)))
+                                .text(t -> t.analyzer("ik_smart_analyzer")))
                         .properties("categoryId", p -> p.long_(l -> l))
                         .properties("categoryName", p -> p.keyword(k -> k))
                         .properties("borrowCount", p -> p.integer(i -> i))

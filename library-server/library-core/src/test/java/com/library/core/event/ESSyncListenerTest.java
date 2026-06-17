@@ -126,33 +126,64 @@ class ESSyncListenerTest {
     }
 
     @Nested
-    @DisplayName("onBookCreated")
-    class OnBookCreated {
+    @DisplayName("onBookEvent - 同步（created/updated/borrowed/returned）")
+    class OnBookSync {
 
         @Test
-        @DisplayName("应同步新建图书到 ES")
-        void shouldSyncNewBookToES() {
+        @DisplayName("created/updated 应同步图书到 ES 并清除搜索缓存")
+        void shouldSyncBookToEsAndEvictCache() {
             when(bookMapper.selectById(1L)).thenReturn(book);
             when(categoryMapper.selectById(1L)).thenReturn(category);
 
-            esSyncListener.onBookCreated(new BookCreatedEvent(1L));
+            // 阶段10：消费 MQ 事件（bookId + routingKey），原 onBookCreated 语义不变
+            esSyncListener.onBookEvent(1L, EventBusConstants.RK_BOOK_CREATED);
 
             ArgumentCaptor<BookDocument> captor = ArgumentCaptor.forClass(BookDocument.class);
             verify(bookESRepository).save(captor.capture());
+            verify(bookSearchService).evictAllSearchCache();
             assertThat(captor.getValue().getId()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("borrowed 应同步图书到 ES 但不清搜索缓存（仅元数据未变）")
+        void shouldSyncBookToEsButNotEvictCacheOnBorrowed() {
+            when(bookMapper.selectById(1L)).thenReturn(book);
+            when(categoryMapper.selectById(1L)).thenReturn(category);
+
+            esSyncListener.onBookEvent(1L, EventBusConstants.RK_BOOK_BORROWED);
+
+            verify(bookESRepository).save(org.mockito.ArgumentMatchers.any(BookDocument.class));
+            // 借/还高频事件不清搜索缓存，避免缓存命中率塌陷
+            org.mockito.Mockito.verify(bookSearchService, org.mockito.Mockito.never())
+                    .evictAllSearchCache();
+        }
+
+        @Test
+        @DisplayName("returned 应同步图书到 ES 但不清搜索缓存")
+        void shouldSyncBookToEsButNotEvictCacheOnReturned() {
+            when(bookMapper.selectById(1L)).thenReturn(book);
+            when(categoryMapper.selectById(1L)).thenReturn(category);
+
+            esSyncListener.onBookEvent(1L, EventBusConstants.RK_BOOK_RETURNED);
+
+            verify(bookESRepository).save(org.mockito.ArgumentMatchers.any(BookDocument.class));
+            org.mockito.Mockito.verify(bookSearchService, org.mockito.Mockito.never())
+                    .evictAllSearchCache();
         }
     }
 
     @Nested
-    @DisplayName("onBookDeleted")
+    @DisplayName("onBookEvent - 删除")
     class OnBookDeleted {
 
         @Test
-        @DisplayName("应删除 ES 文档")
-        void shouldDeleteFromES() {
-            esSyncListener.onBookDeleted(new BookDeletedEvent(1L));
+        @DisplayName("应删除 ES 文档并清除搜索缓存")
+        void shouldDeleteFromEsAndEvictCache() {
+            // 阶段10：消费 MQ 事件（bookId + routingKey=book.deleted），原 onBookDeleted 语义不变
+            esSyncListener.onBookEvent(1L, EventBusConstants.RK_BOOK_DELETED);
 
             verify(bookESRepository).delete(1L);
+            verify(bookSearchService).evictAllSearchCache();
         }
     }
 }
