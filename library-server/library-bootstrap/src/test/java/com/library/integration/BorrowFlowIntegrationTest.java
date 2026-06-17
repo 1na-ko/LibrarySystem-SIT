@@ -23,7 +23,9 @@ class BorrowFlowIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("搜索→详情→借书→还书→统计验证 全流程")
     void shouldCompleteBorrowFlowWhenBookAvailable() {
-        String token = loginHelper.login("test_student", "Test@123456");
+        // V100 种子中 4 个 test_* 用户均有 OVERDUE 借阅（BorrowService step 5 拒绝），
+        // 故借书全流程改用 admin（V4 创建，无任何借阅历史，role=ADMIN max=15）
+        String token = loginHelper.login("admin", "Admin@123456");
 
         // 1. 搜索图书（ES 种子数据已由 EsDataLoader 导入）
         ResponseEntity<Map> searchResp = restTemplate.exchange(
@@ -37,12 +39,12 @@ class BorrowFlowIntegrationTest extends AbstractIntegrationTest {
         assertThat(detailResp.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(((Map<?, ?>) detailResp.getBody().get("data")).get("title")).asString().contains("Java虚拟机");
 
-        // 3. 借书（10006 计算机网络 avail=4，test_student 已借4本达上限5，借第5本）
+        // 3. 借书（10006 计算机网络 V100 avail=4，admin 无借阅历史可借）
         Map<String, Object> borrowReq = Map.of("bookId", 10006);
         ResponseEntity<Map> borrowResp = restTemplate.postForEntity(
                 API + "/borrows", loginHelper.auth(token, borrowReq), Map.class);
         assertThat(borrowResp.getStatusCode().is2xxSuccessful()).isTrue();
-        Long borrowId = ((Number) ((Map<?, ?>) borrowResp.getBody().get("data")).get("borrowId")).longValue();
+        Long borrowId = asLong(((Map<?, ?>) borrowResp.getBody().get("data")).get("borrowId"));
 
         // 4. 还书
         ResponseEntity<Map> returnResp = restTemplate.exchange(
@@ -53,6 +55,17 @@ class BorrowFlowIntegrationTest extends AbstractIntegrationTest {
         ResponseEntity<Map> statsResp = restTemplate.exchange(
                 API + "/users/me/stats", HttpMethod.GET, loginHelper.auth(token), Map.class);
         assertThat(statsResp.getStatusCode().is2xxSuccessful()).isTrue();
+    }
+
+    @Test
+    @DisplayName("有 OVERDUE 借阅的用户借书应被拒（业务规则）")
+    void shouldRejectBorrowWhenUserHasOverdue() {
+        // test_student 在 V100 中有 OVERDUE 记录（20042 / 20045），借书应被 step 5 拒绝
+        String token = loginHelper.login("test_student", "Test@123456");
+        Map<String, Object> req = Map.of("bookId", 10006);
+        ResponseEntity<Map> resp = restTemplate.postForEntity(
+                API + "/borrows", loginHelper.auth(token, req), Map.class);
+        assertThat(resp.getStatusCode().is4xxClientError()).isTrue();
     }
 
     @Test

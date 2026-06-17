@@ -42,8 +42,36 @@ import java.util.List;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractIntegrationTest {
 
-    /** 全局 context-path 前缀，TestRestTemplate 请求路径需带此前缀 */
-    protected static final String API = "/api/v1";
+    /**
+     * 全局 API 路径前缀（保留为空字符串）.
+     * <p>
+     * Spring Boot {@code TestRestTemplate} 在 {@code @SpringBootTest(RANDOM_PORT)} 下，
+     * 会通过 {@code LocalServerPort} 自动构造包含 {@code server.servlet.context-path}
+     * 的 baseUrl（{@code http://localhost:{port}/api/v1}），测试代码直接传相对路径
+     * （如 {@code "/auth/register"}）即可，再叠加 {@code /api/v1} 前缀会变成
+     * {@code /api/v1/api/v1/auth/register} 而 401。
+     * <p>
+     * 保留常量名以兼容现有 16+ 测试类的 {@code API + "/xxx"} 写法，不强制改 16 个测试文件。
+     */
+    protected static final String API = "";
+
+    /**
+     * 兼容性 ID 解析：项目 {@code JacksonConfig} 全局把 Long 序列化为 String（防 JS 大数精度丢失），
+     * 测试拿到 JSON {@code data.id} 是 String，按 {@code (Number) idValue} cast 会抛
+     * ClassCastException。本方法统一处理 String/Number 两种类型，返回 {@link Long}。
+     *
+     * @param value JSON 反序列化得到的 ID 字段（可能是 String 或 Number）
+     * @return 对应 Long 值；value 为 null 返回 null
+     */
+    protected static Long asLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number n) {
+            return n.longValue();
+        }
+        return Long.valueOf(value.toString());
+    }
 
     @Autowired
     protected TestRestTemplate restTemplate;

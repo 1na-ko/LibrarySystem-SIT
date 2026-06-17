@@ -9,6 +9,9 @@ spring:
     locations: classpath:db/migration,classpath:db/test-data
     # 显式允许 clean：AbstractIntegrationTest @BeforeAll 用 flyway.clean()+migrate() 重置中间件到种子状态
     clean-disabled: false
+    # AbstractIntegrationTest @BeforeAll 在 ApplicationContext 启动后立即 clean+migrate；
+    # 关闭 validate-on-migrate 防止 docker MySQL 残留旧 checksum 导致 ApplicationContext 启动失败
+    validate-on-migrate: false
 
 # AI 基础设施：留空 api-key 触发 LLM/Embedding 本地降级（支撑 10.9 降级验证）
 ai:

@@ -36,7 +36,9 @@ public class LoginHelper {
      */
     public Map<?, ?> loginData(String username, String password) {
         Map<String, String> req = Map.of("username", username, "password", password);
-        ResponseEntity<Map> resp = restTemplate.postForEntity("/api/v1/auth/login", req, Map.class);
+        // 注：TestRestTemplate baseUrl 已含 server.servlet.context-path（/api/v1），
+        // 此处只传相对路径 "/auth/login"，否则会变成 /api/v1/api/v1/auth/login 而 401。
+        ResponseEntity<Map> resp = restTemplate.postForEntity("/auth/login", req, Map.class);
         Map<?, ?> body = resp.getBody();
         if (body == null || body.get("data") == null) {
             throw new IllegalStateException("登录失败: " + username + " -> " + resp.getStatusCode());

@@ -67,7 +67,16 @@ public class ReservationNotifier {
         while (attempts < maxAttempts) {
             attempts++;
 
+            // 预检队列大小：Redisson 3.25.0 的 Spring Data Redis 连接器对空 ZSET 调 popMin 时，
+            // ScoredSortedSingleReplayDecoder 会抛 IndexOutOfBoundsException（已知 bug）。
+            // 用 zCard 预检避免对空/不存在 ZSET 调 popMin，同时正常处理"无预约排队"的业务语义。
             // 注：Redis/DB 临时异常此处不 catch，自然抛出由 Spring AMQP RetryTemplate 接管
+            Long queueSize = redisTemplate.opsForZSet().zCard(queueKey);
+            if (queueSize == null || queueSize == 0) {
+                log.debug("预约队列已空（ZSET 不存在或无元素）: bookId={}", bookId);
+                return;
+            }
+
             Set<ZSetOperations.TypedTuple<Object>> popped =
                     redisTemplate.opsForZSet().popMin(queueKey, 1);
             if (popped == null || popped.isEmpty()) {

@@ -39,7 +39,7 @@ class LlmFallbackIntegrationTest extends AbstractIntegrationTest {
                 API + "/acquisition/negotiation?resourceId=1001&supplierId=1001",
                 loginHelper.auth(token), Map.class);
         assertThat(negResp.getStatusCode().is2xxSuccessful()).isTrue();
-        Long negId = ((Number) ((Map<?, ?>) negResp.getBody().get("data")).get("id")).longValue();
+        Long negId = asLong(((Map<?, ?>) negResp.getBody().get("data")).get("id"));
 
         ResponseEntity<Map> sugResp = restTemplate.exchange(
                 API + "/acquisition/negotiation/" + negId + "/suggestion",

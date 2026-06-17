@@ -46,10 +46,14 @@ public class BookESRepository {
      */
     public void save(BookDocument doc) {
         try {
+            // refresh=WaitFor：阻塞当前请求直到下次 ES refresh 完成（默认 1s 内），保证写后立即可搜
+            // 适用于 ESSyncListener 单条同步场景（吞吐量低、一致性优先）；
+            // 大批量重建场景见 bulkSave，使用默认异步 refresh
             esClient.index(i -> i
                     .index(EsIndexInitializer.BOOKS_INDEX)
                     .id(String.valueOf(doc.getId()))
                     .document(doc)
+                    .refresh(co.elastic.clients.elasticsearch._types.Refresh.WaitFor)
             );
             log.debug("ES 文档已索引: bookId={}", doc.getId());
         } catch (IOException e) {
@@ -171,12 +175,17 @@ public class BookESRepository {
                             )
                     )
                     .sort(sortBuilder -> {
+                        // ES 8.11 Java Client 严格要求每个 SortOptions builder 必须指定一个 variant
+                        // （field/score/doc/geo distance）；缺失会抛 "Missing required property
+                        // 'Builder.<variant kind>'" 错误，导致整个搜索失败。
+                        // 故 sortBy 为 null/relevance 时显式选择 _score variant 按相关性降序。
                         if ("borrowCount".equals(sortBy)) {
-                            sortBuilder.field(f -> f.field("borrowCount").order(SortOrder.Desc));
+                            return sortBuilder.field(f -> f.field("borrowCount").order(SortOrder.Desc));
                         } else if ("pubDate".equals(sortBy)) {
-                            sortBuilder.field(f -> f.field("pubDate").order(SortOrder.Desc));
+                            return sortBuilder.field(f -> f.field("pubDate").order(SortOrder.Desc));
+                        } else {
+                            return sortBuilder.score(sc -> sc.order(SortOrder.Desc));
                         }
-                        return sortBuilder;
                     })
                     .trackTotalHits(th -> th.enabled(true)),
                     BookDocument.class

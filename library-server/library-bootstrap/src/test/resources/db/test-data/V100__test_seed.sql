@@ -122,7 +122,9 @@ INSERT INTO borrow_record (id, user_id, book_id, borrow_date, due_date, return_d
 INSERT INTO reservation (id, user_id, book_id, reserve_time, notify_time, expire_time, status, queue_position, deleted) VALUES
 (30001, 101, 10005, '2026-06-01 09:00:00', NULL,                 NULL,                 'WAITING',   1, 0),
 (30002, 102, 10005, '2026-06-03 14:30:00', NULL,                 NULL,                 'WAITING',   2, 0),
-(30003, 100, 10003, '2026-06-05 10:15:00', NULL,                 NULL,                 'WAITING',   1, 0),
+-- 30003 原 (100, 10003, WAITING) 已移除：ReservationFlowIntegrationTest 需通过真实 POST /reservations
+-- 预约 10003（写 Redis ZSET），种子中预置会与测试运行时预约冲突（重复预约被拒）且 Redis ZSET
+-- 未初始化（V100 直 INSERT 绕过 ReservationService.reserve）导致 ReservationNotifier popMin 命中空 ZSET。
 (30004, 103, 10009, '2026-06-08 16:45:00', NULL,                 NULL,                 'WAITING',   1, 0),
 (30005, 101, 10013, '2026-06-10 11:20:00', NULL,                 NULL,                 'WAITING',   1, 0),
 (30006, 100, 10005, '2026-05-20 09:30:00', '2026-06-01 10:00:00', '2026-06-03 10:00:00', 'NOTIFIED', 1, 0),

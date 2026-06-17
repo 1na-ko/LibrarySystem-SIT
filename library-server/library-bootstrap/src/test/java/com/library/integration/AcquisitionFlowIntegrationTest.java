@@ -26,9 +26,11 @@ class AcquisitionFlowIntegrationTest extends AbstractIntegrationTest {
     void shouldCompleteAcquisitionFlowWhenAcquisitorCalls() {
         String token = loginHelper.login("test_acquisitor", "Test@123456");
 
-        // 1. 采购预测（subjectId=1 计算机科学，基于 50 条借阅 ARIMA）
+        // 1. 采购预测（subjectId=101 编程语言，V100 中 4 本书+多月借阅满足 ARIMA MIN_DATA_POINTS=6）
+        // 注：category=1 是顶级类"计算机科学"，V100 中 books 都归类到子分类（101/102/...），
+        // 当前 PredictionService 不递归子分类，故 subjectId=1 会抛 PREDICTION_DATA_INSUFFICIENT
         ResponseEntity<Map> predictResp = restTemplate.exchange(
-                API + "/acquisition/predict?subjectId=1&months=3", HttpMethod.GET, loginHelper.auth(token), Map.class);
+                API + "/acquisition/predict?subjectId=101&months=3", HttpMethod.GET, loginHelper.auth(token), Map.class);
         assertThat(predictResp.getStatusCode().is2xxSuccessful()).isTrue();
 
         // 2. 查重
@@ -38,9 +40,9 @@ class AcquisitionFlowIntegrationTest extends AbstractIntegrationTest {
                 API + "/acquisition/duplicate-check", loginHelper.auth(token, dupReq), Map.class);
         assertThat(dupResp.getStatusCode().is2xxSuccessful()).isTrue();
 
-        // 3. 缺口分析
+        // 3. 缺口分析（subjectId=101 编程语言，与 predict 一致用子分类）
         ResponseEntity<Map> gapResp = restTemplate.exchange(
-                API + "/acquisition/gap-analysis?subjectId=1", HttpMethod.GET, loginHelper.auth(token), Map.class);
+                API + "/acquisition/gap-analysis?subjectId=101", HttpMethod.GET, loginHelper.auth(token), Map.class);
         assertThat(gapResp.getStatusCode().is2xxSuccessful()).isTrue();
 
         // 4. 创建谈判（resourceId=1001, supplierId=1001 V100 种子）
@@ -48,7 +50,7 @@ class AcquisitionFlowIntegrationTest extends AbstractIntegrationTest {
                 API + "/acquisition/negotiation?resourceId=1001&supplierId=1001",
                 loginHelper.auth(token), Map.class);
         assertThat(negResp.getStatusCode().is2xxSuccessful()).isTrue();
-        Long negId = ((Number) ((Map<?, ?>) negResp.getBody().get("data")).get("id")).longValue();
+        Long negId = asLong(((Map<?, ?>) negResp.getBody().get("data")).get("id"));
 
         // 5. 获取建议（LLM 降级本地模板，非空）
         ResponseEntity<Map> sugResp = restTemplate.exchange(

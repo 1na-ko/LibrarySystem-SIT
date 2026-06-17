@@ -35,7 +35,7 @@ class BorrowConcurrencyTest extends AbstractIntegrationTest {
                 "author", "测试", "categoryId", 101, "totalCopies", 1);
         ResponseEntity<Map> createResp = restTemplate.postForEntity(
                 API + "/admin/books", loginHelper.auth(librarianToken, req), Map.class);
-        Long bookId = ((Number) ((Map<?, ?>) createResp.getBody().get("data")).get("id")).longValue();
+        Long bookId = asLong(((Map<?, ?>) createResp.getBody().get("data")).get("id"));
 
         int n = 20;
         CountDownLatch startGate = new CountDownLatch(1);

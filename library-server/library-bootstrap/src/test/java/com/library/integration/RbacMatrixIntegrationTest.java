@@ -53,8 +53,9 @@ class RbacMatrixIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("Acquisitor 访问采编预测应 200")
     void shouldReturn200WhenAcquisitorCallsPredict() {
         String token = loginHelper.login("test_acquisitor", "Test@123456");
+        // subjectId=101 编程语言（V100 borrow record 覆盖 7 个月，满足 ARIMA MIN_DATA_POINTS=6）
         ResponseEntity<Map> resp = restTemplate.exchange(
-                API + "/acquisition/predict?subjectId=1&months=3", HttpMethod.GET, loginHelper.auth(token), Map.class);
+                API + "/acquisition/predict?subjectId=101&months=3", HttpMethod.GET, loginHelper.auth(token), Map.class);
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
     }
 

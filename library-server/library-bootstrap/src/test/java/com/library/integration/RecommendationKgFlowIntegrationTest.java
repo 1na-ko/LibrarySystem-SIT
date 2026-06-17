@@ -31,8 +31,8 @@ class RecommendationKgFlowIntegrationTest extends AbstractIntegrationTest {
                 API + "/users/me/recommendations?limit=5", HttpMethod.GET, loginHelper.auth(token), Map.class);
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
 
-        // 推荐结果非空时，每条应含推荐理由（LLM 降级为本地模板，非空）
-        List<?> records = (List<?>) ((Map<?, ?>) resp.getBody().get("data")).get("records");
+        // RecommendationController 返回 Result<List<BookRecommendVO>>，data 直接是 List 而非分页 records 包装
+        List<?> records = (List<?>) resp.getBody().get("data");
         if (records != null && !records.isEmpty()) {
             Map<?, ?> first = (Map<?, ?>) records.get(0);
             assertThat(first.get("reason")).asString().isNotEmpty();

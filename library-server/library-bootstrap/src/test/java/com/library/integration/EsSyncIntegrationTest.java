@@ -34,7 +34,7 @@ class EsSyncIntegrationTest extends AbstractIntegrationTest {
                 "author", "测试", "categoryId", 101, "totalCopies", 2);
         ResponseEntity<Map> createResp = restTemplate.postForEntity(
                 API + "/admin/books", loginHelper.auth(token, createReq), Map.class);
-        Long bookId = ((Number) ((Map<?, ?>) createResp.getBody().get("data")).get("id")).longValue();
+        Long bookId = asLong(((Map<?, ?>) createResp.getBody().get("data")).get("id"));
 
         await().atMost(10, SECONDS).untilAsserted(() ->
                 assertThat(searchHasTitle(token, "ES同步测试原书名")).isTrue());
