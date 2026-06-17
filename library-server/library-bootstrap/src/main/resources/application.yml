@@ -176,7 +176,9 @@ ai:
     connect-timeout: 10s
     read-timeout: 30s
     write-timeout: 20s
-    max-batch-size: 25
+    # DashScope text-embedding-v3 单次最多 10 条文本（API 强制限制），超出抛 InvalidParameter
+    # 之前配 25 实测 batch size > 10 时单批失败降级零向量，影响 Content-based 推荐质量
+    max-batch-size: 10
 
 # ---- 推荐引擎 ----
 recommendation:

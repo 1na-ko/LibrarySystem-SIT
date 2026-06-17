@@ -36,9 +36,31 @@ public class GraphQueryServiceImpl implements GraphQueryService {
     private final KnowledgeGraphProperties kgProperties;
 
     private static final String BOOK_LABEL = "Book";
-    /** 允许的节点类型白名单（防 Cypher 注入） */
-    private static final java.util.Set<String> ALLOWED_NODE_TYPES =
-            java.util.Set.of("Book", "Author", "Keyword", "Subject", "Publication", "Conference");
+    /**
+     * 允许的节点类型白名单（Cypher 注入防护）.
+     * <p>
+     * 接受前端两种命名风格：Neo4j 标签 PascalCase（{@code Book/Author/...}）+ 上层契约
+     * UPPER_CASE（{@code BOOK/AUTHOR/...}）。Controller Javadoc 与 OpenAPI 契约约定后者，
+     * 此处统一通过 {@link #normalizeNodeType} 映射到实际 Neo4j 标签。
+     */
+    private static final java.util.Map<String, String> ALLOWED_NODE_TYPE_MAP = java.util.Map.ofEntries(
+            java.util.Map.entry("Book", "Book"),
+            java.util.Map.entry("BOOK", "Book"),
+            java.util.Map.entry("Author", "Author"),
+            java.util.Map.entry("AUTHOR", "Author"),
+            java.util.Map.entry("Keyword", "Keyword"),
+            java.util.Map.entry("KEYWORD", "Keyword"),
+            java.util.Map.entry("Subject", "Subject"),
+            java.util.Map.entry("SUBJECT", "Subject"),
+            java.util.Map.entry("Publication", "Publication"),
+            java.util.Map.entry("PUBLICATION", "Publication"),
+            java.util.Map.entry("Conference", "Conference"),
+            java.util.Map.entry("CONFERENCE", "Conference")
+    );
+
+    private static String normalizeNodeType(String input) {
+        return input == null ? null : ALLOWED_NODE_TYPE_MAP.get(input);
+    }
 
     @Override
     public KnowledgeGraphVO getBookGraph(Long bookId, int depth) {
@@ -62,12 +84,13 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         params.put("entity", entity);
 
         if (type != null && !type.isEmpty()) {
-            // 白名单校验，防 Cypher 注入
-            if (!ALLOWED_NODE_TYPES.contains(type)) {
+            // 白名单校验 + 大小写兼容映射，防 Cypher 注入
+            String resolvedLabel = normalizeNodeType(type);
+            if (resolvedLabel == null) {
                 log.warn("非法的实体类型参数: type={}, 已拒绝", type);
                 return KnowledgeGraphVO.builder().nodes(List.of()).edges(List.of()).build();
             }
-            cypher.append("MATCH (n:").append(type).append(") ")
+            cypher.append("MATCH (n:").append(resolvedLabel).append(") ")
                     .append("WHERE n.name CONTAINS $entity OR n.title CONTAINS $entity ")
                     .append("RETURN n ORDER BY coalesce(n.pagerank, 0.0) DESC LIMIT 50");
         } else {
