@@ -8,6 +8,7 @@ import com.library.security.context.SecurityUtils;
 import com.library.security.ratelimit.RateLimitProperties;
 import com.library.security.ratelimit.RateLimitResult;
 import com.library.security.ratelimit.RateLimitService;
+import com.library.security.util.SecurityResponseUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -69,16 +70,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
             long nowSec = System.currentTimeMillis() / 1000;
             long retryAfter = Math.max(1, result.resetEpochSecond() - nowSec);
             response.setHeader("Retry-After", String.valueOf(retryAfter));
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(objectMapper.writeValueAsString(Result.error(ErrorCode.RATE_LIMITED)));
+            SecurityResponseUtil.writeJsonError(response, HttpStatus.TOO_MANY_REQUESTS,
+                    Result.error(ErrorCode.RATE_LIMITED), objectMapper);
             return;
         }
         chain.doFilter(request, response);
     }
 
-    /** 白名单：健康检查、文档、CORS 预检不限流 */
+    /** 白名单：健康检查、文档、可观测性、CORS 预检不限流 */
     private boolean shouldNotRateLimit(String path, String method) {
         if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
@@ -86,7 +85,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return path.startsWith("/health")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/api-docs")
-                || path.startsWith("/v3/api-docs");
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/prometheus");
     }
 
     private BucketConfig resolveBucket(String path, HttpServletRequest request) {

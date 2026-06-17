@@ -104,19 +104,19 @@ public class ReservationZsetReconcileJob {
     }
 
     /**
-     * 收集某个队列的所有 ZSET 成员.
+     * 收集某个队列的所有 ZSET 成员（ZSCAN 分页，默认上限 10000 防阻塞）.
      */
+    private static final int ZSCAN_COUNT = 100;
+    private static final int ZSCAN_MAX = 10000;
+
     private Set<Long> collectZsetMembers(String queueKey) {
-        Set<Object> raw = redisTemplate.opsForZSet().range(queueKey, 0, -1);
-        if (raw == null || raw.isEmpty()) {
-            return Set.of();
-        }
         Set<Long> result = new HashSet<>();
-        for (Object obj : raw) {
-            try {
-                result.add(Long.parseLong(obj.toString()));
-            } catch (NumberFormatException ignored) {
-                // 跳过非法格式
+        int scanned = 0;
+        try (var cursor = redisTemplate.opsForZSet().scan(queueKey,
+                org.springframework.data.redis.core.ScanOptions.scanOptions().count(ZSCAN_COUNT).build())) {
+            while (cursor.hasNext() && scanned < ZSCAN_MAX) {
+                result.add(Long.parseLong(cursor.next().toString()));
+                scanned++;
             }
         }
         return result;

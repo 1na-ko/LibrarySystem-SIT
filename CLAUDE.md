@@ -2,7 +2,7 @@
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
 > **状态**: 阶段 0-9 ✅ | 阶段 10-11 📋 待实施
-> **最后更新**: 2026-06-16
+> **最后更新**: 2026-06-17
 
 ---
 
@@ -334,6 +334,26 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **测试方法命名**: `should{预期行为}When{条件/输入}`
 - **测试统计口径**: 文档中"N 项测试全绿"指 `mvn surefire` 报告的**执行用例数**（含 `@ParameterizedTest` 参数化展开与 `@Nested` 嵌套类），而非 `@Test` 注解的物理方法数；归档记录一律以 surefire 执行用例数为准
 - **禁止**: Controller 直接调 Mapper、拼接 SQL、吞异常、push --force 到 main
+
+### 已落地（阶段 9 后：剩余审计问题修复）
+
+> 对阶段 9 后综合审计报告中未能被提交 `62747e0` 覆盖的剩余 ~35 项 P1/P2/P3 问题进行修复。
+> 全量 **356 项测试全绿**（common 144 + ai 29 + core 99 + security 71 + kg 3 + acquisition 10；bootstrap 1 项 @Disabled）。
+
+- **P1 重要修复**：GlobalExceptionHandler 补 `DataIntegrityViolationException` handler（409 冲突响应）+ `spring-tx` 依赖；OperationLogAspect 分层合规——新建 `OperationLogService`/`OperationLogServiceImpl` 封装 Mapper，AOP 改注 Service 替代直接调 Mapper；GraphBuildServiceImpl `writeToNeo4j()` N+1 → UNWIND 批量写入（`batchMergeNodes`/`batchMergeRelationships`，从 >30 次往返降至 7 次固定调用）；清理 `EmbeddingServiceImpl` 未使用的 `MAX_RETRIES` 死代码；`fallbackNer()` 作者名分隔注释修正（正确反映不按空格分割西方全名）✅
+- **P2 实现质量优化**：RecommendationServiceImpl 超时后先收集部分结果再取消未完成任务（与日志一致）；ReservationZsetReconcileJob `ZRANGE 0 -1` → ZSCAN 分页（防大集合阻塞 Redis）；DuplicateCheckServiceImpl 输入标题 NLP 预处理提到循环外（消除 O(N) 次重复 tokenize）；NegotiationServiceImpl 注入 Spring `ObjectMapper` + `updateRecord` 接受已加载实体消除冗余 `selectById`；LlmConfig/EmbeddingConfig 提取 `AiHttpClientFactory` 共享 HttpClient 配置；4 处 JSON 错误响应提取 `SecurityResponseUtil` 工具类；RateLimitFilter 白名单补 `/prometheus`；KnowledgeGraphProperties `@Configuration`→`@Component` 消除无谓 CGLIB 代理；GraphQueryServiceImpl 删除多余的 `countNodes()` 往返；Neo4jRepository PageRank 降级稠密矩阵→稀疏邻接表（O(n²)→O(edges) 内存）✅
+- **P2 配置与文档**：application-prod.yml `include: health,prometheus`（移除冗余 `metrics`）；ErrorCode.SUCCESS 加 `@Deprecated` + 防御性 Javadoc 说明仅用于 switch 枚举覆盖；KgSchemaInitializer 防御性注释标注 Cypher 拼接安全性前提；CLAUDE.md 测试计数精确校正；文档交叉一致性确认 ✅
+
+### 已落地（阶段 9 后：回溯审计修正）
+
+> 阶段 9 完成后回溯审视阶段 0-9 全量工作，验证历次审计修复落地情况，修正 4 项文档不一致 + 3 项代码实现缺陷。
+> 全量 **360 项测试全绿**（common 144 + ai 29 + core 99 + security 75 + kg 3 + acquisition 10；bootstrap 1 项 @Disabled）。
+
+- **文档一致性修正**：架构文档 §2.3 权限矩阵与 §6.3 Android Retrofit 示例的 KG 路径修正（`/kg/book/{id}/graph` → `/kg/book/{bookId}`，与 `KnowledgeGraphController` 实际 `@GetMapping` 对齐，阶段 9 后审计 P1-13 遗留）；架构文档头部版本号 v1.10 → v1.13（对齐版本历史表，此前头部滞后于历史最新条目）；`docs/README.md` 目录结构示意图补阶段 9 三份文档条目（导航表已有、目录树遗漏）✅
+- **操作日志脱敏兑现**：`OperationLogAspect` 实现 `maskSensitive()`，对参数 JSON 中 password/passwd/secret/token/accessToken/refreshToken/credential/apiKey 等字段值脱敏为 `***`（兑现 `@OperationLog.logParams` Javadoc"敏感字段将由切面自动脱敏"的承诺，此前注释承诺但未实现）；新增 4 项单测覆盖，security 模块 71→75 ✅
+- **ES 重建批量优化**：`BookESRepository` 新增 `bulkSave(List<BookDocument>)`（BulkRequest + `response.errors()` 部分失败检测）；`EsRebuildJob` 由逐条 `save` 改为先批量构建文档再 `bulkSave` 一次性写入（N 次网络往返→1 次），批量失败时降级逐条 `save` 隔离单条失败（阶段 9 后审计 P2-01 遗留）✅
+- **图谱事务边界澄清**：`GraphBuildServiceImpl.buildGraph()`/`rebuildAll()` 的 `@Transactional` 添加注释说明——其仅管理 MySQL 事务，而本方法无 MySQL 写操作（仅 select 读取），Neo4j 写入通过 Driver 独立 Session auto-commit 不在事务内、不可回滚；图谱一致性实际由 MERGE 幂等语义 + `KgBuildListener` 重试保证（消除 `@Transactional` 对 Neo4j 事务保护的误导）✅
+- **记录未改项**：`@ConditionalOnExpression` 在 `LlmConfig` @Bean 与 `LlmServiceImpl`/`EmbeddingServiceImpl` 类上重复声明同一 SpEL（阶段 9 后审计 P1-10），功能完全正常仅 DRY 冗余，改 `@ConditionalOnBean` 有 Bean 注册顺序风险，权衡后保留现状 ✅
 
 ---
 

@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class NegotiationServiceImpl implements NegotiationService {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     private final NegotiationMapper negotiationMapper;
     private final NegotiationAdvisor negotiationAdvisor;
@@ -67,8 +67,8 @@ public class NegotiationServiceImpl implements NegotiationService {
         NegotiationSuggestionVO suggestion = negotiationAdvisor.generateSuggestion(
                 record.getResourceId(), record.getSupplierId());
 
-        // 3. 写回建议（单表更新）
-        updateRecord(negotiationId, suggestion);
+        // 3. 写回建议（复用已加载记录，消除冗余 selectById）
+        updateRecord(record, suggestion);
         return suggestion;
     }
 
@@ -89,19 +89,18 @@ public class NegotiationServiceImpl implements NegotiationService {
      * 价格与策略/条款/风险作为一个整体写回：若 JSON 序列化失败则直接抛异常，
      * 不执行 updateById，避免"价格已更新但策略丢失"的数据不一致。
      */
-    private void updateRecord(Long negotiationId, NegotiationSuggestionVO suggestion) {
-        NegotiationRecord record = negotiationMapper.selectById(negotiationId);
+    private void updateRecord(NegotiationRecord record, NegotiationSuggestionVO suggestion) {
         if (suggestion.getPriceRange() != null) {
             record.setFloorPrice(suggestion.getPriceRange().getFloorPrice());
             record.setCeilingPrice(suggestion.getPriceRange().getCeilingPrice());
             record.setSuggestedOffer(suggestion.getPriceRange().getSuggestedOffer());
         }
         try {
-            record.setStrategies(OBJECT_MAPPER.writeValueAsString(suggestion.getStrategies()));
-            record.setKeyTerms(OBJECT_MAPPER.writeValueAsString(suggestion.getKeyTerms()));
-            record.setRiskWarnings(OBJECT_MAPPER.writeValueAsString(suggestion.getRiskWarnings()));
+            record.setStrategies(objectMapper.writeValueAsString(suggestion.getStrategies()));
+            record.setKeyTerms(objectMapper.writeValueAsString(suggestion.getKeyTerms()));
+            record.setRiskWarnings(objectMapper.writeValueAsString(suggestion.getRiskWarnings()));
         } catch (JsonProcessingException e) {
-            log.error("策略 JSON 序列化失败，谈判记录不予更新: negotiationId={}", negotiationId, e);
+            log.error("策略 JSON 序列化失败，谈判记录不予更新: negotiationId={}", record.getId(), e);
             throw new BizException(ErrorCode.INTERNAL_ERROR, "谈判策略序列化失败");
         }
         negotiationMapper.updateById(record);

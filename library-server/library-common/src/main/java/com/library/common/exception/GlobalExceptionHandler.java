@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -170,6 +171,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "路径变量缺失"));
+    }
+
+    /**
+     * 数据完整性冲突（唯一约束违反、外键约束违反等）.
+     * <p>
+     * Spring 将 JDBC {@code SQLIntegrityConstraintViolationException} 等底层异常
+     * 统一转换为 {@link DataIntegrityViolationException}。
+     * 常见触发场景：并发借书/预约时突破 DB 唯一约束兜底、重复插入已存在记录等。
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Result<Void>> handleDataIntegrityViolation(
+            DataIntegrityViolationException e, HttpServletRequest request) {
+        log.warn("数据完整性冲突: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Result.error(ErrorCode.CONFLICT));
     }
 
     /**

@@ -76,12 +76,7 @@ public class LlmConfig {
     @Bean
     @ConditionalOnExpression("T(org.springframework.util.StringUtils).hasText('${ai.deepseek.api-key:}')")
     public WebClient deepseekWebClient() {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis())
-                .responseTimeout(readTimeout)
-                .doOnConnected(conn ->
-                        conn.addHandlerLast(new ReadTimeoutHandler(readTimeout.toSeconds(), TimeUnit.SECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(writeTimeout.toSeconds(), TimeUnit.SECONDS)));
+        HttpClient httpClient = AiHttpClientFactory.create(connectTimeout, readTimeout, writeTimeout);
 
         WebClient client = WebClient.builder()
                 .baseUrl(baseUrl)

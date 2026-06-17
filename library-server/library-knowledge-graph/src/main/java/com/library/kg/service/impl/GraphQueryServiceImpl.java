@@ -44,12 +44,6 @@ public class GraphQueryServiceImpl implements GraphQueryService {
     public KnowledgeGraphVO getBookGraph(Long bookId, int depth) {
         int safeDepth = clamp(depth, 1, kgProperties.getMaxQueryDepth());
 
-        // 验证 Book 存在
-        long cnt = neo4jRepository.countNodes(BOOK_LABEL);
-        if (cnt == 0) {
-            return KnowledgeGraphVO.builder().nodes(List.of()).edges(List.of()).build();
-        }
-
         // 路径查询：以书为中心，取 depth 跳内邻居
         // 注意：可变长度深度参数无法用 $param 绑定，使用整数白名单校验后字符串拼接
         String cypher = "MATCH p = (b:Book {id: $bookId})-[*1.." + safeDepth + "]-(n) "

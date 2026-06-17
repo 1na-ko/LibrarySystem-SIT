@@ -4,7 +4,9 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
@@ -52,6 +54,45 @@ public class BookESRepository {
             log.debug("ES 文档已索引: bookId={}", doc.getId());
         } catch (IOException e) {
             throw new UncheckedIOException("ES 索引失败: bookId=" + doc.getId(), e);
+        }
+    }
+
+    /**
+     * 批量索引图书文档（BulkRequest，消除全量重建场景的逐条网络往返）.
+     * <p>
+     * 用于 {@code EsRebuildJob} 全量重建：将一批文档通过单次 bulk 请求写入 ES，
+     * 相比逐条 {@link #save} 可将 N 次网络往返降至 1 次。
+     * <p>
+     * 批量请求部分失败（{@code response.errors()=true}）时抛出 {@link UncheckedIOException}，
+     * 由调用方降级为逐条 {@link #save} 重试，保证单条失败不影响同批其他文档。
+     *
+     * @param docs 待索引的文档列表
+     */
+    public void bulkSave(List<BookDocument> docs) {
+        if (docs == null || docs.isEmpty()) {
+            return;
+        }
+        List<BulkOperation> operations = docs.stream()
+                .map(doc -> BulkOperation.of(op -> op.index(i -> i
+                        .index(EsIndexInitializer.BOOKS_INDEX)
+                        .id(String.valueOf(doc.getId()))
+                        .document(doc))))
+                .toList();
+        try {
+            BulkResponse response = esClient.bulk(b -> b
+                    .index(EsIndexInitializer.BOOKS_INDEX)
+                    .operations(operations));
+            if (response.errors()) {
+                List<String> failedIds = response.items().stream()
+                        .filter(it -> it.error() != null)
+                        .map(it -> String.valueOf(it.id()))
+                        .toList();
+                throw new UncheckedIOException(new IOException(
+                        "ES 批量索引部分失败，失败 ID: " + failedIds));
+            }
+            log.debug("ES 批量索引完成: {} 条", docs.size());
+        } catch (IOException e) {
+            throw new UncheckedIOException("ES 批量索引失败: " + docs.size() + " 条", e);
         }
     }
 

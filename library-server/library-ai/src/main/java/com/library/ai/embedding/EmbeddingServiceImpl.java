@@ -41,8 +41,6 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 
     private static final String EMBEDDING_PATH = "/api/v1/services/embeddings/text-embedding/text-embedding";
     private static final int EMBEDDING_DIM = 1024;
-    /** Embedding API 最大重试次数（由配置注入） */
-    private static final int MAX_RETRIES = 2;
 
     @Override
     public List<Float> embed(String text) {

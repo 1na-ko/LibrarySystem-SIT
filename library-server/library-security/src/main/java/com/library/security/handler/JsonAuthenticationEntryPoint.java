@@ -3,6 +3,7 @@ package com.library.security.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.common.exception.ErrorCode;
 import com.library.common.result.Result;
+import com.library.security.util.SecurityResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +33,7 @@ public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(Result.error(ErrorCode.UNAUTHORIZED)));
+        SecurityResponseUtil.writeJsonError(response, HttpStatus.UNAUTHORIZED,
+                Result.error(ErrorCode.UNAUTHORIZED), objectMapper);
     }
 }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.common.annotation.OperationLog;
 import com.library.common.exception.BizException;
 import com.library.core.entity.OperationLogEntity;
-import com.library.core.mapper.OperationLogMapper;
+import com.library.core.service.OperationLogService;
 import com.library.security.context.LoginUser;
 import com.library.security.context.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -42,11 +42,21 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class OperationLogAspect {
 
-    private final OperationLogMapper operationLogMapper;
+    private final OperationLogService operationLogService;
     private final ObjectMapper objectMapper;
 
     private static final int MAX_PARAMS_LENGTH = 2000;
     private static final int MAX_ERROR_LENGTH = 500;
+
+    /**
+     * 敏感字段名匹配（不区分大小写）：命中后其值脱敏为 ***，避免密码/令牌/密钥泄露到 operation_log 表.
+     * <p>
+     * 兑现 {@link com.library.common.annotation.OperationLog#logParams()} 的 Javadoc 承诺——
+     * "敏感字段（password/token/secret 等）将由切面自动脱敏为 ***"。
+     */
+    private static final java.util.regex.Pattern SENSITIVE_FIELD_PATTERN = java.util.regex.Pattern.compile(
+            "(\"(?:password|passwd|passwordHash|password_hash|secret|token|accessToken|access_token|refreshToken|refresh_token|credential|apiKey|api_key)\"\\s*:\\s*)\"[^\"]*\"",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
 
     /**
      * 拦截 @OperationLog 方法，环绕记录操作日志.
@@ -58,7 +68,9 @@ public class OperationLogAspect {
         LoginUser operator = SecurityUtils.getCurrentUser();
         String clientIp = extractClientIp();
         String target = buildTarget(pjp, opLog);
-        String paramsJson = opLog.logParams() ? truncate(toJson(pjp.getArgs()), MAX_PARAMS_LENGTH) : null;
+        String paramsJson = opLog.logParams()
+                ? truncate(maskSensitive(toJson(pjp.getArgs())), MAX_PARAMS_LENGTH)
+                : null;
 
         OperationLogEntity record = new OperationLogEntity();
         record.setOperatorId(operator != null ? operator.getUserId() : null);
@@ -104,7 +116,7 @@ public class OperationLogAspect {
     void asyncInsert(OperationLogEntity record) {
         CompletableFuture.runAsync(() -> {
             try {
-                operationLogMapper.insert(record);
+                operationLogService.insert(record);
             } catch (Exception e) {
                 log.error("操作日志写入失败: module={}, action={}, operator={}",
                         record.getModule(), record.getAction(), record.getOperatorName(), e);
@@ -191,5 +203,23 @@ public class OperationLogAspect {
             return str;
         }
         return str.substring(0, maxLength - 3) + "...";
+    }
+
+    /**
+     * 脱敏 JSON 字符串中的敏感字段值.
+     * <p>
+     * 将 password / token / secret / credential / apiKey 等字段的值替换为 {@code "***"}，
+     * 防止敏感信息随操作参数写入 {@code operation_log} 表。
+     * 在 {@link #toJson(Object)} 之后、{@link #truncate(String, int)} 之前调用，
+     * 兑现 {@link com.library.common.annotation.OperationLog#logParams()} 的脱敏承诺。
+     *
+     * @param json 原始 JSON 字符串
+     * @return 脱敏后的 JSON 字符串
+     */
+    String maskSensitive(String json) {
+        if (json == null) {
+            return null;
+        }
+        return SENSITIVE_FIELD_PATTERN.matcher(json).replaceAll("$1\"***\"");
     }
 }
