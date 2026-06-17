@@ -5,16 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:title="知识图谱"
-        app:titleTextColor="@color/gray"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+    android:background="@color/dark_bg_primary">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,7 +18,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/depth_label"
-            android:textAppearance="?attr/textAppearanceLabelMedium" />
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="@color/dark_text_secondary" />
 
         <com.google.android.material.slider.Slider
             android:id="@+id/sliderDepth"
@@ -38,7 +30,9 @@
             android:valueFrom="1"
             android:valueTo="3"
             android:stepSize="1"
-            android:value="2" />
+            android:value="2"
+            app:trackColorActive="@color/kg_node_core"
+            app:thumbColor="@color/kg_node_core" />
 
         <TextView
             android:id="@+id/textDepthValue"
@@ -46,24 +40,29 @@
             android:layout_height="wrap_content"
             android:text="2"
             android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textColor="?attr/colorPrimary" />
+            android:textColor="@color/dark_text_primary" />
 
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/dark_bg_primary">
 
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
+        <TextView
+            android:id="@+id/textLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:text="— 加载中 —"
+            android:textColor="@color/dark_text_placeholder"
+            android:textSize="15sp"
+            android:visibility="gone" />
 
     </FrameLayout>
 

@@ -5,16 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:title="分类浏览"
-        app:titleTextColor="@color/gray"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+    android:background="@color/bg_primary">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -29,9 +20,13 @@
             android:gravity="center"
             android:visibility="visible">
 
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:layout_width="48dp"
-                android:layout_height="48dp" />
+            <TextView
+                android:id="@+id/textLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="— 加载中 —"
+                android:textColor="@color/text_placeholder"
+                android:textSize="15sp" />
 
         </LinearLayout>
 
@@ -63,8 +58,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="暂无分类数据"
-                android:textSize="16sp"
-                android:textColor="@color/gray" />
+                android:textSize="15sp"
+                android:textColor="@color/text_tertiary" />
 
         </LinearLayout>
 
@@ -81,8 +76,8 @@
                 android:id="@+id/tvError"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textColor="@color/error" />
+                android:textSize="15sp"
+                android:textColor="@color/text_tertiary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRetry"

@@ -19,6 +19,8 @@ import com.library.android.databinding.FragmentLiteratureTraceBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.TraceGraph;
+import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
 import org.json.JSONArray;
@@ -47,7 +49,9 @@ public class LiteratureTraceFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        binding = FragmentLiteratureTraceBinding.inflate(inflater, container, false);
+        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
+        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
+        binding = FragmentLiteratureTraceBinding.inflate(themedInflater, container, false);
         return binding.getRoot();
     }
 
@@ -56,7 +60,7 @@ public class LiteratureTraceFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("文献溯源");
 
         if (getArguments() != null) {
             bookId = getArguments().getLong("bookId", 0);
@@ -110,7 +114,7 @@ public class LiteratureTraceFragment extends Fragment {
     private void observeViewModel() {
         viewModel.getTraceGraph().observe(getViewLifecycleOwner(), this::renderTrace);
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
     }
 
     private void renderTrace(TraceGraph trace) {

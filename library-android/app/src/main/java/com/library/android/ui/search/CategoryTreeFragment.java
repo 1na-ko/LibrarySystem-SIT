@@ -15,6 +15,7 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentCategoryTreeBinding;
 import com.library.android.model.CategoryVO;
 import com.library.android.repository.BookRepository;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.common.BaseAdapter;
 
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class CategoryTreeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("分类浏览");
 
         adapter = new CategoryTreeAdapter();
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -76,6 +77,7 @@ public class CategoryTreeFragment extends Fragment {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
+                        if (binding == null) return;
                         binding.layoutLoading.setVisibility(View.GONE);
                         if (result.isSuccess() && result.getData() != null) {
                             allCategories = result.getData();
@@ -86,6 +88,7 @@ public class CategoryTreeFragment extends Fragment {
                         }
                     },
                     throwable -> {
+                        if (binding == null) return;
                         binding.layoutLoading.setVisibility(View.GONE);
                         binding.layoutError.setVisibility(View.VISIBLE);
                         binding.tvError.setText("加载失败：" + throwable.getMessage());

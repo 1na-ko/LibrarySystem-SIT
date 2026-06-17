@@ -115,7 +115,7 @@ public class BorrowFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getLoadingState().observe(getViewLifecycleOwner(), state -> {
-            binding.progressBar.setVisibility(
+            binding.textLoading.setVisibility(
                     state == com.library.android.ui.common.LoadingState.LOADING
                             && adapter.getCurrentList().isEmpty() ? View.VISIBLE : View.GONE);
             binding.layoutEmpty.setVisibility(
@@ -133,7 +133,6 @@ public class BorrowFragment extends Fragment {
 
         viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
             if (msg != null && !msg.isEmpty()) {
-                binding.textError.setText(msg);
                 Snackbar.make(binding.getRoot(), msg, Snackbar.LENGTH_SHORT).show();
             }
         });

@@ -4,25 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:title="热门图书"
-        app:titleTextColor="@color/gray"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+    android:background="@color/bg_primary">
 
     <!-- 分类筛选 -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupCategories"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp"
+        android:padding="@dimen/space_md"
         app:singleLine="true"
-        app:selectionRequired="false" />
+        app:selectionRequired="false"
+        app:chipStyle="@style/Widget.Library.Chip.Filter" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -45,8 +37,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="暂无热门图书"
-                android:textSize="16sp"
-                android:textColor="@color/gray" />
+                android:textSize="15sp"
+                android:textColor="@color/text_tertiary" />
 
         </LinearLayout>
 

@@ -4,23 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:title="@string/recommendations"
-        app:titleTextColor="@color/gray"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+    android:background="@color/bg_primary">
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- 下拉刷新 -->
+        <!-- Pull-to-refresh wrapping RecyclerView -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
@@ -33,6 +24,7 @@
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+        <!-- Empty state -->
         <LinearLayout
             android:id="@+id/layoutEmpty"
             android:layout_width="match_parent"
@@ -43,9 +35,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="暂无推荐"
-                android:textSize="16sp"
-                android:textColor="@color/gray" />
+                android:text="还没有推荐，多借几本书再来看看吧。"
+                android:textSize="15sp"
+                android:textColor="@color/text_tertiary" />
 
         </LinearLayout>
 

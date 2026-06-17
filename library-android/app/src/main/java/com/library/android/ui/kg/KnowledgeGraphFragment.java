@@ -20,12 +20,12 @@ import com.library.android.databinding.FragmentKnowledgeGraphBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.KnowledgeGraphVO;
+import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.Locale;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -50,7 +50,9 @@ public class KnowledgeGraphFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        binding = FragmentKnowledgeGraphBinding.inflate(inflater, container, false);
+        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
+        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
+        binding = FragmentKnowledgeGraphBinding.inflate(themedInflater, container, false);
         return binding.getRoot();
     }
 
@@ -59,7 +61,7 @@ public class KnowledgeGraphFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("知识图谱");
 
         if (getArguments() != null) {
             bookId = getArguments().getLong("bookId", 0);
@@ -98,7 +100,7 @@ public class KnowledgeGraphFragment extends Fragment {
         viewModel.getBookGraph().observe(getViewLifecycleOwner(), this::renderGraph);
 
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
 
         viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
             if (msg != null) {

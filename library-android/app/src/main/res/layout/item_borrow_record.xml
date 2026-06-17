@@ -5,88 +5,89 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardElevation="1dp"
-    app:cardCornerRadius="12dp"
-    style="@style/Widget.Material3.CardView.Filled">
+    android:layout_margin="@dimen/space_xs"
+    style="@style/Widget.Library.Card">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/space_lg">
 
+        <!-- Row 1: 书名 + 状态标签 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/textBookTitle"
+                style="@style/TextAppearance.Library.Title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:singleLine="true"
                 android:ellipsize="end"
+                android:singleLine="true"
                 tools:text="深入理解Java虚拟机" />
 
             <TextView
                 android:id="@+id/textStatus"
+                style="@style/TextAppearance.Library.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="2dp"
-                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:layout_marginStart="@dimen/space_sm"
                 android:background="@drawable/bg_status_chip"
+                android:paddingHorizontal="@dimen/space_sm"
+                android:paddingVertical="@dimen/space_xxs"
                 tools:text="借阅中" />
 
         </LinearLayout>
 
+        <!-- Row 2: 作者 -->
         <TextView
             android:id="@+id/textAuthor"
+            style="@style/TextAppearance.Library.BodySecondary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginTop="@dimen/space_xs"
             tools:text="周志明" />
 
+        <!-- Row 3: 借阅日期 + 应还日期 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/textBorrowDate"
+                style="@style/TextAppearance.Library.Caption"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
                 tools:text="借阅: 2026-06-01" />
 
             <TextView
                 android:id="@+id/textDueDate"
+                style="@style/TextAppearance.Library.Caption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodySmall"
                 tools:text="应还: 2026-07-01" />
 
         </LinearLayout>
 
+        <!-- Row 4: 罚款（超期时显示） -->
         <TextView
             android:id="@+id/textFine"
+            style="@style/TextAppearance.Library.Caption"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?attr/colorError"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textColor="@color/accent_cta"
             android:visibility="gone"
-            tools:text="罚款: ¥5.50" />
+            tools:text="罚款: ¥5.50"
+            tools:visibility="visible" />
 
     </LinearLayout>
 

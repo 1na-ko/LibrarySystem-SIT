@@ -11,13 +11,25 @@
         android:label="搜索">
         <action
             android:id="@+id/action_searchFragment_to_bookDetailFragment"
-            app:destination="@id/bookDetailFragment" />
+            app:destination="@id/bookDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <action
             android:id="@+id/action_searchFragment_to_advancedSearchFragment"
-            app:destination="@id/advancedSearchFragment" />
+            app:destination="@id/advancedSearchFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <action
             android:id="@+id/action_searchFragment_to_categoryTreeFragment"
-            app:destination="@id/categoryTreeFragment" />
+            app:destination="@id/categoryTreeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -31,16 +43,39 @@
         android:label="我的">
         <action
             android:id="@+id/action_profileFragment_to_borrowHistoryFragment"
-            app:destination="@id/borrowHistoryFragment" />
+            app:destination="@id/borrowHistoryFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <action
             android:id="@+id/action_profileFragment_to_borrowStatsFragment"
-            app:destination="@id/borrowStatsFragment" />
+            app:destination="@id/borrowStatsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <action
             android:id="@+id/action_profileFragment_to_recommendationsFragment"
-            app:destination="@id/recommendationsFragment" />
+            app:destination="@id/recommendationsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <action
             android:id="@+id/action_profileFragment_to_editProfileFragment"
-            app:destination="@id/editProfileFragment" />
+            app:destination="@id/editProfileFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_profileFragment_to_reservationListFragment"
+            app:destination="@id/reservationListFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <!-- ======================== 认证模块（人员 A） ======================== -->
@@ -50,7 +85,11 @@
         android:label="登录">
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
-            app:destination="@id/registerFragment" />
+            app:destination="@id/registerFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -74,7 +113,11 @@
         android:label="高级搜索">
         <action
             android:id="@+id/action_advancedSearchFragment_to_searchFragment"
-            app:destination="@id/searchFragment" />
+            app:destination="@id/searchFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -82,6 +125,7 @@
         android:name="com.library.android.ui.search.CategoryTreeFragment"
         android:label="分类浏览" />
 
+    <!-- TODO: 暂不可达，待添加导航入口 -->
     <fragment
         android:id="@+id/hotBooksFragment"
         android:name="com.library.android.ui.search.HotBooksFragment"
@@ -121,7 +165,11 @@
 
     <action
         android:id="@+id/action_borrowFragment_to_borrowDetailFragment"
-        app:destination="@id/borrowDetailFragment" />
+        app:destination="@id/borrowDetailFragment"
+        app:enterAnim="@anim/slide_in_right"
+        app:exitAnim="@anim/slide_out_left"
+        app:popEnterAnim="@anim/slide_in_left"
+        app:popExitAnim="@anim/slide_out_right" />
 
     <!-- ======================== 预约管理（人员 B） ======================== -->
     <fragment

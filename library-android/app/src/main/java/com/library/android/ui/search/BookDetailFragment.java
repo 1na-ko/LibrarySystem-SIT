@@ -50,7 +50,7 @@ public class BookDetailFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(BookDetailViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((com.library.android.ui.main.MainActivity) requireActivity()).setGlobalTitle("图书详情");
 
         bookId = getArguments() != null ? getArguments().getLong("bookId", 0) : 0;
 
@@ -58,16 +58,6 @@ public class BookDetailFragment extends Fragment {
         recommendAdapter = new RecommendAdapter();
         binding.rvRelatedBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvRelatedBooks.setAdapter(recommendAdapter);
-
-        // 借阅按钮
-        binding.btnBorrow.setOnClickListener(v -> {
-            // TODO: 跳转借阅确认
-        });
-
-        // 预约按钮
-        binding.btnReserve.setOnClickListener(v -> {
-            // TODO: 调用预约接口
-        });
 
         setupObservers();
 
@@ -90,7 +80,7 @@ public class BookDetailFragment extends Fragment {
         });
 
         viewModel.isLoading().observe(getViewLifecycleOwner(), loading -> {
-            // TODO: 显示/隐藏加载状态
+            // loading state handled by textLoading view if needed
         });
     }
 
@@ -162,7 +152,6 @@ public class BookDetailFragment extends Fragment {
             binding.tvTitle.setText(item.getBook().getTitle());
             binding.tvAuthor.setText(item.getBook().getAuthor());
             binding.tvReason.setText(item.getReason());
-            binding.tvScore.setText(String.format("%.0f", item.getScore()));
         }
     }
 }

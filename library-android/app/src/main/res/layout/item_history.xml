@@ -1,62 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="6dp"
-    app:cardElevation="1dp"
-    app:cardCornerRadius="8dp">
+    android:minHeight="72dp"
+    android:orientation="horizontal"
+    android:padding="@dimen/space_sm">
 
+    <!-- Left date column -->
+    <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="@dimen/timeline_date_width"
+        android:layout_height="match_parent"
+        android:gravity="end"
+        android:paddingEnd="@dimen/space_sm"
+        style="@style/TextAppearance.Library.Mono"
+        tools:text="2026-06" />
+
+    <!-- Timeline dot -->
+    <View
+        android:id="@+id/timelineDot"
+        android:layout_width="@dimen/timeline_dot_size"
+        android:layout_height="@dimen/timeline_dot_size"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="@dimen/space_sm"
+        android:background="@drawable/circle_dot" />
+
+    <!-- Content area -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvBookTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvBookTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="@color/gray"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/tvBorrowDate"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="@color/gray"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:id="@+id/tvDueDate"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="@color/gray" />
-
-        </LinearLayout>
+            style="@style/TextAppearance.Library.Title"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="深入理解Java虚拟机" />
 
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:gravity="center"
-            android:paddingHorizontal="12dp"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp" />
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            tools:text="已归还" />
+
+        <TextView
+            android:id="@+id/tvDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            style="@style/TextAppearance.Library.Caption"
+            tools:text="借阅: 30天" />
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>

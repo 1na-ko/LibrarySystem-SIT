@@ -1,25 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主题色 -->
-    <color name="primary">#1565C0</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="secondary">#42A5F5</color>
+    <!-- ============================================================
+         Design Tokens v2.1 — 图书馆智能管理系统配色
+         浅色模式为默认；深色模式通过 Theme.LibrarySystem.Dark 应用
+         ============================================================ -->
+
+    <!-- ── 背景（浅色） ── -->
+    <color name="bg_primary">#F7F4EB</color>
+    <color name="bg_card">#FDFCF8</color>
+    <color name="bg_input">#FFFFFF</color>
+    <color name="bg_overview">#F8F6F1</color>
+
+    <!-- ── 文字（浅色） ── -->
+    <color name="text_primary">#2A3B32</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_tertiary">#999999</color>
+    <color name="text_placeholder">#B0B0B0</color>
+
+    <!-- ── 功能色 ── -->
+    <color name="accent_cta">#8B3A3A</color>
+    <color name="accent_available">#4A7C59</color>
+    <color name="accent_checkedout">#D1D1D1</color>
+    <color name="accent_reserve">#D4A24C</color>
+
+    <!-- ── 边框（浅色） ── -->
+    <color name="border_light">#E5E5E5</color>
+
+    <!-- ── 深色模式 背景 ── -->
+    <color name="dark_bg_primary">#1A1A1A</color>
+    <color name="dark_bg_card">#2C2C2E</color>
+    <color name="dark_bg_input">#2C2C2E</color>
+    <color name="dark_bg_overview">#2C2C2E</color>
+
+    <!-- ── 深色模式 文字 ── -->
+    <color name="dark_text_primary">#F5F5F5</color>
+    <color name="dark_text_secondary">#A0A0A0</color>
+    <color name="dark_text_tertiary">#707070</color>
+    <color name="dark_text_placeholder">#555555</color>
+
+    <!-- ── 深色模式 边框 ── -->
+    <color name="dark_border_light">#3A3A3C</color>
+
+    <!-- ── 知识图谱专用色（深色背景下） ── -->
+    <color name="kg_node_core">#1A3A5C</color>
+    <color name="kg_node_secondary">#4A6B8A</color>
+    <color name="kg_node_edge">#8A9BAA</color>
+    <color name="kg_edge_default">#CCCCCC</color>
+    <color name="kg_edge_highlight">#1A3A5C</color>
+
+    <!-- ── 图表配色（BorrowStats 等） ── -->
+    <color name="chart_color_1">#8B3A3A</color>
+    <color name="chart_color_2">#4A7C59</color>
+    <color name="chart_color_3">#D4A24C</color>
+    <color name="chart_color_4">#4A6B8A</color>
+    <color name="chart_color_5">#D1D1D1</color>
+    <color name="chart_color_6">#8A9BAA</color>
+
+    <!-- ── 状态标签色（保持语义但使用新调色板） ── -->
+    <color name="chip_borrowed">#E8F0EB</color>       <!-- accent_available @ 20% -->
+    <color name="chip_returned">#F5F5F5</color>        <!-- accent_checkedout @ 20% -->
+    <color name="chip_overdue">#EFE3E3</color>         <!-- accent_cta @ 20% -->
+    <color name="chip_active">#E8F0EB</color>
+
+    <!-- ── 兼容 Material 3 主题属性映射（供 themes.xml 使用） ── -->
+    <color name="m3_primary">#8B3A3A</color>
+    <color name="m3_on_primary">#FDFCF8</color>
+    <color name="m3_secondary">#4A7C59</color>
+    <color name="m3_on_secondary">#FDFCF8</color>
+    <color name="m3_tertiary">#D4A24C</color>
+    <color name="m3_error">#B3261E</color>
+    <color name="m3_on_error">#FFFFFF</color>
+    <color name="m3_surface">#FDFCF8</color>
+    <color name="m3_on_surface">#2A3B32</color>
+    <color name="m3_surface_variant">#F8F6F1</color>
+    <color name="m3_on_surface_variant">#666666</color>
+    <color name="m3_outline">#E5E5E5</color>
+
+    <!-- ── 深色模式 Material 3 主题属性映射 ── -->
+    <color name="m3_dark_primary">#D4A24C</color>        <!-- 深色下主色用金色更醒目 -->
+    <color name="m3_dark_on_primary">#1A1A1A</color>
+    <color name="m3_dark_secondary">#4A6B8A</color>
+    <color name="m3_dark_on_secondary">#F5F5F5</color>
+    <color name="m3_dark_tertiary">#8A9BAA</color>
+    <color name="m3_dark_error">#CF6679</color>
+    <color name="m3_dark_on_error">#1A1A1A</color>
+    <color name="m3_dark_surface">#2C2C2E</color>
+    <color name="m3_dark_on_surface">#F5F5F5</color>
+    <color name="m3_dark_surface_variant">#2C2C2E</color>
+    <color name="m3_dark_on_surface_variant">#A0A0A0</color>
+    <color name="m3_dark_outline">#3A3A3C</color>
+
+    <!-- ── 保留旧兼容色 ── -->
     <color name="white">#FFFFFF</color>
-    <color name="gray">#757575</color>
-    <color name="red">#D32F2F</color>
-
-    <!-- 扩展色板 -->
-    <color name="surface_variant">#E7E0EC</color>
-    <color name="on_surface_variant">#49454F</color>
     <color name="error">#B3261E</color>
-    <color name="on_error">#FFFFFF</color>
-
-    <!-- 状态标签色 -->
-    <color name="chip_borrowed">#E3F2FD</color>
-    <color name="chip_returned">#E8F5E9</color>
-    <color name="chip_overdue">#FFEBEE</color>
-    <color name="chip_waiting">#FFF3E0</color>
-    <color name="chip_active">#E8F5E9</color>
-    <color name="chip_frozen">#FFF3E0</color>
-    <color name="chip_disabled">#F5F5F5</color>
 </resources>

@@ -17,6 +17,8 @@ import com.library.android.databinding.FragmentEntitySearchBinding;
 import com.library.android.databinding.ItemEntitySearchBinding;
 import com.library.android.model.EntitySearchResult;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -40,7 +42,9 @@ public class EntitySearchFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        binding = FragmentEntitySearchBinding.inflate(inflater, container, false);
+        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
+        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
+        binding = FragmentEntitySearchBinding.inflate(themedInflater, container, false);
         return binding.getRoot();
     }
 
@@ -49,7 +53,7 @@ public class EntitySearchFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("实体搜索");
 
         setupRecyclerView();
         setupSearch();
@@ -96,7 +100,7 @@ public class EntitySearchFragment extends Fragment {
                 adapter.submitListSync(results));
 
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
     }
 
     @Override

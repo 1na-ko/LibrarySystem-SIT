@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        app:cardCornerRadius="8dp"
+        app:shapeAppearance="@style/ShapeAppearance.Library.Medium"
         style="@style/Widget.Material3.CardView.Outlined">
 
         <LinearLayout

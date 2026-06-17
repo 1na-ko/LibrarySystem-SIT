@@ -74,6 +74,10 @@ public class ProfileFragment extends Fragment {
                 Navigation.findNavController(view)
                         .navigate(R.id.action_profileFragment_to_editProfileFragment));
 
+        binding.layoutReservations.setOnClickListener(v ->
+                Navigation.findNavController(view)
+                        .navigate(R.id.action_profileFragment_to_reservationListFragment));
+
         // 监听用户数据
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), this::updateUI);
 

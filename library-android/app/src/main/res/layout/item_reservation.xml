@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardElevation="1dp"
-    app:cardCornerRadius="12dp"
-    style="@style/Widget.Material3.CardView.Filled">
+    android:layout_margin="@dimen/space_xs"
+    style="@style/Widget.Library.Card">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/space_lg">
 
+        <!-- Row 1: Book title + status -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -23,59 +21,69 @@
             android:gravity="center_vertical">
 
             <TextView
-                android:id="@+id/textBookTitle"
+                android:id="@+id/tvBookTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                style="@style/TextAppearance.Library.Title"
                 android:singleLine="true"
                 android:ellipsize="end"
                 tools:text="深入理解Java虚拟机" />
 
+            <View
+                android:id="@+id/statusDot"
+                android:layout_width="@dimen/timeline_dot_size"
+                android:layout_height="@dimen/timeline_dot_size"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/circle_dot" />
+
             <TextView
-                android:id="@+id/textStatus"
+                android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="2dp"
-                android:textAppearance="?attr/textAppearanceLabelSmall"
-                android:background="@drawable/bg_status_chip"
+                style="@style/TextAppearance.Library.Label"
                 tools:text="等待中" />
 
         </LinearLayout>
 
+        <!-- Row 2: Author -->
         <TextView
-            android:id="@+id/textAuthor"
+            android:id="@+id/tvAuthor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginTop="@dimen/space_xs"
+            style="@style/TextAppearance.Library.BodySecondary"
             tools:text="周志明" />
 
+        <!-- Row 3: Queue position, Reserve time, Expire time -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/textReserveTime"
+                android:id="@+id/tvQueuePosition"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                style="@style/TextAppearance.Library.Caption"
+                tools:text="排队第3位" />
+
+            <TextView
+                android:id="@+id/tvReserveTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.Caption"
                 tools:text="预约: 2026-06-10" />
 
             <TextView
-                android:id="@+id/textQueuePosition"
+                android:id="@+id/tvExpireTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorPrimary"
-                tools:text="排队第3位" />
+                android:layout_marginStart="@dimen/space_sm"
+                style="@style/TextAppearance.Library.Caption"
+                tools:text="过期: 2026-06-15" />
 
         </LinearLayout>
 

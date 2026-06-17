@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@color/bg_primary">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -13,11 +13,10 @@
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
+            style="@style/Widget.Library.TabLayout"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            app:tabMode="scrollable"
-            app:tabSelectedTextColor="?attr/colorPrimary"
-            app:tabTextColor="?attr/colorOnSurfaceVariant" />
+            app:tabMode="scrollable" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -36,7 +35,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
-                android:padding="8dp" />
+                android:padding="@dimen/space_sm" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
@@ -52,16 +51,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📚"
-                android:textSize="48sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/no_borrow_records"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="16sp" />
+                android:text="还没有借阅轨迹，去发现一本好书吧。"
+                android:textColor="@color/text_tertiary"
+                android:textSize="15sp" />
 
         </LinearLayout>
 
@@ -75,29 +67,23 @@
             android:visibility="gone">
 
             <TextView
-                android:id="@+id/textError"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/load_error"
-                android:textColor="?attr/colorError"
-                android:textSize="16sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRetry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/retry"
-                style="@style/Widget.Material3.Button.TonalButton" />
+                android:text="连接中断，请检查网络"
+                android:textColor="@color/text_tertiary"
+                android:textSize="15sp" />
 
         </LinearLayout>
 
         <!-- 加载中 -->
-        <ProgressBar
-            android:id="@+id/progressBar"
+        <TextView
+            android:id="@+id/textLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:text="— 加载中 —"
+            android:textColor="@color/text_placeholder"
+            android:textSize="15sp"
             android:visibility="gone" />
 
     </FrameLayout>
@@ -105,12 +91,14 @@
     <!-- FAB：扫码借书 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabScanBorrow"
+        style="@style/Widget.Material3.FloatingActionButton.Primary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
+        android:layout_margin="@dimen/space_lg"
         android:contentDescription="@string/scan_borrow"
-        android:src="@android:drawable/ic_menu_camera"
-        app:tint="@color/on_primary" />
+        android:src="@drawable/ic_nav_borrow"
+        app:backgroundTint="@color/accent_cta"
+        app:tint="@color/m3_on_primary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

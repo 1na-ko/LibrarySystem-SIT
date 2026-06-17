@@ -11,6 +11,9 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.library.android.databinding.FragmentAdvancedSearchBinding;
+import com.library.android.ui.main.MainActivity;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * 高级搜索 Fragment.
@@ -18,6 +21,7 @@ import com.library.android.databinding.FragmentAdvancedSearchBinding;
  * @author LibrarySystem Team
  * @since 1.0.0
  */
+@AndroidEntryPoint
 public class AdvancedSearchFragment extends Fragment {
 
     private FragmentAdvancedSearchBinding binding;
@@ -34,7 +38,7 @@ public class AdvancedSearchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
+        ((MainActivity) requireActivity()).setGlobalTitle("高级搜索");
 
         binding.btnSearch.setOnClickListener(v -> {
             String title = binding.etTitle.getText().toString().trim();
