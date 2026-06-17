@@ -30,6 +30,8 @@
 | [implementation/阶段7完成记录](implementation/阶段7完成记录.md) | 阶段 7（学科知识图谱）完成详情——Neo4j 图谱构建/查询/溯源/主题网络 |
 | [implementation/阶段8完成记录](implementation/阶段8完成记录.md) | 阶段 8（智能采编）完成详情——ARIMA 采购预测/查重查缺/智能谈判 |
 | [implementation/阶段8后综合审计报告](implementation/阶段8后综合审计报告.md) | 阶段 0-8 四维度质量审计（实现质量/阶段配合/文档维护/架构落地），三轮修复全记录 |
+| [implementation/阶段9完成记录](implementation/阶段9完成记录.md) | 阶段 9（系统管理与监控）完成详情——用户管理/流通统计/操作日志/定时任务/Prometheus |
+| [implementation/阶段9后综合审计报告](implementation/阶段9后综合审计报告.md) | 阶段 0-9 四维度质量审计（实现质量/阶段配合/文档维护/架构落地），7 模块全量走查，发现 3P0+16P1+29P2+33P3 |
 | [implementation/前端人员B完成记录](implementation/前端人员B完成记录.md) | Android 前端人员 B — 借阅管理/预约管理/知识图谱/系统管理/条码扫描 完成详情 |
 
 ### 技术参考

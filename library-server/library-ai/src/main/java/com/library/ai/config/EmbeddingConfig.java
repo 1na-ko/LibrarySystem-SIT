@@ -55,6 +55,10 @@ public class EmbeddingConfig {
     private Duration writeTimeout;
 
     @Getter
+    @Value("${ai.dashscope.max-retries:2}")
+    private int maxRetries;
+
+    @Getter
     @Value("${ai.dashscope.max-batch-size:25}")
     private int maxBatchSize;
 

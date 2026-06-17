@@ -42,7 +42,7 @@ public class NegotiationVO {
     private BigDecimal ceilingPrice;
 
     /** 建议报价 */
-    private BigDecimal suggestedPrice;
+    private BigDecimal suggestedOffer;
 
     /** 创建时间 */
     private LocalDateTime createTime;

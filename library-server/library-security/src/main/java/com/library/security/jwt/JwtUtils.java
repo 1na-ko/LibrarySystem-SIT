@@ -64,7 +64,6 @@ public final class JwtUtils {
                 .claim(CLAIM_USERNAME, username)
                 .claim(CLAIM_ROLE, role)
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
-                .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(props.getAccessTokenExpiration())))
                 .signWith(key, Jwts.SIG.HS256)

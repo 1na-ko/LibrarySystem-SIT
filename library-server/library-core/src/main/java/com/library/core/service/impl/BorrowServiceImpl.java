@@ -278,10 +278,11 @@ public class BorrowServiceImpl implements BorrowService {
             if (overdueDays > 0) {
                 fine = DAILY_FINE.multiply(BigDecimal.valueOf(overdueDays));
 
-                // 查询是否已有 OverdueCheckJob 生成的 FineRecord
+                // 查询是否已有 OverdueCheckJob 生成的 FineRecord（行级锁防并发）
                 FineRecord existingFine = fineRecordMapper.selectOne(
                         new LambdaQueryWrapper<FineRecord>()
                                 .eq(FineRecord::getBorrowId, borrowId)
+                                .last("FOR UPDATE")
                 );
 
                 if (existingFine != null) {

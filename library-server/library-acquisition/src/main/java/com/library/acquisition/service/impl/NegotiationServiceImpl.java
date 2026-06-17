@@ -51,7 +51,7 @@ public class NegotiationServiceImpl implements NegotiationService {
         record.setStatus(com.library.acquisition.enums.NegotiationStatusEnum.DRAFT);
         record.setFloorPrice(BigDecimal.ZERO);
         record.setCeilingPrice(BigDecimal.ZERO);
-        record.setSuggestedPrice(BigDecimal.ZERO);
+        record.setSuggestedOffer(BigDecimal.ZERO);
         record.setDeleted(0);
         negotiationMapper.insert(record);
         log.info("谈判记录创建: id={}, resourceId={}, supplierId={}", record.getId(), resourceId, supplierId);
@@ -94,7 +94,7 @@ public class NegotiationServiceImpl implements NegotiationService {
         if (suggestion.getPriceRange() != null) {
             record.setFloorPrice(suggestion.getPriceRange().getFloorPrice());
             record.setCeilingPrice(suggestion.getPriceRange().getCeilingPrice());
-            record.setSuggestedPrice(suggestion.getPriceRange().getSuggestedOffer());
+            record.setSuggestedOffer(suggestion.getPriceRange().getSuggestedOffer());
         }
         try {
             record.setStrategies(OBJECT_MAPPER.writeValueAsString(suggestion.getStrategies()));

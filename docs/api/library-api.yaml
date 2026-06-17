@@ -795,6 +795,56 @@ components:
           type: string
           format: date-time
 
+    DashboardVO:
+      type: object
+      properties:
+        todayBorrows:
+          type: integer
+          format: int64
+          description: 今日借阅数
+        todayReturns:
+          type: integer
+          format: int64
+          description: 今日归还数
+        todayOverdue:
+          type: integer
+          format: int64
+          description: 当前超期未还数
+        activeBorrowers:
+          type: integer
+          format: int64
+          description: 实时在馆人数
+        monthTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyTrend"
+        hotCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryHotStat"
+
+    DailyTrend:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        borrows:
+          type: integer
+          format: int64
+        returns:
+          type: integer
+          format: int64
+
+    CategoryHotStat:
+      type: object
+      properties:
+        categoryName:
+          type: string
+        borrowCount:
+          type: integer
+          format: int64
+
     UserStatusUpdateRequest:
       type: object
       required: [status]
@@ -2465,13 +2515,37 @@ paths:
                         $ref: "#/components/schemas/NegotiationSuggestion"
 
   # ======================== 系统管理模块 ========================
+  /api/v1/admin/stats/dashboard:
+    get:
+      tags: [系统管理]
+      summary: 流通统计 Dashboard
+      description: 获取全局流通统计数据（今日借阅/归还/超期、本月趋势、热门分类Top-10、实时在馆人数）
+      operationId: getDashboard
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Dashboard 数据
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/DashboardVO"
+        "403":
+          description: 无管理员权限
+
   /api/v1/admin/users:
     get:
       tags: [系统管理]
       summary: 用户列表
       description: 分页查询用户列表（管理员权限）
       operationId: listUsers
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:
@@ -2515,7 +2589,7 @@ paths:
       summary: 变更用户状态
       description: 冻结/解冻/禁用用户账户（管理员权限）
       operationId: updateUserStatus
-      x-implemented: false
+      x-implemented: true
       security:
         - BearerAuth: []
       parameters:

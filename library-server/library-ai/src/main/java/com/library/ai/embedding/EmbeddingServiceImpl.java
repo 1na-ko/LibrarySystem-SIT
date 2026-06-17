@@ -1,5 +1,6 @@
 package com.library.ai.embedding;
 
+import com.library.ai.common.AiExceptionUtils;
 import com.library.ai.config.EmbeddingConfig;
 import com.library.ai.embedding.dto.EmbeddingRequest;
 import com.library.ai.embedding.dto.EmbeddingResponse;
@@ -40,7 +41,7 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 
     private static final String EMBEDDING_PATH = "/api/v1/services/embeddings/text-embedding/text-embedding";
     private static final int EMBEDDING_DIM = 1024;
-    /** Embedding API 最大重试次数 */
+    /** Embedding API 最大重试次数（由配置注入） */
     private static final int MAX_RETRIES = 2;
 
     @Override
@@ -130,7 +131,7 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                 .onErrorMap(IOException.class,
                         e -> new LlmUnavailableException("DashScope Embedding 网络异常: " + e.getMessage(),
                                 e, "NETWORK_ERROR"))
-                .retryWhen(Retry.backoff(MAX_RETRIES, Duration.ofSeconds(1))
+                .retryWhen(Retry.backoff(embeddingConfig.getMaxRetries(), Duration.ofSeconds(1))
                         .maxBackoff(Duration.ofSeconds(8))
                         .filter(throwable -> {
                             // 跳过永久性错误重试（与 LlmServiceImpl 一致）
@@ -145,7 +146,7 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                         .doBeforeRetry(signal -> log.info("DashScope Embedding 重试 ({}), 失败原因: {}",
                                 signal.totalRetries() + 1, signal.failure().getMessage()))
                         .onRetryExhaustedThrow((spec, signal) ->
-                                new LlmUnavailableException("DashScope Embedding 重试耗尽 (共" + MAX_RETRIES + "次)",
+                                new LlmUnavailableException("DashScope Embedding 重试耗尽 (共" + embeddingConfig.getMaxRetries() + "次)",
                                         signal.failure(), "RETRY_EXHAUSTED")))
                 .block(embeddingConfig.getReadTimeout().plusSeconds(10));
 
@@ -169,19 +170,10 @@ public class EmbeddingServiceImpl implements EmbeddingService {
     }
 
     /**
-     * 按 HTTP 状态码分类失败原因（与 LlmServiceImpl 保持一致）.
+     * 按 HTTP 状态码分类失败原因（委托 AiExceptionUtils）.
      */
     private String categorizeReason(int statusCode) {
-        if (statusCode == 401 || statusCode == 403) {
-            return "AUTH_FAILED";
-        }
-        if (statusCode == 429) {
-            return "QUOTA_EXHAUSTED";
-        }
-        if (statusCode >= 500) {
-            return "SERVER_ERROR";
-        }
-        return "CLIENT_ERROR";
+        return AiExceptionUtils.categorizeReason(statusCode);
     }
 
     /**
