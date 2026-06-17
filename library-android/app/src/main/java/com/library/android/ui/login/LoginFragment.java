@@ -1,10 +1,14 @@
 package com.library.android.ui.login;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -77,6 +81,9 @@ public class LoginFragment extends Fragment {
         });
 
         binding.btnLogin.setOnClickListener(v -> {
+            // ── 按钮光泽扫过动效 ──
+            triggerShineAnimation();
+
             String username = binding.etUsername.getText().toString().trim();
             String password = binding.etPassword.getText().toString().trim();
             Log.d(TAG, "点击登录: username=" + username + ", password=" + (password.isEmpty() ? "空" : "已填写"));
@@ -93,5 +100,38 @@ public class LoginFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    /**
+     * 登录按钮光泽扫过动效：从左侧滑入，经按钮表面扫至右侧消失。
+     *
+     * <p>光泽条纹使用 {@code viewShineOverlay}（FrameLayout 内叠加在按钮上方），
+     * 通过 ObjectAnimator 平移 translationX 实现对角线高光扫过效果，
+     * 持续 800ms，加速-减速插值器模拟自然光泽。
+     */
+    private void triggerShineAnimation() {
+        final View shineOverlay = binding.viewShineOverlay;
+        final int shineWidth = shineOverlay.getLayoutParams().width;
+        if (shineWidth <= 0) {
+            return; // 布局尚未测量，跳过动画
+        }
+
+        shineOverlay.setVisibility(View.VISIBLE);
+        shineOverlay.setTranslationX(-shineWidth); // 从按钮左侧外开始
+
+        ObjectAnimator animator = ObjectAnimator.ofFloat(
+                shineOverlay, "translationX",
+                -shineWidth,           // from: 左侧外
+                shineWidth * 1.5f      // to:   右侧外
+        );
+        animator.setDuration(800);
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                shineOverlay.setVisibility(View.INVISIBLE);
+            }
+        });
+        animator.start();
     }
 }

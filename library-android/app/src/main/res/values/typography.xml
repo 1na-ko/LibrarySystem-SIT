@@ -57,4 +57,12 @@
         <item name="android:textSize">12sp</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
+
+    <!-- ── 登录页大标题：思源宋体 / 28sp / 朱砂红 ── -->
+    <style name="TextAppearance.Login.Title" parent="TextAppearance.Library.Display">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/login_accent_vermillion</item>
+        <item name="android:fontFamily">serif</item>
+        <!-- TODO: 替换为 @font/noto_serif_sc_bold_subset 做字体子集化 -->
+    </style>
 </resources>
