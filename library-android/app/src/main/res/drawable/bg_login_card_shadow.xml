@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ================================================================
+     登录卡片多层纸影（4层偏移 + 卡片表面）
+     仿传统纸质厚度：阴影沿右下方向渐远渐淡，朱砂红色调
+     ================================================================ -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Layer 4: 最外层阴影，偏移最大，最淡 -->
+    <item
+        android:left="4dp"
+        android:top="4dp"
+        android:right="0dp"
+        android:bottom="-4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/login_shadow_layer_4" />
+            <corners android:radius="@dimen/radius_md" />
+        </shape>
+    </item>
+
+    <!-- Layer 3 -->
+    <item
+        android:left="3dp"
+        android:top="3dp"
+        android:right="0dp"
+        android:bottom="-3dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/login_shadow_layer_3" />
+            <corners android:radius="@dimen/radius_md" />
+        </shape>
+    </item>
+
+    <!-- Layer 2 -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="0dp"
+        android:bottom="-2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/login_shadow_layer_2" />
+            <corners android:radius="@dimen/radius_md" />
+        </shape>
+    </item>
+
+    <!-- Layer 1: 最内层阴影，最短偏移 -->
+    <item
+        android:left="1dp"
+        android:top="1dp"
+        android:right="0dp"
+        android:bottom="-1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/login_shadow_layer_1" />
+            <corners android:radius="@dimen/radius_md" />
+        </shape>
+    </item>
+
+    <!-- 卡片表面 -->
+    <item
+        android:left="0dp"
+        android:top="0dp"
+        android:right="4dp"
+        android:bottom="4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/login_card_surface" />
+            <corners android:radius="@dimen/radius_md" />
+            <stroke
+                android:width="@dimen/stroke_thickness"
+                android:color="@color/border_light" />
+        </shape>
+    </item>
+
+</layer-list>

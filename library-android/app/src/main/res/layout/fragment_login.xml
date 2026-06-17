@@ -1,100 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- ================================================================
+     Login Page — 中式学术美学 v3.0
+     米黄宣纸底色 + 朱砂红点缀 + 多层纸影 + 光泽扫过动效
+     ================================================================ -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg_primary"
-    android:gravity="center"
-    android:padding="@dimen/space_xxl">
+    android:background="@color/login_bg_rice_paper">
 
-    <!-- ================================================================
-         Login Card
-         ================================================================ -->
-    <com.google.android.material.card.MaterialCardView
-        style="@style/Widget.Library.Card"
+    <!-- 小屏适配：内容过多时可滚动 -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/space_xl">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/space_xxl">
 
-            <!-- Title -->
-            <TextView
-                style="@style/TextAppearance.Library.Display"
+            <!-- ====================================================
+                 Card — 多层纸影背景
+                 ==================================================== -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="图书馆管理系统"
-                android:gravity="center"
-                android:layout_marginBottom="@dimen/space_sm" />
+                android:background="@drawable/bg_login_card_shadow"
+                android:orientation="vertical"
+                android:padding="@dimen/space_xl">
 
-            <!-- Subtitle -->
-            <TextView
-                style="@style/TextAppearance.Library.BodySecondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="学术 · 严谨 · 知识"
-                android:gravity="center"
-                android:layout_marginBottom="@dimen/space_xxl" />
+                <!-- ── 顶部朱砂红渐变装饰线 ── -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="@drawable/bg_login_top_accent" />
 
-            <!-- Username field -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Library.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="学号/工号"
-                android:layout_marginBottom="@dimen/space_lg">
+                <!-- ── 博士帽图标 ── -->
+                <ImageView
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/space_xl"
+                    android:src="@drawable/ic_login_cap"
+                    android:contentDescription="学位帽图标" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etUsername"
+                <!-- ── 标题：图书馆管理系统 ── -->
+                <TextView
+                    style="@style/TextAppearance.Login.Title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1" />
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:layout_marginBottom="@dimen/space_sm"
+                    android:gravity="center"
+                    android:text="图书馆管理系统" />
 
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Password field -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Library.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="密码"
-                app:passwordToggleEnabled="true"
-                android:layout_marginBottom="@dimen/space_xl">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etPassword"
+                <!-- ── 副标题 ── -->
+                <TextView
+                    style="@style/TextAppearance.Library.BodySecondary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword"
-                    android:maxLines="1" />
+                    android:layout_marginBottom="@dimen/space_xxl"
+                    android:gravity="center"
+                    android:text="学术 · 严谨 · 知识"
+                    android:textColor="@color/login_subtitle_text" />
 
-            </com.google.android.material.textfield.TextInputLayout>
+                <!-- ── 用户名：学号/工号 ── -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Library.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_lg"
+                    android:hint="学号/工号"
+                    app:boxStrokeColor="@color/border_light"
+                    app:hintTextColor="@color/text_placeholder">
 
-            <!-- Login button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLogin"
-                style="@style/Widget.Library.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="登录" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etUsername"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Register link -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRegister"
-                style="@style/Widget.Library.Button.Text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="还没有账号？立即注册"
-                android:textColor="@color/text_tertiary"
-                android:layout_marginTop="@dimen/space_sm" />
+                <!-- ── 密码 ── -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Library.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_xl"
+                    android:hint="密码"
+                    app:boxStrokeColor="@color/border_light"
+                    app:hintTextColor="@color/text_placeholder"
+                    app:passwordToggleEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- ── 登录按钮 + 光泽叠加层 ── -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLogin"
+                        style="@style/Widget.Library.Button.Primary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="登录"
+                        app:backgroundTint="@color/login_accent_vermillion"
+                        app:cornerRadius="@dimen/radius_md" />
+
+                    <!-- 光泽扫过条纹（默认不可见，点击时 ObjectAnimator 驱动） -->
+                    <View
+                        android:id="@+id/viewShineOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_button_shine"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:visibility="invisible" />
+                </FrameLayout>
+
+                <!-- ── 注册链接 ── -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRegister"
+                    style="@style/Widget.Library.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="还没有账号？立即注册"
+                    android:textColor="@color/text_tertiary" />
+
+                <!-- ── 底部朱砂红横线收尾 ── -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:background="@drawable/bg_login_bottom_line" />
+
+            </LinearLayout>
 
         </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-</LinearLayout>
+    </ScrollView>
+</FrameLayout>

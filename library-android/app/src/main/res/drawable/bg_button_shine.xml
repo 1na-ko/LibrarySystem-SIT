@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 按钮光泽条纹：对角线渐变（135°），透明→白→透明，点击时平移扫过 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:startColor="#00FFFFFF"
+        android:centerColor="@color/login_shine_center"
+        android:endColor="#00FFFFFF"
+        android:angle="135"
+        android:type="linear"
+        android:centerX="0.5"
+        android:centerY="0.5" />
+</shape>
