@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import com.library.android.R;
@@ -46,15 +47,22 @@ public class ProfileFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
+        // 立即同步设置初始 UI，避免 XML 默认值导致"未登录"闪现
+        updateUI(viewModel.getUserProfile().getValue());
+
         // 登录按钮
         binding.btnLogin.setOnClickListener(v ->
                 Navigation.findNavController(view)
                         .navigate(R.id.loginFragment));
 
-        // 退出登录
+        // 退出登录：清除 token 后直接跳转登录页
         binding.btnLogout.setOnClickListener(v -> {
             TokenManager.getInstance(requireContext()).clear();
-            updateUI(null);
+            NavOptions navOptions = new NavOptions.Builder()
+                    .setPopUpTo(R.id.nav_graph, true)
+                    .setLaunchSingleTop(true)
+                    .build();
+            Navigation.findNavController(view).navigate(R.id.loginFragment, null, navOptions);
         });
 
         // 功能入口点击

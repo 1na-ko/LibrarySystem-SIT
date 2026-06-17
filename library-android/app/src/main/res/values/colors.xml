@@ -93,4 +93,21 @@
     <!-- ── 保留旧兼容色 ── -->
     <color name="white">#FFFFFF</color>
     <color name="error">#B3261E</color>
+
+    <!-- ============================================================
+         登录页专用色 — 朱砂红学术美学（v3.0，不影响全局 accent_cta）
+         ============================================================ -->
+    <color name="login_accent_vermillion">#C93756</color>
+    <color name="login_bg_rice_paper">#F5F0E1</color>
+    <color name="login_card_surface">#FDFBF7</color>
+    <!-- 多层纸影：朱砂红色调 + 递减透明度 -->
+    <color name="login_shadow_layer_1">#08C93756</color>   <!-- ~3% opacity -->
+    <color name="login_shadow_layer_2">#10C93756</color>   <!-- ~6% opacity -->
+    <color name="login_shadow_layer_3">#06C93756</color>   <!-- ~2.5% opacity -->
+    <color name="login_shadow_layer_4">#04C93756</color>   <!-- ~1.5% opacity -->
+    <color name="login_gradient_end">#00C93756</color>      <!-- fully transparent -->
+    <color name="login_subtitle_text">#8C6B4A</color>       <!-- 暖棕，替代 #666 更学术 -->
+
+    <!-- 登录按钮光泽色 -->
+    <color name="login_shine_center">#44FFFFFF</color>      <!-- 27% 白色 -->
 </resources>
