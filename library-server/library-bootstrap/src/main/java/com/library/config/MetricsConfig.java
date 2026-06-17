@@ -5,13 +5,16 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.scheduling.TaskScheduler;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -50,46 +53,50 @@ public class MetricsConfig {
      * 注意：仅通过 {@link MeterBinder} 注册一次——若拆为两个 Bean 会因 Micrometer
      * {@code putIfAbsent} 语义导致后注册的 Gauge 被静默丢弃，指标永久为 0。
      */
+    /**
+     * 预约队列大小 Gauge（复用 Spring 管理的 TaskScheduler 每 60 秒 Redis SCAN 采样）.
+     * <p>
+     * 采样任务委托 {@code schedulingTaskExecutor}（见 {@link SchedulingConfig}）调度，
+     * 替代原裸 daemon Thread——线程由 Spring 容器统一管理生命周期，与项目调度规范一致。
+     * <p>
+     * 注意：仅通过 {@link MeterBinder} 注册一次——若拆为两个 Bean 会因 Micrometer
+     * {@code putIfAbsent} 语义导致后注册的 Gauge 被静默丢弃，指标永久为 0。
+     */
     @Bean
-    public MeterBinder reservationQueueSizeBinder() {
+    public MeterBinder reservationQueueSizeBinder(
+            @Qualifier("schedulingTaskExecutor") TaskScheduler taskScheduler) {
         return registry -> {
             AtomicLong gauge = new AtomicLong(0);
             Gauge.builder("library_reservations_queue_size", gauge::get)
                     .description("Total entries across all reservation ZSET queues")
                     .register(registry);
+            // 每 60 秒采样一次（首次立即执行，之后固定速率）
+            taskScheduler.scheduleAtFixedRate(() -> sampleQueueSize(gauge), Duration.ofSeconds(60));
+        };
+    }
 
-            // 定期更新 gauge 值
-            Thread sampler = new Thread(() -> {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        Thread.sleep(60_000); // 每 60 秒采样一次
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                    try {
-                        long total = 0;
-                        try (Cursor<String> cursor = (Cursor<String>) redisTemplate.scan(
-                                ScanOptions.scanOptions()
-                                        .match("reservation:queue:*")
-                                        .count(100).build())) {
-                            while (cursor.hasNext()) {
-                                String key = cursor.next();
-                                Long size = redisTemplate.opsForZSet().size(key);
-                                if (size != null) {
-                                    total += size;
-                                }
-                            }
-                        }
-                        gauge.set(total);
-                    } catch (Exception e) {
-                        log.debug("预约队列 Gauge 采样失败: {}", e.getMessage());
-                        gauge.set(-1);
+    /**
+     * 采样所有预约队列 ZSET 的总大小并更新 Gauge.
+     */
+    private void sampleQueueSize(AtomicLong gauge) {
+        try {
+            long total = 0;
+            try (Cursor<String> cursor = (Cursor<String>) redisTemplate.scan(
+                    ScanOptions.scanOptions()
+                            .match("reservation:queue:*")
+                            .count(100).build())) {
+                while (cursor.hasNext()) {
+                    String key = cursor.next();
+                    Long size = redisTemplate.opsForZSet().size(key);
+                    if (size != null) {
+                        total += size;
                     }
                 }
-            }, "reservation-queue-gauge-sampler");
-            sampler.setDaemon(true);
-            sampler.start();
-        };
+            }
+            gauge.set(total);
+        } catch (Exception e) {
+            log.debug("预约队列 Gauge 采样失败: {}", e.getMessage());
+            gauge.set(-1);
+        }
     }
 }

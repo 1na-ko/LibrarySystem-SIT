@@ -15,6 +15,14 @@ import lombok.Getter;
 public enum ErrorCode {
 
     // ==================== 通用 ====================
+    /**
+     * 操作成功（非错误码，仅供 {@code mapHttpStatus} switch 枚举覆盖）.
+     *
+     * @deprecated 不应在异常路径中使用；仅保留以保证 switch 无 default 分支能编译期全覆盖。
+     *             外部获取成功响应应使用 {@code Result.success()} 工厂方法。
+     */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     SUCCESS(200, "操作成功"),
     BAD_REQUEST(400, "请求参数不合法"),
     UNAUTHORIZED(401, "请先登录"),

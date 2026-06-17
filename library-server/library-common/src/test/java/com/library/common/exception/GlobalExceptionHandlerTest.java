@@ -3,8 +3,10 @@ package com.library.common.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -77,5 +79,19 @@ class GlobalExceptionHandlerTest {
                 handler.handleBizException(new BizException(code), request);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    // ==================== 非 BizException handler 测试 ====================
+
+    @Test
+    @DisplayName("DataIntegrityViolationException 应映射 409 CONFLICT")
+    void shouldReturn409WhenDataIntegrityViolation() {
+        DataIntegrityViolationException ex = new DataIntegrityViolationException("Duplicate entry");
+        ResponseEntity<com.library.common.result.Result<Void>> resp =
+                handler.handleDataIntegrityViolation(ex, request);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().getCode()).isEqualTo(ErrorCode.CONFLICT.getCode());
     }
 }

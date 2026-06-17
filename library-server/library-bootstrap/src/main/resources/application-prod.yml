@@ -59,7 +59,7 @@ management:
     web:
       base-path: /
       exposure:
-        include: health,metrics,prometheus
+        include: health,prometheus
   endpoint:
     health:
       # 生产环境默认不暴露组件细节，仅显示聚合状态；需要时由授权运维访问

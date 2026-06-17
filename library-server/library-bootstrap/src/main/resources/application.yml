@@ -93,7 +93,7 @@ mybatis-plus:
 jwt:
   # ⚠️ 开发环境默认密钥仅用于本地调试——严禁用于生产！
   # 生产环境必须通过 JWT_SECRET 环境变量注入强随机密钥（≥256-bit）
-  secret: ${JWT_SECRET:dev-only-do-not-use-in-prod}
+  secret: ${JWT_SECRET:library-system-dev-jwt-secret-replace-in-production-2026}
   access-token-expiration: 7200000      # 2 小时
   refresh-token-expiration: 604800000   # 7 天
 

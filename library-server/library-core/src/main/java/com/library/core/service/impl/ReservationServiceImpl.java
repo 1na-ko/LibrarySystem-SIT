@@ -352,38 +352,29 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
-     * 按 bookId 分组批量查询排队位置（每本书一次 zRange，消除 N+1 over Redis）.
+     * 批量查询 WAITING 预约的排队位置（按用户 rank 逐条查询）.
+     * <p>
+     * 改用 {@code rank} 逐条查询（O(log N)）替代原 {@code zRange 0 -1} 全量拉取：
+     * 全量拉取在热门书预约队列累积到数千条时会阻塞 Redis 并占用内存；逐条 rank 仅查本页
+     * 涉及用户（≤ pageSize ≤ 100），对大集合健壮。与 {@link #queryQueuePosition} 降级语义一致。
      *
      * @param reservations 预约记录列表
      * @return reservationId → 1-based 排队位置
      */
     private Map<Long, Integer> batchLoadQueuePositions(List<Reservation> reservations) {
-        Map<Long, List<Reservation>> byBook = reservations.stream()
-                .filter(r -> r.getStatus() == ReservationStatusEnum.WAITING)
-                .collect(Collectors.groupingBy(Reservation::getBookId));
-
         Map<Long, Integer> result = new HashMap<>();
-        for (Map.Entry<Long, List<Reservation>> e : byBook.entrySet()) {
-            String queueKey = QUEUE_KEY_PREFIX + e.getKey();
+        for (Reservation r : reservations) {
+            if (r.getStatus() != ReservationStatusEnum.WAITING) {
+                continue;
+            }
+            String queueKey = QUEUE_KEY_PREFIX + r.getBookId();
             try {
-                Set<Object> members = redisTemplate.opsForZSet().range(queueKey, 0, -1);
-                if (members == null) {
-                    continue;
-                }
-                // zRange 按 score 升序返回，建立 member → 1-based 位置
-                Map<String, Integer> memberToPos = new HashMap<>();
-                int pos = 1;
-                for (Object m : members) {
-                    memberToPos.put(m.toString(), pos++);
-                }
-                for (Reservation r : e.getValue()) {
-                    Integer p = memberToPos.get(r.getUserId().toString());
-                    if (p != null) {
-                        result.put(r.getId(), p);
-                    }
+                Long rank = redisTemplate.opsForZSet().rank(queueKey, r.getUserId().toString());
+                if (rank != null) {
+                    result.put(r.getId(), rank.intValue() + 1);
                 }
             } catch (Exception ex) {
-                log.debug("批量查询排队位置失败，降级实时查询: bookId={}", e.getKey());
+                log.debug("批量查询排队位置失败，降级持久化值: reservationId={}", r.getId());
             }
         }
         return result;

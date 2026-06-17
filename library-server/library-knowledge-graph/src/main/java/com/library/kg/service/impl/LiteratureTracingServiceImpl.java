@@ -65,7 +65,7 @@ public class LiteratureTracingServiceImpl implements LiteratureTracingService {
                 Map.of("bookId", bookId),
                 (rec) -> rec.get("path").asList());
 
-        List<TracePath> paths = parseTracePaths(rawPaths, safeDepth);
+        List<TracePath> paths = parseTracePaths(rawPaths);
 
         return TraceGraphVO.builder()
                 .sourceBook(sourceBook)
@@ -130,7 +130,7 @@ public class LiteratureTracingServiceImpl implements LiteratureTracingService {
      * Neo4j 5.x Driver 中路径段交替排列为 NODE / RELATIONSHIP / NODE / ...。
      * 遍历时从前后的 NODE 段提取业务 {@code id} 作为 CITES 边的 sourceId / targetId。
      */
-    private List<TracePath> parseTracePaths(List<List<Object>> rawPaths, int safeDepth) {
+    private List<TracePath> parseTracePaths(List<List<Object>> rawPaths) {
         List<TracePath> paths = new ArrayList<>();
         for (List<Object> pathSegments : rawPaths) {
             if (pathSegments == null || pathSegments.isEmpty()) continue;

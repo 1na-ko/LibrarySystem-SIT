@@ -41,8 +41,6 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 
     private static final String EMBEDDING_PATH = "/api/v1/services/embeddings/text-embedding/text-embedding";
     private static final int EMBEDDING_DIM = 1024;
-    /** Embedding API 最大重试次数（由配置注入） */
-    private static final int MAX_RETRIES = 2;
 
     @Override
     public List<Float> embed(String text) {
@@ -76,13 +74,21 @@ public class EmbeddingServiceImpl implements EmbeddingService {
             return createZeroVectors(texts.size());
         }
 
-        // 分批请求
+        // 分批请求（批次间失败隔离：单批失败降级为零向量，不影响其他批次）
         int maxBatch = embeddingConfig.getMaxBatchSize();
         List<List<Float>> nonEmptyResults = new ArrayList<>();
         for (int i = 0; i < nonEmpty.size(); i += maxBatch) {
             int end = Math.min(i + maxBatch, nonEmpty.size());
             List<String> batch = nonEmpty.subList(i, end);
-            List<List<Float>> batchResult = doEmbed(batch);
+            List<List<Float>> batchResult;
+            try {
+                batchResult = doEmbed(batch);
+            } catch (Exception e) {
+                // 单批失败（重试耗尽/网络异常）降级为该批零向量，保证整体部分可用
+                log.warn("Embedding 单批失败，降级为零向量: batchSize={}, error={}",
+                        batch.size(), e.getMessage());
+                batchResult = createZeroVectors(batch.size());
+            }
             nonEmptyResults.addAll(batchResult);
         }
 
@@ -148,7 +154,9 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                         .onRetryExhaustedThrow((spec, signal) ->
                                 new LlmUnavailableException("DashScope Embedding 重试耗尽 (共" + embeddingConfig.getMaxRetries() + "次)",
                                         signal.failure(), "RETRY_EXHAUSTED")))
-                .block(embeddingConfig.getReadTimeout().plusSeconds(10));
+                .block(embeddingConfig.getReadTimeout()
+                        .multipliedBy(embeddingConfig.getMaxRetries() + 1)
+                        .plusSeconds(20));
 
         if (response == null) {
             log.warn("DashScope Embedding 返回 null，返回零向量列表");

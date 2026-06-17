@@ -1,5 +1,6 @@
 package com.library.core.dto;
 
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +39,7 @@ public class BookUpdateDTO {
     private Long categoryId;
 
     /** 总册数（≥ 1） */
+    @Min(value = 1, message = "总册数至少为 1")
     private Integer totalCopies;
 
     /** 内容简介 */

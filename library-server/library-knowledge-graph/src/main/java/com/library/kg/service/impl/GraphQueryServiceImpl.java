@@ -44,12 +44,6 @@ public class GraphQueryServiceImpl implements GraphQueryService {
     public KnowledgeGraphVO getBookGraph(Long bookId, int depth) {
         int safeDepth = clamp(depth, 1, kgProperties.getMaxQueryDepth());
 
-        // 验证 Book 存在
-        long cnt = neo4jRepository.countNodes(BOOK_LABEL);
-        if (cnt == 0) {
-            return KnowledgeGraphVO.builder().nodes(List.of()).edges(List.of()).build();
-        }
-
         // 路径查询：以书为中心，取 depth 跳内邻居
         // 注意：可变长度深度参数无法用 $param 绑定，使用整数白名单校验后字符串拼接
         String cypher = "MATCH p = (b:Book {id: $bookId})-[*1.." + safeDepth + "]-(n) "
@@ -181,6 +175,9 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         String label = resolveLabel(nodeVal);
         GraphNodeType type = resolveType(nodeVal);
 
+        // Book 节点含业务 id 属性 → 用业务 id；Keyword/Author/Subject 节点以 name 为唯一键
+        // （见 KgSchemaInitializer），无 id 属性 → 退化为 Neo4j 内部 id()。可视化层据此匹配节点，
+        // 前端不应使用非 Book 节点的 id 反查 MySQL（这些实体仅存于图数据库）。
         Long entityId = neoId;
         if (props.containsKey("id") && props.get("id") instanceof Number) {
             entityId = ((Number) props.get("id")).longValue();

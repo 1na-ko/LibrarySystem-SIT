@@ -5,7 +5,7 @@ import com.library.common.annotation.OperationLog;
 import com.library.common.exception.BizException;
 import com.library.common.exception.ErrorCode;
 import com.library.core.entity.OperationLogEntity;
-import com.library.core.mapper.OperationLogMapper;
+import com.library.core.service.OperationLogService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 class OperationLogAspectTest {
 
     @Mock
-    private OperationLogMapper operationLogMapper;
+    private OperationLogService operationLogService;
 
     @Mock
     private ProceedingJoinPoint pjp;
@@ -47,7 +47,8 @@ class OperationLogAspectTest {
 
     @BeforeEach
     void setUp() {
-        aspect = new OperationLogAspect(operationLogMapper, objectMapper);
+        // Runnable::run 作为同步 Executor，使 asyncInsert 在测试中同步执行便于验证
+        aspect = new OperationLogAspect(operationLogService, objectMapper, Runnable::run);
     }
 
     @Nested
@@ -119,14 +120,14 @@ class OperationLogAspectTest {
             // 给异步任务一点时间执行
             Thread.sleep(200);
 
-            verify(operationLogMapper).insert(record);
+            verify(operationLogService).insert(record);
         }
 
         @Test
         @DisplayName("写入失败不应抛异常（不阻塞主流程）")
         void shouldNotThrowWhenInsertFails() throws Exception {
             OperationLogEntity record = new OperationLogEntity();
-            doThrow(new RuntimeException("DB 不可用")).when(operationLogMapper).insert(any());
+            doThrow(new RuntimeException("DB 不可用")).when(operationLogService).insert(any());
 
             assertThatCode(() -> {
                 aspect.asyncInsert(record);
@@ -160,6 +161,45 @@ class OperationLogAspectTest {
                     return OperationLog.class;
                 }
             };
+        }
+    }
+
+    @Nested
+    @DisplayName("敏感字段脱敏 maskSensitive")
+    class MaskSensitive {
+
+        @Test
+        @DisplayName("null 输入应返回 null")
+        void shouldReturnNullForNullInput() {
+            assertThat(aspect.maskSensitive(null)).isNull();
+        }
+
+        @Test
+        @DisplayName("password 字段值应脱敏为 ***")
+        void shouldMaskPasswordField() {
+            String json = "{\"username\":\"admin\",\"password\":\"Admin@123456\"}";
+            String masked = aspect.maskSensitive(json);
+            assertThat(masked).contains("\"password\":\"***\"")
+                    .doesNotContain("Admin@123456")
+                    .contains("\"username\":\"admin\"");
+        }
+
+        @Test
+        @DisplayName("token / secret / apiKey 等字段均应脱敏（不区分大小写）")
+        void shouldMaskMultipleSensitiveFieldsCaseInsensitive() {
+            String json = "{\"Token\":\"abc\",\"SECRET\":\"xyz\",\"api_key\":\"k1\"}";
+            String masked = aspect.maskSensitive(json);
+            assertThat(masked).contains("\"Token\":\"***\"")
+                    .contains("\"SECRET\":\"***\"")
+                    .contains("\"api_key\":\"***\"")
+                    .doesNotContain("abc").doesNotContain("xyz").doesNotContain("k1");
+        }
+
+        @Test
+        @DisplayName("无敏感字段的 JSON 应原样返回")
+        void shouldReturnOriginalWhenNoSensitiveField() {
+            String json = "{\"userId\":1,\"action\":\"login\"}";
+            assertThat(aspect.maskSensitive(json)).isEqualTo(json);
         }
     }
 }
