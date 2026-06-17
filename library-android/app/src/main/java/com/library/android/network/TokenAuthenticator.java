@@ -65,6 +65,9 @@ public class TokenAuthenticator implements Authenticator {
 
             try {
                 LibraryApi api = apiProvider.getApi();
+                if (api == null) {
+                    return null;  // DI 尚未完成初始化，放弃本次刷新
+                }
                 Call<Result<RefreshResponse>> call = api.refreshToken(new RefreshRequest(refreshToken));
                 retrofit2.Response<Result<RefreshResponse>> refreshResponse = call.execute();
 

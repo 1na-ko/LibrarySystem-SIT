@@ -63,9 +63,10 @@ public class BorrowViewModel extends ViewModel {
                 .subscribe(result -> {
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         PageResult<BorrowRecordVO> page = result.getData();
-                        borrowList.setValue(page.getRecords());
+                        List<BorrowRecordVO> records = page.getRecords();
+                        borrowList.setValue(records != null ? records : new ArrayList<>());
                         totalPages = page.getTotalPages();
-                        loadingState.setValue(page.getRecords().isEmpty()
+                        loadingState.setValue(records == null || records.isEmpty()
                                 ? LoadingState.EMPTY : LoadingState.CONTENT);
                     } else {
                         errorMessage.setValue(result != null ? result.getMessage() : "加载失败");
@@ -89,9 +90,12 @@ public class BorrowViewModel extends ViewModel {
                 .subscribe(result -> {
                     isLoading = false;
                     if (result != null && result.isSuccess() && result.getData() != null) {
+                        List<BorrowRecordVO> records = result.getData().getRecords();
                         List<BorrowRecordVO> current = new ArrayList<>(borrowList.getValue() != null
                                 ? borrowList.getValue() : new ArrayList<>());
-                        current.addAll(result.getData().getRecords());
+                        if (records != null) {
+                            current.addAll(records);
+                        }
                         borrowList.setValue(current);
                     }
                 }, throwable -> isLoading = false));

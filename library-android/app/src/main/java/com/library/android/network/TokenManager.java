@@ -24,6 +24,8 @@ public class TokenManager {
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_USER_ROLE = "user_role";
+    private static final String KEY_USERNAME = "username";
+    private static final String KEY_REAL_NAME = "real_name";
 
     private static volatile TokenManager instance;
     private final SharedPreferences prefs;
@@ -60,6 +62,23 @@ public class TokenManager {
                 .putString(KEY_ACCESS_TOKEN, accessToken)
                 .putString(KEY_REFRESH_TOKEN, refreshToken)
                 .apply();
+    }
+
+    public void saveUserInfo(String username, String realName) {
+        prefs.edit()
+                .putString(KEY_USERNAME, username)
+                .putString(KEY_REAL_NAME, realName)
+                .apply();
+    }
+
+    @Nullable
+    public String getUsername() {
+        return prefs.getString(KEY_USERNAME, null);
+    }
+
+    @Nullable
+    public String getRealName() {
+        return prefs.getString(KEY_REAL_NAME, null);
     }
 
     @Nullable

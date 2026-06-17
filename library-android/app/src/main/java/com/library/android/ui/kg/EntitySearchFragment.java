@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.library.android.R;
 import com.library.android.databinding.FragmentEntitySearchBinding;
 import com.library.android.databinding.ItemEntitySearchBinding;
 import com.library.android.model.EntitySearchResult;
@@ -47,6 +48,8 @@ public class EntitySearchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
+
+        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
 
         setupRecyclerView();
         setupSearch();

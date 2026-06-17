@@ -58,6 +58,9 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment:2.7.6")
     implementation("androidx.navigation:navigation-ui:2.7.6")
 
+    // ---- 下拉刷新 ----
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
     // ---- 生命周期 & ViewModel ----
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata:2.7.0")

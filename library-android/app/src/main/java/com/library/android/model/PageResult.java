@@ -25,8 +25,11 @@ public class PageResult<T> {
     private int totalPages;
 
     public List<T> getRecords() { return records; }
+    public List<T> getList() { return records; }
     public long getTotal() { return total; }
+    public int getTotalPages() { return totalPages; }
+    public int getPages() { return totalPages; }
     public int getPageNum() { return pageNum; }
     public int getPageSize() { return pageSize; }
-    public int getTotalPages() { return totalPages; }
+    public boolean hasNextPage() { return pageNum < totalPages; }
 }

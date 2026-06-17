@@ -71,9 +71,10 @@ public class AdminViewModel extends ViewModel {
                 .subscribe(result -> {
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         PageResult<UserManageVO> page = result.getData();
-                        userList.setValue(page.getRecords());
+                        List<UserManageVO> records = page.getRecords();
+                        userList.setValue(records != null ? records : new ArrayList<>());
                         userTotalPages = page.getTotalPages();
-                        userLoadingState.setValue(page.getRecords().isEmpty()
+                        userLoadingState.setValue(records == null || records.isEmpty()
                                 ? LoadingState.EMPTY : LoadingState.CONTENT);
                     } else {
                         errorMessage.setValue(result != null ? result.getMessage() : "加载失败");
@@ -95,9 +96,12 @@ public class AdminViewModel extends ViewModel {
                 .subscribe(result -> {
                     isLoadingUsers = false;
                     if (result != null && result.isSuccess() && result.getData() != null) {
+                        List<UserManageVO> records = result.getData().getRecords();
                         List<UserManageVO> current = new ArrayList<>(userList.getValue() != null
                                 ? userList.getValue() : new ArrayList<>());
-                        current.addAll(result.getData().getRecords());
+                        if (records != null) {
+                            current.addAll(records);
+                        }
                         userList.setValue(current);
                     }
                 }, throwable -> isLoadingUsers = false));

@@ -34,4 +34,5 @@ public class ReservationVO {
 
     public boolean isWaiting() { return "WAITING".equals(status); }
     public boolean isNotified() { return "NOTIFIED".equals(status); }
+    public boolean canCancel() { return "WAITING".equals(status) || "NOTIFIED".equals(status); }
 }

@@ -43,4 +43,5 @@ public class BorrowRecordVO {
     public boolean isOverdue() { return "OVERDUE".equals(status); }
     public boolean isReturned() { return "RETURNED".equals(status); }
     public boolean isBorrowing() { return "BORROWED".equals(status) || "RENEWED".equals(status); }
+    public boolean canRenew() { return "BORROWED".equals(status); }
 }

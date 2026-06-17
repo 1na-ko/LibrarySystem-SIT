@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import com.library.android.R;
@@ -52,8 +53,12 @@ public class LoginFragment extends Fragment {
         viewModel.isLoginSuccess().observe(getViewLifecycleOwner(), success -> {
             Log.d(TAG, "登录结果: success=" + success);
             if (success) {
+                NavOptions navOptions = new NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_graph, true)
+                        .setLaunchSingleTop(true)
+                        .build();
                 Navigation.findNavController(view)
-                        .popBackStack(R.id.searchFragment, false);
+                        .navigate(R.id.searchFragment, null, navOptions);
             }
         });
 

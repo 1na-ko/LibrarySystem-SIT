@@ -8,6 +8,7 @@ import com.library.android.repository.BookRepository;
 import com.library.android.repository.BorrowRepository;
 import com.library.android.repository.KnowledgeGraphRepository;
 import com.library.android.repository.ReservationRepository;
+import com.library.android.repository.UserRepository;
 
 import javax.inject.Singleton;
 
@@ -60,5 +61,11 @@ public class RepositoryModule {
     @Singleton
     public AdminRepository provideAdminRepository(LibraryApi api) {
         return new AdminRepository(api);
+    }
+
+    @Provides
+    @Singleton
+    public UserRepository provideUserRepository(LibraryApi api) {
+        return new UserRepository(api);
     }
 }

@@ -66,9 +66,10 @@ public class ReservationViewModel extends ViewModel {
                 .subscribe(result -> {
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         PageResult<ReservationVO> page = result.getData();
-                        reservationList.setValue(page.getRecords());
+                        List<ReservationVO> records = page.getRecords();
+                        reservationList.setValue(records != null ? records : new ArrayList<>());
                         totalPages = page.getTotalPages();
-                        loadingState.setValue(page.getRecords().isEmpty()
+                        loadingState.setValue(records == null || records.isEmpty()
                                 ? LoadingState.EMPTY : LoadingState.CONTENT);
                     } else {
                         errorMessage.setValue(result != null ? result.getMessage() : "加载失败");
@@ -91,9 +92,12 @@ public class ReservationViewModel extends ViewModel {
                 .subscribe(result -> {
                     isLoading = false;
                     if (result != null && result.isSuccess() && result.getData() != null) {
+                        List<ReservationVO> records = result.getData().getRecords();
                         List<ReservationVO> current = new ArrayList<>(reservationList.getValue() != null
                                 ? reservationList.getValue() : new ArrayList<>());
-                        current.addAll(result.getData().getRecords());
+                        if (records != null) {
+                            current.addAll(records);
+                        }
                         reservationList.setValue(current);
                     }
                 }, throwable -> isLoading = false));

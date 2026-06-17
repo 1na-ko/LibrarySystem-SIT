@@ -7,6 +7,15 @@
     android:orientation="vertical"
     android:background="?attr/colorSurface">
 
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/white"
+        app:title="实体搜索"
+        app:titleTextColor="@color/gray"
+        app:navigationIcon="@android:drawable/ic_menu_revert" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -46,7 +55,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="12dp"
-        app:checkedChip="0"
+        app:checkedChip="@id/chipAll"
         app:singleSelection="true">
 
         <com.google.android.material.chip.Chip
