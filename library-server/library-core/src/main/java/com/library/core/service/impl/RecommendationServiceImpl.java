@@ -130,6 +130,10 @@ public class RecommendationServiceImpl implements RecommendationService {
             kgResult = kgFuture.getNow(Collections.emptyMap());
         } catch (TimeoutException e) {
             log.warn("推荐并行召回超时（{}s），使用已完成路径的部分结果", timeout);
+            // 先收集已完成的结果，再取消未完成的——与日志"使用部分结果"一致
+            cfResult = cfFuture != null ? cfFuture.getNow(Collections.emptyMap()) : Collections.emptyMap();
+            cbfResult = cbfFuture != null ? cbfFuture.getNow(Collections.emptyMap()) : Collections.emptyMap();
+            kgResult = kgFuture != null ? kgFuture.getNow(Collections.emptyMap()) : Collections.emptyMap();
             if (cfFuture != null) cfFuture.cancel(true);
             if (cbfFuture != null) cbfFuture.cancel(true);
             if (kgFuture != null) kgFuture.cancel(true);

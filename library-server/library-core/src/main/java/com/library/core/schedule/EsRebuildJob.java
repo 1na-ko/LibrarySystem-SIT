@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -76,15 +77,35 @@ public class EsRebuildJob {
                 // 批量预加载分类名 Map（消除 N+1）
                 Map<Long, String> catNameMap = buildCategoryNameMap(batch);
 
+                // 先批量构建文档，再通过 BulkRequest 一次性写入（消除逐条 save 的 N 次网络往返）
+                List<BookDocument> docBatch = new ArrayList<>(batch.size());
                 for (Book book : batch) {
                     try {
                         BookDocument doc = buildDocument(book, catNameMap.get(book.getCategoryId()));
                         if (doc != null) {
-                            bookESRepository.save(doc);
-                            processed++;
+                            docBatch.add(doc);
                         }
                     } catch (Exception e) {
-                        log.error("ES 重建单条失败: bookId={}, error={}", book.getId(), e.getMessage());
+                        log.error("ES 重建构建文档失败: bookId={}, error={}", book.getId(), e.getMessage());
+                    }
+                }
+                if (!docBatch.isEmpty()) {
+                    try {
+                        bookESRepository.bulkSave(docBatch);
+                        processed += docBatch.size();
+                    } catch (Exception e) {
+                        // 批量失败（网络异常或部分项错误）→ 降级逐条写入，隔离单条失败
+                        log.warn("ES 批量写入失败(本批 {} 条)，降级逐条重试: {}",
+                                docBatch.size(), e.getMessage());
+                        for (BookDocument doc : docBatch) {
+                            try {
+                                bookESRepository.save(doc);
+                                processed++;
+                            } catch (Exception ex) {
+                                log.error("ES 重建单条降级失败: bookId={}, error={}",
+                                        doc.getId(), ex.getMessage());
+                            }
+                        }
                     }
                 }
                 lastId = batch.get(batch.size() - 1).getId();

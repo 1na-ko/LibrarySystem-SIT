@@ -2,7 +2,7 @@ package com.library.kg.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 /**
  * 知识图谱配置属性.
@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Data
-@Configuration
+@Component
 @ConfigurationProperties(prefix = "kg")
 public class KnowledgeGraphProperties {
 

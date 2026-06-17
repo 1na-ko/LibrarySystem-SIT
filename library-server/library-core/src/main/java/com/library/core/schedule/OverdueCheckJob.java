@@ -45,7 +45,10 @@ public class OverdueCheckJob {
         log.info("超期检查开始: date={}", today);
 
         int processedCount = 0;
-        while (true) {
+        // 防卡死兜底：限制最大迭代次数，避免 processBatch 持续失败时同批被无限重复扫描
+        final int maxIterations = 1000;
+        int iteration = 0;
+        while (iteration++ < maxIterations) {
             List<BorrowRecord> batch = borrowRecordMapper.selectList(
                     new LambdaQueryWrapper<BorrowRecord>()
                             .lt(BorrowRecord::getDueDate, today)
@@ -56,6 +59,9 @@ public class OverdueCheckJob {
                 break;
             }
             processedCount += batchProcessor.processBatch(batch, today);
+        }
+        if (iteration > maxIterations) {
+            log.warn("超期检查达到最大迭代次数 {}，可能存在持续失败批次，请排查", maxIterations);
         }
 
         log.info("超期检查结束: 处理 {} 条超期记录", processedCount);

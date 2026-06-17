@@ -122,7 +122,7 @@ public class LlmServiceImpl implements LlmService {
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
+                        status -> status.isError(),
                         resp -> resp.bodyToMono(String.class)
                                 .map(body -> new LlmUnavailableException(
                                         "DeepSeek API 返回错误: " + resp.statusCode() + " - " + body,
@@ -149,7 +149,9 @@ public class LlmServiceImpl implements LlmService {
                                 new LlmUnavailableException(
                                         "DeepSeek API 重试 " + llmConfig.getMaxRetries() + " 次后仍失败",
                                         retrySignal.failure(), "RETRY_EXHAUSTED")))
-                .block(Duration.ofSeconds(llmConfig.getReadTimeout().toSeconds() + 10));
+                .block(llmConfig.getReadTimeout()
+                        .multipliedBy(llmConfig.getMaxRetries() + 1)
+                        .plusSeconds(20));
     }
 
     /**

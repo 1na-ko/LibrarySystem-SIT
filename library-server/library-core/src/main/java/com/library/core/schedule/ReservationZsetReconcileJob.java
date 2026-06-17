@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 /**
  * 预约 ZSET 对账 Job.
  * <p>
- * 每天凌晨 4:00 运行，交叉核对 Redis ZSET 预约队列与 DB 中的 WAITING 记录，
+ * 每天凌晨 4:30 运行，交叉核对 Redis ZSET 预约队列与 DB 中的 WAITING 记录，
  * 自动修复不一致：
  * <ul>
  *   <li>幽灵条目：ZSET 中存在但 DB 不存在 → 从 ZSET 删除</li>
@@ -46,9 +46,9 @@ public class ReservationZsetReconcileJob {
     private static final String QUEUE_KEY_PREFIX = "reservation:queue:";
 
     /**
-     * 每天凌晨 4:00 执行对账（在 OverdueCheckJob 3:00 和 ReservationExpireJob 之后）.
+     * 每天凌晨 4:30 执行对账（错开 ES 全量重建周日 4:00 窗口，在 OverdueCheckJob 3:00 之后）.
      */
-    @Scheduled(cron = "0 0 4 * * ?")
+    @Scheduled(cron = "0 30 4 * * ?")
     public void reconcile() {
         log.info("预约 ZSET 对账开始");
         int ghostsRemoved = 0;
@@ -104,19 +104,19 @@ public class ReservationZsetReconcileJob {
     }
 
     /**
-     * 收集某个队列的所有 ZSET 成员.
+     * 收集某个队列的所有 ZSET 成员（ZSCAN 分页，默认上限 10000 防阻塞）.
      */
+    private static final int ZSCAN_COUNT = 100;
+    private static final int ZSCAN_MAX = 10000;
+
     private Set<Long> collectZsetMembers(String queueKey) {
-        Set<Object> raw = redisTemplate.opsForZSet().range(queueKey, 0, -1);
-        if (raw == null || raw.isEmpty()) {
-            return Set.of();
-        }
         Set<Long> result = new HashSet<>();
-        for (Object obj : raw) {
-            try {
-                result.add(Long.parseLong(obj.toString()));
-            } catch (NumberFormatException ignored) {
-                // 跳过非法格式
+        int scanned = 0;
+        try (var cursor = redisTemplate.opsForZSet().scan(queueKey,
+                org.springframework.data.redis.core.ScanOptions.scanOptions().count(ZSCAN_COUNT).build())) {
+            while (cursor.hasNext() && scanned < ZSCAN_MAX) {
+                result.add(Long.parseLong(cursor.next().toString()));
+                scanned++;
             }
         }
         return result;

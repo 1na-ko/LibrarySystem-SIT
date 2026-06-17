@@ -5,15 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.common.annotation.OperationLog;
 import com.library.common.exception.BizException;
 import com.library.core.entity.OperationLogEntity;
-import com.library.core.mapper.OperationLogMapper;
+import com.library.core.service.OperationLogService;
 import com.library.security.context.LoginUser;
 import com.library.security.context.SecurityUtils;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * 操作日志 AOP 切面.
@@ -38,15 +39,34 @@ import java.util.concurrent.CompletableFuture;
  */
 @Aspect
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class OperationLogAspect {
 
-    private final OperationLogMapper operationLogMapper;
+    private final OperationLogService operationLogService;
     private final ObjectMapper objectMapper;
+    /** 异步日志写入专用线程池（注入 library-async taskExecutor，与 ForkJoinPool.commonPool 隔离） */
+    private final Executor taskExecutor;
+
+    public OperationLogAspect(OperationLogService operationLogService,
+                              ObjectMapper objectMapper,
+                              @Qualifier("taskExecutor") Executor taskExecutor) {
+        this.operationLogService = operationLogService;
+        this.objectMapper = objectMapper;
+        this.taskExecutor = taskExecutor;
+    }
 
     private static final int MAX_PARAMS_LENGTH = 2000;
     private static final int MAX_ERROR_LENGTH = 500;
+
+    /**
+     * 敏感字段名匹配（不区分大小写）：命中后其值脱敏为 ***，避免密码/令牌/密钥泄露到 operation_log 表.
+     * <p>
+     * 兑现 {@link com.library.common.annotation.OperationLog#logParams()} 的 Javadoc 承诺——
+     * "敏感字段（password/token/secret 等）将由切面自动脱敏为 ***"。
+     */
+    private static final java.util.regex.Pattern SENSITIVE_FIELD_PATTERN = java.util.regex.Pattern.compile(
+            "(\"(?:password|passwd|passwordHash|password_hash|secret|token|accessToken|access_token|refreshToken|refresh_token|credential|apiKey|api_key)\"\\s*:\\s*)\"[^\"]*\"",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
 
     /**
      * 拦截 @OperationLog 方法，环绕记录操作日志.
@@ -58,7 +78,9 @@ public class OperationLogAspect {
         LoginUser operator = SecurityUtils.getCurrentUser();
         String clientIp = extractClientIp();
         String target = buildTarget(pjp, opLog);
-        String paramsJson = opLog.logParams() ? truncate(toJson(pjp.getArgs()), MAX_PARAMS_LENGTH) : null;
+        String paramsJson = opLog.logParams()
+                ? truncate(maskSensitive(toJson(pjp.getArgs())), MAX_PARAMS_LENGTH)
+                : null;
 
         OperationLogEntity record = new OperationLogEntity();
         record.setOperatorId(operator != null ? operator.getUserId() : null);
@@ -77,9 +99,10 @@ public class OperationLogAspect {
             // logResult=true 时记录返回摘要到 requestParams 后缀（errorMessage 仅用于 FAIL）
             if (opLog.logResult()) {
                 String summary = truncate(toJson(result), MAX_ERROR_LENGTH);
-                record.setRequestParams(
-                        (record.getRequestParams() != null ? record.getRequestParams() + " | " : "")
-                                + "result:" + summary);
+                String combined = (record.getRequestParams() != null ? record.getRequestParams() + " | " : "")
+                        + "result:" + summary;
+                // 拼接后整体截断至列长上限（operation_log.request_params VARCHAR(2000)），避免写入超长
+                record.setRequestParams(truncate(combined, MAX_PARAMS_LENGTH));
             }
             asyncInsert(record);
             return result;
@@ -104,12 +127,12 @@ public class OperationLogAspect {
     void asyncInsert(OperationLogEntity record) {
         CompletableFuture.runAsync(() -> {
             try {
-                operationLogMapper.insert(record);
+                operationLogService.insert(record);
             } catch (Exception e) {
                 log.error("操作日志写入失败: module={}, action={}, operator={}",
                         record.getModule(), record.getAction(), record.getOperatorName(), e);
             }
-        });
+        }, taskExecutor);
     }
 
     /**
@@ -153,6 +176,8 @@ public class OperationLogAspect {
             if (param.isAnnotationPresent(org.springframework.web.bind.annotation.PathVariable.class)) {
                 String name = param.getAnnotation(org.springframework.web.bind.annotation.PathVariable.class).value();
                 if (name.isEmpty()) {
+                    // 回退到反射参数名：依赖编译期 -parameters 选项（Spring Boot 3 默认开启），
+                    // 否则返回 arg0/arg1。当前所有 @PathVariable 均显式指定 value()，此分支极少触发。
                     name = param.getName();
                 }
                 return name + ":" + args[i];
@@ -191,5 +216,23 @@ public class OperationLogAspect {
             return str;
         }
         return str.substring(0, maxLength - 3) + "...";
+    }
+
+    /**
+     * 脱敏 JSON 字符串中的敏感字段值.
+     * <p>
+     * 将 password / token / secret / credential / apiKey 等字段的值替换为 {@code "***"}，
+     * 防止敏感信息随操作参数写入 {@code operation_log} 表。
+     * 在 {@link #toJson(Object)} 之后、{@link #truncate(String, int)} 之前调用，
+     * 兑现 {@link com.library.common.annotation.OperationLog#logParams()} 的脱敏承诺。
+     *
+     * @param json 原始 JSON 字符串
+     * @return 脱敏后的 JSON 字符串
+     */
+    String maskSensitive(String json) {
+        if (json == null) {
+            return null;
+        }
+        return SENSITIVE_FIELD_PATTERN.matcher(json).replaceAll("$1\"***\"");
     }
 }

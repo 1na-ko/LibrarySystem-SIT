@@ -99,7 +99,8 @@ public class TopicNetworkBuilderImpl implements TopicNetworkBuilder {
         List<Long> ids = nodes.stream().map(GraphNode::getId).toList();
         List<GraphEdge> edges = new ArrayList<>();
         if (ids.size() >= 2) {
-            String edgeCypher = "MATCH (k1:Keyword)-[r:RELATED_TO]->(k2:Keyword) "
+            // 无向匹配 RELATED_TO：无论关系创建方向如何都能命中（id(k1)<id(k2) 保证不重复）
+            String edgeCypher = "MATCH (k1:Keyword)-[r:RELATED_TO]-(k2:Keyword) "
                     + "WHERE id(k1) IN $ids AND id(k2) IN $ids "
                     + "AND id(k1) < id(k2) "
                     + "RETURN id(k1) AS sourceId, id(k2) AS targetId, r.weight AS weight";

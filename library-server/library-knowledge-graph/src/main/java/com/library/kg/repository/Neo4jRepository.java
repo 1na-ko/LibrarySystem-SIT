@@ -113,12 +113,32 @@ public class Neo4jRepository {
     private static final java.util.Set<String> ALLOWED_LABELS =
             java.util.Set.of("Book", "Author", "Keyword", "Subject", "Publication", "Conference");
 
+    /** 允许的关系类型白名单（防 Cypher 注入） */
+    private static final java.util.Set<String> ALLOWED_REL_TYPES =
+            java.util.Set.of("CITES", "AUTHORED_BY", "BELONGS_TO", "HAS_KEYWORD",
+                    "RELATED_TO", "CO_CITED", "PUBLISHED_IN", "PRESENTED_AT");
+
+    /** 校验节点标签是否在白名单内，防 Cypher 注入（与 countNodes 对称） */
+    private void requireValidLabel(String label) {
+        if (!ALLOWED_LABELS.contains(label)) {
+            throw new IllegalArgumentException("非法的节点标签（不在白名单）: " + label);
+        }
+    }
+
+    /** 校验关系类型是否在白名单内，防 Cypher 注入 */
+    private void requireValidRelType(String relType) {
+        if (!ALLOWED_REL_TYPES.contains(relType)) {
+            throw new IllegalArgumentException("非法的关系类型（不在白名单）: " + relType);
+        }
+    }
+
     // ---- 节点与关系写入 ----
 
     /**
      * 幂等写入节点（MERGE 语义）.
      */
     public void saveNode(String label, Map<String, Object> matchProps, Map<String, Object> setProps) {
+        requireValidLabel(label);
         Map<String, Object> params = new HashMap<>();
         StringBuilder cypher = new StringBuilder("MERGE (n:").append(label).append(" {");
         boolean first = true;
@@ -148,6 +168,9 @@ public class Neo4jRepository {
     public void saveRelationship(String fromLabel, Map<String, Object> fromMatch,
                                  String toLabel, Map<String, Object> toMatch,
                                  String relType, Map<String, Object> relProps) {
+        requireValidLabel(fromLabel);
+        requireValidLabel(toLabel);
+        requireValidRelType(relType);
         Map<String, Object> params = new HashMap<>();
         StringBuilder cypher = new StringBuilder("MATCH (a:").append(fromLabel).append(" {");
         mergeEntryParams(fromMatch, "f", params, cypher);
@@ -167,10 +190,68 @@ public class Neo4jRepository {
         execute(cypher.toString(), params);
     }
 
+    // ---- 批量写入（UNWIND 优化，消除 N+1 往返） ----
+
+    /**
+     * 批量 MERGE 节点（同 label，单一 key 属性匹配）.
+     * <p>
+     * 将 for 循环中逐条 {@code saveNode(label, {key: name}, {key: name})} 的 N+1 模式
+     * 替换为单次 {@code UNWIND $rows AS row MERGE (n:<label> {<key>: row.name})}。
+     *
+     * @param label     节点标签
+     * @param key       匹配属性名（如 "name"）
+     * @param keyValues 属性值列表
+     */
+    public void batchMergeNodes(String label, String key, List<String> keyValues) {
+        requireValidLabel(label);
+        if (keyValues == null || keyValues.isEmpty()) return;
+
+        Map<String, Object> params = Map.of("rows",
+                keyValues.stream().map(v -> Map.of("name", (Object) v)).toList());
+        String cypher = "UNWIND $rows AS row MERGE (n:" + label + " {" + key + ": row.name})";
+        execute(cypher, params);
+    }
+
+    /**
+     * 批量 MERGE 关系（从同一源节点到多个目标节点的同类型关系）.
+     * <p>
+     * 将 for 循环中逐条 {@code saveRelationship} 的 N+1 模式替换为单次
+     * {@code UNWIND $rows AS row MATCH (src) MATCH (tgt) MERGE (src)-[r:<type>]->(tgt)}。
+     *
+     * @param srcLabel  源节点标签
+     * @param srcKey    源节点匹配属性名
+     * @param srcValue  源节点匹配属性值
+     * @param tgtLabel  目标节点标签
+     * @param tgtKey    目标节点匹配属性名（通常为 "name"）
+     * @param relType   关系类型
+     * @param tgtValues 目标节点属性值列表（含置信度）
+     */
+    public void batchMergeRelationships(String srcLabel, String srcKey, Object srcValue,
+                                        String tgtLabel, String tgtKey, String relType,
+                                        List<Map<String, Object>> tgtValues) {
+        requireValidLabel(srcLabel);
+        requireValidLabel(tgtLabel);
+        requireValidRelType(relType);
+        if (tgtValues == null || tgtValues.isEmpty()) return;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("srcVal", srcValue);
+        params.put("rows", tgtValues);
+
+        String cypher = "MATCH (src:" + srcLabel + " {" + srcKey + ": $srcVal}) "
+                + "UNWIND $rows AS row "
+                + "MATCH (tgt:" + tgtLabel + " {" + tgtKey + ": row.name}) "
+                + "MERGE (src)-[r:" + relType + "]->(tgt) "
+                + "SET r.confidence = coalesce(row.confidence, 0.5)";
+        execute(cypher, params);
+    }
+
     // ---- GDS 图算法 ----
 
     public Map<Long, Double> pageRank(String nodeLabel, String relType,
                                        double damping, int iterations) {
+        requireValidLabel(nodeLabel);
+        requireValidRelType(relType);
         if (gdsProvider.isAvailable()) {
             return pageRankViaGds(nodeLabel, relType);
         }
@@ -179,10 +260,9 @@ public class Neo4jRepository {
     }
 
     public List<Long> shortestPath(Long fromBookId, Long toBookId, String relType) {
-        if (gdsProvider.isAvailable()) {
-            return shortestPathViaGds(fromBookId, toBookId, relType);
-        }
-        log.info("GDS 不可用，使用 Cypher shortestPath() 降级");
+        requireValidRelType(relType);
+        // 直接使用 Cypher shortestPath()：GDS Dijkstra 需 CITES 关系带 weight 属性，
+        // 当前 CITES 关系未构建且无权重，GDS 路径不可用，Cypher 降级为常态（课设量级足够）。
         return shortestPathViaCypher(fromBookId, toBookId, relType);
     }
 
@@ -247,27 +327,48 @@ public class Neo4jRepository {
         int n = nodeIndex.size();
         if (n == 0) return Collections.emptyMap();
 
-        double[][] adj = new double[n][n];
+        // 稀疏邻接表：List<Map<列, 权重>> — O(edges) 内存，避免稠密 n×n 矩阵
+        List<Map<Integer, Double>> adj = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) adj.add(new java.util.HashMap<>());
         for (var edge : edges) {
             Long src = (Long) edge.get("src");
             Long tgt = (Long) edge.get("tgt");
-            adj[nodeIndex.get(src)][nodeIndex.get(tgt)] += 1.0;
-            adj[nodeIndex.get(tgt)][nodeIndex.get(src)] += 1.0;
+            int si = nodeIndex.get(src);
+            int ti = nodeIndex.get(tgt);
+            adj.get(si).merge(ti, 1.0, Double::sum);
+            adj.get(ti).merge(si, 1.0, Double::sum);
         }
-        for (int j = 0; j < n; j++) {
-            double sum = 0;
-            for (int i = 0; i < n; i++) sum += adj[i][j];
-            if (sum > 0) for (int i = 0; i < n; i++) adj[i][j] /= sum;
+        // 列归一化
+        double[] colSum = new double[n];
+        for (int i = 0; i < n; i++) {
+            for (var entry : adj.get(i).entrySet()) {
+                colSum[entry.getKey()] += entry.getValue();
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            var it = adj.get(i).entrySet().iterator();
+            while (it.hasNext()) {
+                var entry = it.next();
+                int j = entry.getKey();
+                if (colSum[j] > 0) {
+                    entry.setValue(entry.getValue() / colSum[j]);
+                } else {
+                    it.remove();
+                }
+            }
         }
         double[] rank = new double[n];
         double init = 1.0 / n;
+        double teleport = (1.0 - damping) / n;
         for (int i = 0; i < n; i++) rank[i] = init;
         for (int iter = 0; iter < iterations; iter++) {
             double[] newRank = new double[n];
             for (int i = 0; i < n; i++) {
                 double sum = 0;
-                for (int j = 0; j < n; j++) sum += adj[i][j] * rank[j];
-                newRank[i] = damping * sum + (1 - damping) / n;
+                for (var entry : adj.get(i).entrySet()) {
+                    sum += entry.getValue() * rank[entry.getKey()];
+                }
+                newRank[i] = damping * sum + teleport;
             }
             rank = newRank;
         }
@@ -276,24 +377,6 @@ public class Neo4jRepository {
             scores.put(entry.getKey(), rank[entry.getValue()]);
         }
         return scores;
-    }
-
-    private List<Long> shortestPathViaGds(Long from, Long to, String relType) {
-        try {
-            List<Object> result = query(
-                    "MATCH (s:Book {id: $fromId}), (t:Book {id: $toId}) "
-                            + "CALL gds.shortestPath.dijkstra.stream('citationGraph', {"
-                            + "sourceNode: id(s), targetNode: id(t), relationshipWeightProperty: 'weight'}) "
-                            + "YIELD nodeIds RETURN nodeIds LIMIT 1",
-                    Map.of("fromId", from, "toId", to),
-                    rec -> rec.get("nodeIds").asList());
-            if (result.isEmpty()) return Collections.emptyList();
-            return ((List<?>) result.get(0)).stream()
-                    .map(id -> ((Number) id).longValue()).toList();
-        } catch (Exception e) {
-            log.warn("GDS Dijkstra 失败，降级: {}", e.getMessage());
-            return shortestPathViaCypher(from, to, relType);
-        }
     }
 
     private List<Long> shortestPathViaCypher(Long from, Long to, String relType) {

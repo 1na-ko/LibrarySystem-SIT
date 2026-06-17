@@ -1,8 +1,5 @@
 package com.library.ai.config;
 
-import io.netty.channel.ChannelOption;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +13,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 阿里云百炼 DashScope Embedding 客户端配置.
@@ -70,12 +66,7 @@ public class EmbeddingConfig {
     @Bean
     @ConditionalOnExpression("T(org.springframework.util.StringUtils).hasText('${ai.dashscope.api-key:}')")
     public WebClient dashscopeWebClient() {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis())
-                .responseTimeout(readTimeout)
-                .doOnConnected(conn ->
-                        conn.addHandlerLast(new ReadTimeoutHandler(readTimeout.toSeconds(), TimeUnit.SECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(writeTimeout.toSeconds(), TimeUnit.SECONDS)));
+        HttpClient httpClient = AiHttpClientFactory.create(connectTimeout, readTimeout, writeTimeout);
 
         WebClient client = WebClient.builder()
                 .baseUrl(baseUrl)

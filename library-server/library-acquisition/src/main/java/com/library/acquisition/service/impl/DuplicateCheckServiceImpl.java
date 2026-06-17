@@ -51,6 +51,10 @@ public class DuplicateCheckServiceImpl implements DuplicateCheckService {
         }
 
         // 策略2: 作者+标题联合匹配
+        // 预计算输入标题的分词 + 频率 Map（循环外复用，消除 O(n) 次重复 NLP 调用）
+        List<String> inputTokens = StringUtils.hasText(title) ? nlpService.tokenize(title) : List.of();
+        Map<String, Long> inputFreq = buildFreqMap(inputTokens);
+
         if (StringUtils.hasText(author) && StringUtils.hasText(title)) {
             List<Book> authorBooks = bookMapper.selectList(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Book>()
@@ -58,7 +62,7 @@ public class DuplicateCheckServiceImpl implements DuplicateCheckService {
                             .eq(Book::getDeleted, 0));
             for (Book book : authorBooks) {
                 if (book.getIsbn() != null && seenIsbn.contains(book.getIsbn())) continue;
-                double sim = cosineSimilarity(title, book.getTitle());
+                double sim = cosineSimilarity(inputTokens, inputFreq, book.getTitle());
                 if (sim > props.getDuplicateAuthorTitleThreshold()) {
                     candidates.add(DuplicateCheckResultVO.DuplicateItem.builder()
                             .book(toSimpleVO(book))
@@ -79,7 +83,7 @@ public class DuplicateCheckServiceImpl implements DuplicateCheckService {
                             .last("LIMIT 200"));
             for (Book book : allBooks) {
                 if (book.getIsbn() != null && seenIsbn.contains(book.getIsbn())) continue;
-                double sim = cosineSimilarity(title, book.getTitle());
+                double sim = cosineSimilarity(inputTokens, inputFreq, book.getTitle());
                 if (sim > props.getDuplicateTitleThreshold()) {
                     candidates.add(DuplicateCheckResultVO.DuplicateItem.builder()
                             .book(toSimpleVO(book))
@@ -97,14 +101,13 @@ public class DuplicateCheckServiceImpl implements DuplicateCheckService {
                 .build();
     }
 
-    private double cosineSimilarity(String a, String b) {
-        if (a == null || b == null) return 0.0;
-        List<String> tokensA = nlpService.tokenize(a);
+    /**
+     * 余弦相似度（接受预计算的输入侧分词和频率 Map，避免循环内重复 NLP 调用）.
+     */
+    private double cosineSimilarity(List<String> tokensA, Map<String, Long> freqA, String b) {
+        if (tokensA.isEmpty() || b == null) return 0.0;
         List<String> tokensB = nlpService.tokenize(b);
-        if (tokensA.isEmpty() || tokensB.isEmpty()) return 0.0;
-
-        // 使用频率 Map 替代 O(vocab × n) 的 stream filter——O(n) 构建，O(vocab) 计算
-        Map<String, Long> freqA = buildFreqMap(tokensA);
+        if (tokensB.isEmpty()) return 0.0;
         Map<String, Long> freqB = buildFreqMap(tokensB);
 
         Set<String> vocab = new HashSet<>();

@@ -61,9 +61,29 @@ class PageDTOTest {
     }
 
     @Test
-    @DisplayName("pageNum=0 时校验应失败")
+    @DisplayName("构造器应对非法入参做钳制（pageNum<1→1, pageSize 越界→[1,100]）")
+    void shouldClampInvalidValuesInConstructor() {
+        PageDTO dto = new PageDTO(-1, 999999);
+
+        assertThat(dto.getPageNum()).isEqualTo(1);
+        assertThat(dto.getPageSize()).isEqualTo(100);
+        // 钳制后值合法，Bean Validation 通过
+        assertThat(validator.validate(dto)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("构造器应对 pageSize=0 钳制为 1")
+    void shouldClampZeroPageSizeInConstructor() {
+        PageDTO dto = new PageDTO(1, 0);
+
+        assertThat(dto.getPageSize()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("pageNum=0 时 @Min 注解校验应失败（setter 路径模拟 @Valid 绑定绕过构造器钳制）")
     void shouldFailValidationWhenPageNumLessThanOne() {
-        PageDTO dto = new PageDTO(0, 20);
+        PageDTO dto = new PageDTO();
+        dto.setPageNum(0);
 
         var violations = validator.validate(dto);
 
@@ -72,9 +92,10 @@ class PageDTOTest {
     }
 
     @Test
-    @DisplayName("pageSize=0 时校验应失败")
+    @DisplayName("pageSize=0 时 @Min 注解校验应失败（setter 路径）")
     void shouldFailValidationWhenPageSizeLessThanOne() {
-        PageDTO dto = new PageDTO(1, 0);
+        PageDTO dto = new PageDTO();
+        dto.setPageSize(0);
 
         var violations = validator.validate(dto);
 
@@ -83,9 +104,10 @@ class PageDTOTest {
     }
 
     @Test
-    @DisplayName("pageSize=101 时校验应失败（超过上限 100）")
+    @DisplayName("pageSize=101 时 @Max 注解校验应失败（超过上限 100，setter 路径）")
     void shouldFailValidationWhenPageSizeExceedsMax() {
-        PageDTO dto = new PageDTO(1, 101);
+        PageDTO dto = new PageDTO();
+        dto.setPageSize(101);
 
         var violations = validator.validate(dto);
 

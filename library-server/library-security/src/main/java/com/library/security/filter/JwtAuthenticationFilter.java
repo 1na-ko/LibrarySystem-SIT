@@ -7,6 +7,7 @@ import com.library.core.enums.RoleEnum;
 import com.library.core.enums.UserStatusEnum;
 import com.library.security.context.LoginUser;
 import com.library.security.jwt.JwtUtils;
+import com.library.security.util.SecurityResponseUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -105,9 +106,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void writeError(HttpServletResponse response, ErrorCode errorCode) throws IOException {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(Result.error(errorCode)));
+        SecurityResponseUtil.writeJsonError(response, HttpStatus.UNAUTHORIZED,
+                Result.error(errorCode), objectMapper);
     }
 }

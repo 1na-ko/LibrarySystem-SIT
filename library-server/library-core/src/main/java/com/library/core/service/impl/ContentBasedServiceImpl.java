@@ -11,7 +11,6 @@ import com.library.core.mapper.BorrowRecordMapper;
 import com.library.core.mapper.CategoryMapper;
 import com.library.core.service.ContentBasedService;
 import com.library.core.util.SimilarityUtils;
-import com.library.core.vo.BookSimpleVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -169,12 +168,5 @@ public class ContentBasedServiceImpl implements ContentBasedService {
             mean.add(sum / vectors.size());
         }
         return mean;
-    }
-
-    /**
-     * Book → BookSimpleVO（含分类名称，避免 N+1）.
-     */
-    BookSimpleVO toBookSimpleVO(Book book, Map<Long, String> categoryNameMap) {
-        return BookSimpleVO.from(book, categoryNameMap.get(book.getCategoryId()));
     }
 }
