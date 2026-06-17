@@ -46,6 +46,23 @@ public class EsIndexInitializer {
     }
 
     /**
+     * 删除并重建 books 索引（供 EsRebuildJob 全量重建调用）.
+     */
+    public void recreateIndex() throws Exception {
+        // 删除旧索引（不存在则忽略）
+        try {
+            esClient.indices().delete(d -> d.index(BOOKS_INDEX));
+            log.info("ES 索引 [{}] 已删除", BOOKS_INDEX);
+            // 等待删除传播
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            log.debug("ES 索引删除跳过（可能不存在）: {}", e.getMessage());
+        }
+        createIndex();
+        log.info("ES 索引 [{}] 重建成功", BOOKS_INDEX);
+    }
+
+    /**
      * 创建 books 索引，含 IK 自定义分析器和 Completion Suggester.
      * <p>
      * Mapping 严格对齐架构文档 §5.3：

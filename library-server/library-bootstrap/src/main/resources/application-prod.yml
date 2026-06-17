@@ -25,7 +25,7 @@ spring:
       password: ${REDIS_PASSWORD}
 
   neo4j:
-    uri: ${NEO4J_URI}
+    uri: ${NEO4J_URI:bolt://localhost:7687}
     authentication:
       username: ${NEO4J_USERNAME}
       password: ${NEO4J_PASSWORD}
@@ -59,7 +59,7 @@ management:
     web:
       base-path: /
       exposure:
-        include: health,metrics
+        include: health,metrics,prometheus
   endpoint:
     health:
       # 生产环境默认不暴露组件细节，仅显示聚合状态；需要时由授权运维访问

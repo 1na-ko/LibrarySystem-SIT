@@ -2,6 +2,7 @@ package com.library.common.result;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.library.common.exception.ErrorCode;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result<T> {
 

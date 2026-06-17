@@ -45,7 +45,7 @@ class JwtUtilsTest {
         assertThat(claims.get(JwtUtils.CLAIM_ROLE)).isEqualTo("ADMIN");
         assertThat(jwtUtils.isAccess(claims)).isTrue();
         assertThat(jwtUtils.isRefresh(claims)).isFalse();
-        assertThat(claims.getId()).isNotBlank();
+        assertThat(claims.getId()).isNull(); // Access Token 不生成 jti，仅 Refresh Token 含 jti
     }
 
     @Test

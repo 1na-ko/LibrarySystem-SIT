@@ -41,7 +41,7 @@ spring:
   # 已生效：library-core 的 ElasticsearchConfig 手动声明 ElasticsearchClient Bean 并读取此配置键。
   #        ES Java 客户端 8.11（elasticsearch-java）已引入，索引在启动时由 EsIndexInitializer 幂等创建。
   elasticsearch:
-    uris: ${ES_HOST:localhost}:${ES_PORT:9200}
+    uris: http://${ES_HOST:localhost}:${ES_PORT:9200}
 
   # ---- Neo4j ----
   # 生效前置：依赖由 library-knowledge-graph 提供的 spring-boot-starter-data-neo4j（已引入）。
@@ -204,7 +204,11 @@ management:
     web:
       base-path: /
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
   endpoint:
     health:
       show-details: when-authorized

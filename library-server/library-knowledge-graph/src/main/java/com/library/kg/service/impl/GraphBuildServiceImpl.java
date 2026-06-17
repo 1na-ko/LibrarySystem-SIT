@@ -19,6 +19,7 @@ import com.library.kg.service.GraphBuildService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ public class GraphBuildServiceImpl implements GraphBuildService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void buildGraph(Long bookId) {
         Book book = bookMapper.selectById(bookId);
         if (book == null || book.getDeleted() != null && book.getDeleted() == 1) {
@@ -89,6 +91,7 @@ public class GraphBuildServiceImpl implements GraphBuildService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int rebuildAll() {
         int built = 0;
         int pageSize = 100;
@@ -142,7 +145,7 @@ public class GraphBuildServiceImpl implements GraphBuildService {
         // 作者：按逗号/分号/空格切分原始 author 字段
         List<Entity> authors = new ArrayList<>();
         if (StringUtils.hasText(book.getAuthor())) {
-            String[] parts = book.getAuthor().split("[,，;；、\\s]+");
+            String[] parts = book.getAuthor().split("[,，;；、]+");
             for (String part : parts) {
                 String name = part.trim();
                 if (!name.isEmpty()) {

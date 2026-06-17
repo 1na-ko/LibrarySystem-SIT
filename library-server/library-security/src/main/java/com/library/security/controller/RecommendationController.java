@@ -3,7 +3,9 @@ package com.library.security.controller;
 import com.library.common.result.Result;
 import com.library.core.service.RecommendationService;
 import com.library.core.vo.BookRecommendVO;
+import com.library.security.aspect.RequireRole;
 import com.library.security.context.SecurityUtils;
+import com.library.core.enums.RoleEnum;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,7 @@ public class RecommendationController {
      * @return 推荐图书列表（含推荐分数与理由）
      */
     @GetMapping("/recommendations")
+    @RequireRole({RoleEnum.STUDENT, RoleEnum.TEACHER, RoleEnum.LIBRARIAN, RoleEnum.ADMIN})
     public Result<List<BookRecommendVO>> getRecommendations(
             @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
         long userId = SecurityUtils.getCurrentUserId();

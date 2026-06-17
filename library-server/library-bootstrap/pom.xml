@@ -42,6 +42,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
         <!-- 生成 IDE 元数据以支持自定义配置键（jwt.* 等）的自动补全 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

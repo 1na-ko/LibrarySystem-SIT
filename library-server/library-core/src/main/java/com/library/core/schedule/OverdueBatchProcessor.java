@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -60,7 +61,12 @@ public class OverdueBatchProcessor {
             fineRecord.setAmount(fineAmount);
             fineRecord.setReason("超期 " + overdueDays + " 天，日罚款 0.5 元");
             fineRecord.setPaid(0);
-            fineRecordMapper.insert(fineRecord);
+            try {
+                fineRecordMapper.insert(fineRecord);
+            } catch (DuplicateKeyException e) {
+                log.warn("罚款记录已存在(可能被并发还书操作创建)，跳过: borrowId={}", record.getId());
+                continue;
+            }
 
             log.info("超期处理: borrowId={}, userId={}, overdueDays={}, fine={}",
                     record.getId(), record.getUserId(), overdueDays, fineAmount);

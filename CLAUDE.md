@@ -1,7 +1,7 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-8 ✅ | 阶段 9-11 📋 待实施
+> **状态**: 阶段 0-9 ✅ | 阶段 10-11 📋 待实施
 > **最后更新**: 2026-06-16
 
 ---
@@ -75,6 +75,8 @@ LibrarySystem-SIT/
 library-common ←── (所有模块的基础依赖)
 library-ai     ←── library-core, library-acquisition, library-knowledge-graph
 library-core   ←── library-knowledge-graph, library-acquisition, library-security
+library-knowledge-graph ←── library-security
+library-acquisition ←── library-security
 library-security ←── library-bootstrap
 library-bootstrap ←── (聚合所有模块)
 ```
@@ -306,6 +308,19 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **P2 TopicNetworkBuilderImpl PageRank 批量写入**：`buildTopicNetwork()` 中 PageRank 分数写入由 for 循环 N 次 `execute()` 改为单次 `UNWIND $rows` 批量 Cypher，消除 N 次网络往返 ✅
 - **P2 RateLimitServiceImpl 降级策略文档化**：Redis 故障"放行"行为保留（Rate Limit 为保护性措施，阻断所有用户损失更大），但显式标注 fail-open 决策理由及 Redis HA 运维要求，添加本地 ConcurrentHashMap 降级 TODO ✅
 - **P3 发现与记录**：识别 9 项 P3 技术债——`@EnableMethodSecurity` 死配置、ES URI 缺 scheme、NlpService Javadoc 契约不一致、LLM 日志含可能敏感数据、GlobalExceptionHandler 缺 3 个 Spring MVC 异常 handler、EmbeddingService 重试次数不象 LlmService 可配置、DuplicateCheckService 作者查询无 LIMIT、PredictionService 全分类预加载浪费、CORS 生产环境缺白名单 ✅
+
+### 已落地（阶段 9：系统管理与监控）
+
+> 一次性落地 6 项系统管理功能 + 3 项 P3 技术债修复。全量 **355 项测试全绿**（common 143 + ai 29 + core 99 + security 71 + kg 3 + acquisition 10；bootstrap 1 项 @Disabled）。
+> 新建源码 21 个 + Flyway V7 迁移，修改文件 ~15 个。
+
+- **9.1 用户列表**（`GET /admin/users`）：`AdminUserController`(security) + `AdminUserService`(core) + `UserQueryDTO`，支持按角色/状态/关键词分页筛选，批量查询在借/超期统计消除 N+1 ✅
+- **9.2 用户状态管理**（`PUT /admin/users/{id}/status`）：状态变更含自操作防护 + DISABLED 不可逆守卫 + `@OperationLog` 自动审计 ✅
+- **9.3 流通统计 Dashboard**（`GET /admin/stats/dashboard`）：`AdminStatsController`(security) + `StatsDashboardService`(core) + `DashboardVO`，聚合今日借阅/归还/超期、本月日趋势、热门分类 Top-10、实时在馆人数 ✅
+- **9.4 操作日志 AOP**：`@OperationLog` 注解(common) + `OperationLogEntity`(core) + `OperationLogMapper` + `OperationLogAspect`(security) + Flyway V7 `operation_log` 表，异步写入防阻塞主流程 ✅
+- **9.5 Prometheus 指标**：`MetricsConfig`(bootstrap) + `micrometer-registry-prometheus` 依赖 + `library_reservations_queue_size` Gauge + Counter 埋点（借阅/搜索）✅
+- **9.6 定时任务总控增强**：`SchedulingConfig` 自定义 4 线程池 + `ReservationZsetReconcileJob` 骨架→完整（幽灵删除+孤儿补回）+ `EsRebuildJob` 每周日 4:00 全量重建（游标分批+批量写入+缓存清除）✅
+- **P3 技术债清理**：`SecurityConfig` 删除 `@EnableMethodSecurity` 死配置 / `application.yml` ES URI 补齐 `http://` scheme / `CorsConfig` 生产 `CORS_ALLOWED_ORIGINS` 白名单支持 ✅
 
 ### 待实现
 - RabbitMQ Starter 正式引入（当前仅 docker-compose 编排）

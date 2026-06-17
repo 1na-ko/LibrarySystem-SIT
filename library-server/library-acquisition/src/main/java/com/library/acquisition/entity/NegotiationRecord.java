@@ -26,7 +26,7 @@ public class NegotiationRecord {
     private Long negotiatorId;
     private BigDecimal floorPrice;
     private BigDecimal ceilingPrice;
-    private BigDecimal suggestedPrice;
+    private BigDecimal suggestedOffer;
     /** JSON 列，存谈判策略数组 */
     private String strategies;
     /** JSON 列，存关键条款数组 */

@@ -75,13 +75,13 @@ public class GraphQueryServiceImpl implements GraphQueryService {
             }
             cypher.append("MATCH (n:").append(type).append(") ")
                     .append("WHERE n.name CONTAINS $entity OR n.title CONTAINS $entity ")
-                    .append("RETURN n LIMIT 50");
+                    .append("RETURN n ORDER BY coalesce(n.pagerank, 0.0) DESC LIMIT 50");
         } else {
             // 模糊搜索所有类型节点
             cypher.append("MATCH (n) ")
                     .append("WHERE (n:Book OR n:Author OR n:Keyword OR n:Subject) ")
                     .append("AND (n.name CONTAINS $entity OR n.title CONTAINS $entity) ")
-                    .append("RETURN n LIMIT 50");
+                    .append("RETURN n ORDER BY coalesce(n.pagerank, 0.0) DESC LIMIT 50");
         }
 
         List<GraphNode> nodes = neo4jRepository.query(cypher.toString(), params,

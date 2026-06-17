@@ -73,8 +73,9 @@ public class AcquisitionController {
     @Operation(summary = "创建谈判记录")
     public Result<NegotiationVO> createNegotiation(
             @Parameter(description = "电子资源ID") @RequestParam Long resourceId,
-            @Parameter(description = "供应商ID") @RequestParam Long supplierId,
-            @Parameter(description = "谈判人ID") @RequestParam Long negotiatorId) {
+            @Parameter(description = "供应商ID") @RequestParam Long supplierId) {
+        // 谈判人 ID 从当前认证用户派生，防止冒充
+        Long negotiatorId = com.library.security.context.SecurityUtils.getCurrentUserId();
         NegotiationRecord record = negotiationService.createNegotiation(resourceId, supplierId, negotiatorId);
         return Result.success(NegotiationVO.builder()
                 .id(record.getId())
@@ -84,7 +85,7 @@ public class AcquisitionController {
                 .status(record.getStatus())
                 .floorPrice(record.getFloorPrice())
                 .ceilingPrice(record.getCeilingPrice())
-                .suggestedPrice(record.getSuggestedPrice())
+                .suggestedOffer(record.getSuggestedOffer())
                 .createTime(record.getCreateTime())
                 .build());
     }

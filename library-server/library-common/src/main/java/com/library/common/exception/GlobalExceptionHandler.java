@@ -4,15 +4,20 @@ import com.library.common.result.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.stream.Collectors;
 
@@ -117,6 +122,66 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), msg));
+    }
+
+    /**
+     * 不支持的 HTTP 方法（GET 接口收到 POST 请求等）.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Result<Void>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
+        log.warn("不支持的请求方法: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "不支持的请求方法"));
+    }
+
+    /**
+     * 不支持的 Media Type（Content-Type）.
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Result<Void>> handleMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
+        log.warn("不支持的 Content-Type: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "不支持的 Content-Type"));
+    }
+
+    /**
+     * 参数类型转换失败（如 String→Long）.
+     */
+    @ExceptionHandler(TypeMismatchException.class)
+    public ResponseEntity<Result<Void>> handleTypeMismatch(
+            TypeMismatchException e, HttpServletRequest request) {
+        log.warn("参数类型转换失败: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "参数类型不匹配"));
+    }
+
+    /**
+     * 路径变量缺失.
+     */
+    @ExceptionHandler(MissingPathVariableException.class)
+    public ResponseEntity<Result<Void>> handleMissingPathVariable(
+            MissingPathVariableException e, HttpServletRequest request) {
+        log.warn("路径变量缺失: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .badRequest()
+                .body(Result.error(ErrorCode.BAD_REQUEST.getCode(), "路径变量缺失"));
+    }
+
+    /**
+     * 请求路径不存在（需配合 {@code spring.mvc.throw-exception-if-no-handler-found=true}）.
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<Result<Void>> handleNoHandler(
+            NoHandlerFoundException e, HttpServletRequest request) {
+        log.warn("路径不存在: {}, path={}", e.getMessage(), request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Result.error(ErrorCode.NOT_FOUND.getCode(), "请求路径不存在"));
     }
 
     /**

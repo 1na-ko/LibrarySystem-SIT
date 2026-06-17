@@ -110,12 +110,16 @@ public class RecommendationServiceImpl implements RecommendationService {
         Map<Long, Double> cbfResult = Collections.emptyMap();
         Map<Long, Double> kgResult = Collections.emptyMap();
 
+        CompletableFuture<Map<Long, Double>> cfFuture = null;
+        CompletableFuture<Map<Long, Double>> cbfFuture = null;
+        CompletableFuture<Map<Long, Double>> kgFuture = null;
+
         try {
-            CompletableFuture<Map<Long, Double>> cfFuture = CompletableFuture.supplyAsync(
+            cfFuture = CompletableFuture.supplyAsync(
                     () -> cfService.recommend(userId, allRecords), recommendExecutor);
-            CompletableFuture<Map<Long, Double>> cbfFuture = CompletableFuture.supplyAsync(
+            cbfFuture = CompletableFuture.supplyAsync(
                     () -> contentBasedService.recommend(userId, borrowedBookIds, actualLimit), recommendExecutor);
-            CompletableFuture<Map<Long, Double>> kgFuture = CompletableFuture.supplyAsync(
+            kgFuture = CompletableFuture.supplyAsync(
                     () -> kgService.recommend(userId, actualLimit), recommendExecutor);
 
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(cfFuture, cbfFuture, kgFuture);
@@ -126,6 +130,9 @@ public class RecommendationServiceImpl implements RecommendationService {
             kgResult = kgFuture.getNow(Collections.emptyMap());
         } catch (TimeoutException e) {
             log.warn("推荐并行召回超时（{}s），使用已完成路径的部分结果", timeout);
+            if (cfFuture != null) cfFuture.cancel(true);
+            if (cbfFuture != null) cbfFuture.cancel(true);
+            if (kgFuture != null) kgFuture.cancel(true);
         } catch (Exception e) {
             log.warn("推荐并行召回异常: {}", e.getMessage(), e);
         }

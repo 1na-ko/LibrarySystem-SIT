@@ -1,6 +1,7 @@
 package com.library.security.token;
 
 import com.library.security.config.JwtProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.List;
  * @author LibrarySystem Team
  * @since 1.0.0
  */
+@Slf4j
 @Service
 public class TokenServiceImpl implements TokenService {
 
@@ -50,6 +52,8 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public void revoke(long userId) {
-        redis.delete(KEY_PREFIX + userId);
+        if (!Boolean.TRUE.equals(redis.delete(KEY_PREFIX + userId))) {
+            log.warn("Refresh Token 删除失败或 key 不存在: userId={}", userId);
+        }
     }
 }

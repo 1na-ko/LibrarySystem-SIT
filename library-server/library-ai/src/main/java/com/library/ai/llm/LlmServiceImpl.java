@@ -2,6 +2,7 @@ package com.library.ai.llm;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.library.ai.common.AiExceptionUtils;
 import com.library.ai.config.LlmConfig;
 import com.library.ai.llm.dto.LlmChatRequest;
 import com.library.ai.llm.dto.LlmChatResponse;
@@ -152,19 +153,10 @@ public class LlmServiceImpl implements LlmService {
     }
 
     /**
-     * 按 HTTP 状态码分类失败原因.
+     * 按 HTTP 状态码分类失败原因（委托 AiExceptionUtils）.
      */
     private String categorizeReason(int statusCode) {
-        if (statusCode == 401 || statusCode == 403) {
-            return "AUTH_FAILED";
-        }
-        if (statusCode == 429) {
-            return "QUOTA_EXHAUSTED";
-        }
-        if (statusCode >= 500) {
-            return "SERVER_ERROR";
-        }
-        return "CLIENT_ERROR";
+        return AiExceptionUtils.categorizeReason(statusCode);
     }
 
     /**

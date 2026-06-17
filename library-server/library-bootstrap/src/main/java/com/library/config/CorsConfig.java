@@ -25,12 +25,25 @@ public class CorsConfig {
 
     /**
      * CORS 配置源（单一来源，供 Security 过滤器链使用）.
+     * <p>
+     * 生产环境应设置 {@code CORS_ALLOWED_ORIGINS} 环境变量为逗号分隔的域名白名单
+     * （如 {@code https://lib.university.edu.cn,https://admin.lib.university.edu.cn}），
+     * 该值在构造时读取并解析。
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // 开发环境宽松；生产需收紧为具体域名白名单
-        config.setAllowedOriginPatterns(List.of("*"));
+        // 从环境变量读取生产白名单，默认宽松（开发环境）
+        String originsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (originsEnv != null && !originsEnv.isBlank()) {
+            config.setAllowedOriginPatterns(
+                    java.util.Arrays.stream(originsEnv.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList());
+        } else {
+            config.setAllowedOriginPatterns(List.of("*"));
+        }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         // Bearer Header 认证（非 Cookie），无需允许凭据
