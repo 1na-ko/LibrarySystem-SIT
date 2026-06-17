@@ -58,12 +58,25 @@ public class LiteratureTracingServiceImpl implements LiteratureTracingService {
             case BOTH -> "-[:" + CITE_REL + "*1.." + safeDepth + "]-";
         };
 
+        // Neo4j Driver 5.x 不支持 PATH 直接 .asList()，故 Cypher 端解构 nodes(p)+relationships(p)，
+        // Java 端重组成"NODE/REL/NODE/REL/NODE"交替序列保持 parseTracePaths 既有契约不变
         String cypher = "MATCH path = (start:Book {id: $bookId})" + arrow + "(target:Book) "
-                + "RETURN path LIMIT " + kgProperties.getTracingLimit();
+                + "RETURN nodes(path) AS pathNodes, relationships(path) AS pathRels LIMIT " + kgProperties.getTracingLimit();
 
         List<List<Object>> rawPaths = neo4jRepository.query(cypher,
                 Map.of("bookId", bookId),
-                (rec) -> rec.get("path").asList());
+                (rec) -> {
+                    List<Value> nodes = rec.get("pathNodes").asList(v -> v);
+                    List<Value> rels = rec.get("pathRels").asList(v -> v);
+                    List<Object> alternating = new ArrayList<>(nodes.size() + rels.size());
+                    for (int i = 0; i < nodes.size(); i++) {
+                        alternating.add(nodes.get(i));
+                        if (i < rels.size()) {
+                            alternating.add(rels.get(i));
+                        }
+                    }
+                    return alternating;
+                });
 
         List<TracePath> paths = parseTracePaths(rawPaths);
 

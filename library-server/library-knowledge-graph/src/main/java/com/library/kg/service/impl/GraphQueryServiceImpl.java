@@ -67,12 +67,27 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         int safeDepth = clamp(depth, 1, kgProperties.getMaxQueryDepth());
 
         // 路径查询：以书为中心，取 depth 跳内邻居
-        // 注意：可变长度深度参数无法用 $param 绑定，使用整数白名单校验后字符串拼接
+        // 注意：1) 可变长度深度参数无法用 $param 绑定，使用整数白名单校验后字符串拼接；
+        //       2) Neo4j Driver 5.x 对 PATH 类型不支持 .asList()（抛 Cannot coerce PATH to Java List），
+        //          故 Cypher 端用 nodes(p) + relationships(p) 解构后由 Java 端重组交替序列，
+        //          保持 buildGraphFromPaths 的"NODE/REL/NODE/REL/NODE"列表契约不变
         String cypher = "MATCH p = (b:Book {id: $bookId})-[*1.." + safeDepth + "]-(n) "
-                + "RETURN p LIMIT 200";
+                + "RETURN nodes(p) AS pathNodes, relationships(p) AS pathRels LIMIT 200";
         List<List<Object>> paths = neo4jRepository.query(cypher,
                 Map.of("bookId", bookId),
-                (rec) -> rec.get("p").asList());
+                (rec) -> {
+                    List<Value> nodes = rec.get("pathNodes").asList(v -> v);
+                    List<Value> rels = rec.get("pathRels").asList(v -> v);
+                    // 按 path 顺序重组交替序列：N0, R0, N1, R1, N2, ...
+                    List<Object> alternating = new ArrayList<>(nodes.size() + rels.size());
+                    for (int i = 0; i < nodes.size(); i++) {
+                        alternating.add(nodes.get(i));
+                        if (i < rels.size()) {
+                            alternating.add(rels.get(i));
+                        }
+                    }
+                    return alternating;
+                });
 
         return buildGraphFromPaths(bookId, paths);
     }
