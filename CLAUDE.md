@@ -264,7 +264,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 
 ### 已落地（阶段 8 后：跨阶段综合质量审计修复）
 
-> 对阶段 0-8 全量代码与文档进行四维度审计（实现质量/阶段配合/文档维护/架构落地）后，修复以下确认问题。详见 `docs/implementation/阶段8后综合审计报告.md`。
+> 对阶段 0-8 全量代码与文档进行四维度审计（实现质量/阶段配合/文档维护/架构落地）后，修复以下确认问题。详见 `docs/implementation/阶段8后审计修复记录.md`。
 
 - **P0 GraphQueryServiceImpl 图谱路径解析重写**：Neo4j 5.x Driver path `Value.asList()` 返回交替 NODE/RELATIONSHIP 段，原代码错误假设 `asMap()` 含 `_nodes`/`_relationships` 键。重写 `buildGraphFromPaths()` 按 `type().name()` 区分段类型，从相邻 NODE 段提取业务 ID 构建边 ✅
 - **P0 边 ID 解析修复**：Neo4j 5.x elementId 为字符串格式（`"4:abc123def:0"`），原代码 `Long.parseLong()` 将抛出 `NumberFormatException`。改为从路径中前/后 NODE 段预提取业务 `id` 属性作为 sourceId/targetId ✅
@@ -337,7 +337,7 @@ open http://localhost:8080/api/v1/swagger-ui.html
 
 ### 已落地（阶段 9 后：剩余审计问题修复）
 
-> 对阶段 9 后综合审计报告中未能被提交 `62747e0` 覆盖的剩余 ~35 项 P1/P2/P3 问题进行修复。
+> 对阶段 9 后审计修复记录中未能被提交 `62747e0` 覆盖的剩余 ~35 项 P1/P2/P3 问题进行修复。
 > 全量 **356 项测试全绿**（common 144 + ai 29 + core 99 + security 71 + kg 3 + acquisition 10；bootstrap 1 项 @Disabled）。
 
 - **P1 重要修复**：GlobalExceptionHandler 补 `DataIntegrityViolationException` handler（409 冲突响应）+ `spring-tx` 依赖；OperationLogAspect 分层合规——新建 `OperationLogService`/`OperationLogServiceImpl` 封装 Mapper，AOP 改注 Service 替代直接调 Mapper；GraphBuildServiceImpl `writeToNeo4j()` N+1 → UNWIND 批量写入（`batchMergeNodes`/`batchMergeRelationships`，从 >30 次往返降至 7 次固定调用）；清理 `EmbeddingServiceImpl` 未使用的 `MAX_RETRIES` 死代码；`fallbackNer()` 作者名分隔注释修正（正确反映不按空格分割西方全名）✅
