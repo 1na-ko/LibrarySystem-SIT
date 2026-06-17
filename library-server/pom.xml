@@ -45,7 +45,9 @@
 
         <!-- 搜索 & 图数据库 -->
         <elasticsearch.version>8.11.0</elasticsearch.version>
-        <neo4j.version>5.17.0</neo4j.version>
+        <!-- neo4j-java-driver 版本由 Spring Boot 3.5 dependencyManagement 管理（兼容 Spring Data Neo4j 7.4），
+             父 POM 不再强制 5.17.0——该版本缺 Notification.classification() 致 NoSuchMethodError。
+             driver 5.x 向下兼容 docker-compose 的 Neo4j server 5.17.0。 -->
 
         <!-- 缓存 & 分布式 -->
         <redisson.version>3.25.0</redisson.version>
@@ -72,6 +74,11 @@
         <!-- 插件版本 -->
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+
+        <!-- 测试基础设施（阶段10 集成测试与加固） -->
+        <!-- 集成测试改用 docker-compose 真实中间件（Testcontainers 与 Docker Desktop 29 不兼容，已移除） -->
+        <awaitility.version>4.2.2</awaitility.version>
+        <org-jacoco.version>0.8.12</org-jacoco.version>
     </properties>
 
     <!-- ==================== 依赖管理（统一版本，子模块按需引入） ==================== -->
@@ -124,11 +131,8 @@
             </dependency>
 
             <!-- ===== Neo4j ===== -->
-            <dependency>
-                <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver</artifactId>
-                <version>${neo4j.version}</version>
-            </dependency>
+            <!-- neo4j-java-driver 版本由 Spring Boot 3.5 dependencyManagement 管理，兼容 Spring Data Neo4j 7.4
+                 （含 Notification.classification()）。driver 5.x 兼容 docker-compose 的 Neo4j server 5.17.0。 -->
 
             <!-- ===== Redisson（分布式锁 / 排队） ===== -->
             <dependency>
@@ -205,6 +209,7 @@
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -221,6 +226,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- 测试基础设施（阶段10，全局 test scope，所有模块可写集成测试） -->
+        <!-- Awaitility：异步事件（MQ 消费）等待断言。中间件由 docker-compose 预启动，连接用 application.yml 默认 localhost。 -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -255,6 +268,15 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!-- 默认排除集成测试（需 docker-compose 中间件），日常 mvn test 仅跑单元测试；
+                             mvn test -Pintegration 时清空 excludes 跑全量（含集成测试） -->
+                        <excludes>
+                            <exclude>**/integration/**</exclude>
+                            <exclude>**/LibraryApplicationTests.java</exclude>
+                        </excludes>
+                        <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -279,7 +301,66 @@
                         </execution>
                     </executions>
                 </plugin>
+                <!-- JaCoCo 覆盖率（阶段10，对照架构文档 §11.4 目标） -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${org-jacoco.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <!-- 排除非业务逻辑：配置/实体/DTO/Mapper 接口/启动类 -->
+                        <excludes>
+                            <exclude>**/config/**</exclude>
+                            <exclude>**/entity/**</exclude>
+                            <exclude>**/dto/**</exclude>
+                            <exclude>**/mapper/**</exclude>
+                            <exclude>**/*Application.class</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <!-- 全局激活 JaCoCo prepare-agent，所有子模块继承生成覆盖率数据 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
+
+    <profiles>
+        <!-- 集成测试 profile：mvn test -Pintegration 跑全量（含 docker-compose 集成测试）。
+             日常 mvn test（无此 profile）仅跑单元测试，保护现有 368 项不被慢测试拖累。
+             前置：docker-compose up -d 启动 5 中间件（MySQL/Redis/ES+IK/Neo4j/RabbitMQ）。 -->
+        <profile>
+            <id>integration</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- 清空默认 excludes，跑 integration 包 + LibraryApplicationTests -->
+                            <excludes combine.self="override"/>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
