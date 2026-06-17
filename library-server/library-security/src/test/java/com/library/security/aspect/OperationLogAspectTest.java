@@ -47,7 +47,8 @@ class OperationLogAspectTest {
 
     @BeforeEach
     void setUp() {
-        aspect = new OperationLogAspect(operationLogService, objectMapper);
+        // Runnable::run 作为同步 Executor，使 asyncInsert 在测试中同步执行便于验证
+        aspect = new OperationLogAspect(operationLogService, objectMapper, Runnable::run);
     }
 
     @Nested

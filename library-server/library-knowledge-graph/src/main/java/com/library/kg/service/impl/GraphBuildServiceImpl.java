@@ -309,56 +309,37 @@ public class GraphBuildServiceImpl implements GraphBuildService {
                 "categoryId", book.getCategoryId() != null ? book.getCategoryId() : 0);
         neo4jRepository.saveNode("Book", bookMatch, bookSet);
 
-        // 批量写入 Author 节点 + AUTHORED_BY 关系（UNWIND 消除 N+1）
-        if (entities.getAuthors() != null && !entities.getAuthors().isEmpty()) {
-            List<String> authorNames = entities.getAuthors().stream()
-                    .map(a -> normalizeName(a.getName()))
-                    .filter(StringUtils::hasText)
-                    .distinct()
-                    .collect(Collectors.toList());
-            List<Map<String, Object>> authorRows = entities.getAuthors().stream()
-                    .filter(a -> StringUtils.hasText(a.getName()))
-                    .map(a -> Map.of("name", (Object) normalizeName(a.getName()),
-                            "confidence", a.getConfidence() != null ? a.getConfidence() : 0.5))
-                    .collect(Collectors.toList());
-            neo4jRepository.batchMergeNodes("Author", "name", authorNames);
-            neo4jRepository.batchMergeRelationships("Book", "id", book.getId(),
-                    "Author", "name", "AUTHORED_BY", authorRows);
-        }
+        // 批量写入 Author / Keyword / Subject 节点及关系（UNWIND 消除 N+1，结构相同故提取统一方法）
+        mergeEntities("Author", "AUTHORED_BY", entities.getAuthors(), book.getId());
+        mergeEntities("Keyword", "HAS_KEYWORD", entities.getKeywords(), book.getId());
+        mergeEntities("Subject", "BELONGS_TO", entities.getSubjects(), book.getId());
+    }
 
-        // 批量写入 Keyword 节点 + HAS_KEYWORD 关系（UNWIND 消除 N+1）
-        if (entities.getKeywords() != null && !entities.getKeywords().isEmpty()) {
-            List<String> kwNames = entities.getKeywords().stream()
-                    .map(k -> normalizeName(k.getName()))
-                    .filter(StringUtils::hasText)
-                    .distinct()
-                    .collect(Collectors.toList());
-            List<Map<String, Object>> kwRows = entities.getKeywords().stream()
-                    .filter(k -> StringUtils.hasText(k.getName()))
-                    .map(k -> Map.of("name", (Object) normalizeName(k.getName()),
-                            "confidence", k.getConfidence() != null ? k.getConfidence() : 0.5))
-                    .collect(Collectors.toList());
-            neo4jRepository.batchMergeNodes("Keyword", "name", kwNames);
-            neo4jRepository.batchMergeRelationships("Book", "id", book.getId(),
-                    "Keyword", "name", "HAS_KEYWORD", kwRows);
-        }
-
-        // 批量写入 Subject 节点 + BELONGS_TO 关系（UNWIND 消除 N+1）
-        if (entities.getSubjects() != null && !entities.getSubjects().isEmpty()) {
-            List<String> subjNames = entities.getSubjects().stream()
-                    .map(s -> normalizeName(s.getName()))
-                    .filter(StringUtils::hasText)
-                    .distinct()
-                    .collect(Collectors.toList());
-            List<Map<String, Object>> subjRows = entities.getSubjects().stream()
-                    .filter(s -> StringUtils.hasText(s.getName()))
-                    .map(s -> Map.of("name", (Object) normalizeName(s.getName()),
-                            "confidence", s.getConfidence() != null ? s.getConfidence() : 0.5))
-                    .collect(Collectors.toList());
-            neo4jRepository.batchMergeNodes("Subject", "name", subjNames);
-            neo4jRepository.batchMergeRelationships("Book", "id", book.getId(),
-                    "Subject", "name", "BELONGS_TO", subjRows);
-        }
+    /**
+     * 批量 MERGE 同类实体节点 + Book→实体 关系（UNWIND 消除 N+1）.
+     * <p>
+     * Author / Keyword / Subject 三类实体的写入结构完全相同（仅 label / relType / 实体列表不同），
+     * 提取此方法消除重复。
+     *
+     * @param label    目标节点标签（Author/Keyword/Subject）
+     * @param relType  关系类型（AUTHORED_BY/HAS_KEYWORD/BELONGS_TO）
+     * @param entities 实体列表（可为 null/空，方法内跳过）
+     * @param bookId   源 Book 业务 ID
+     */
+    private void mergeEntities(String label, String relType, List<Entity> entities, Long bookId) {
+        if (entities == null || entities.isEmpty()) return;
+        List<String> names = entities.stream()
+                .map(e -> normalizeName(e.getName()))
+                .filter(StringUtils::hasText)
+                .distinct()
+                .collect(Collectors.toList());
+        List<Map<String, Object>> rows = entities.stream()
+                .filter(e -> StringUtils.hasText(e.getName()))
+                .map(e -> Map.of("name", (Object) normalizeName(e.getName()),
+                        "confidence", e.getConfidence() != null ? e.getConfidence() : 0.5))
+                .collect(Collectors.toList());
+        neo4jRepository.batchMergeNodes(label, "name", names);
+        neo4jRepository.batchMergeRelationships("Book", "id", bookId, label, "name", relType, rows);
     }
 
     // ---- 工具方法 ----

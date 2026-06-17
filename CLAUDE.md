@@ -349,11 +349,22 @@ open http://localhost:8080/api/v1/swagger-ui.html
 > 阶段 9 完成后回溯审视阶段 0-9 全量工作，验证历次审计修复落地情况，修正 4 项文档不一致 + 3 项代码实现缺陷。
 > 全量 **360 项测试全绿**（common 144 + ai 29 + core 99 + security 75 + kg 3 + acquisition 10；bootstrap 1 项 @Disabled）。
 
-- **文档一致性修正**：架构文档 §2.3 权限矩阵与 §6.3 Android Retrofit 示例的 KG 路径修正（`/kg/book/{id}/graph` → `/kg/book/{bookId}`，与 `KnowledgeGraphController` 实际 `@GetMapping` 对齐，阶段 9 后审计 P1-13 遗留）；架构文档头部版本号 v1.10 → v1.13（对齐版本历史表，此前头部滞后于历史最新条目）；`docs/README.md` 目录结构示意图补阶段 9 三份文档条目（导航表已有、目录树遗漏）✅
+- **文档一致性修正**：架构文档 §2.3 权限矩阵与 §6.3 Android Retrofit 示例的 KG 路径修正（`/kg/book/{id}/graph` → `/kg/book/{bookId}`，与 `KnowledgeGraphController` 实际 `@GetMapping` 对齐，阶段 9 后审计 P1-13 遗留）；架构文档头部版本号 v1.10 → v1.13（对齐版本历史表，此前头部滞后于历史最新条目）；`docs/README.md` 目录结构示意图补阶段 9 两份文档条目（导航表已有、目录树遗漏）✅
 - **操作日志脱敏兑现**：`OperationLogAspect` 实现 `maskSensitive()`，对参数 JSON 中 password/passwd/secret/token/accessToken/refreshToken/credential/apiKey 等字段值脱敏为 `***`（兑现 `@OperationLog.logParams` Javadoc"敏感字段将由切面自动脱敏"的承诺，此前注释承诺但未实现）；新增 4 项单测覆盖，security 模块 71→75 ✅
 - **ES 重建批量优化**：`BookESRepository` 新增 `bulkSave(List<BookDocument>)`（BulkRequest + `response.errors()` 部分失败检测）；`EsRebuildJob` 由逐条 `save` 改为先批量构建文档再 `bulkSave` 一次性写入（N 次网络往返→1 次），批量失败时降级逐条 `save` 隔离单条失败（阶段 9 后审计 P2-01 遗留）✅
 - **图谱事务边界澄清**：`GraphBuildServiceImpl.buildGraph()`/`rebuildAll()` 的 `@Transactional` 添加注释说明——其仅管理 MySQL 事务，而本方法无 MySQL 写操作（仅 select 读取），Neo4j 写入通过 Driver 独立 Session auto-commit 不在事务内、不可回滚；图谱一致性实际由 MERGE 幂等语义 + `KgBuildListener` 重试保证（消除 `@Transactional` 对 Neo4j 事务保护的误导）✅
 - **记录未改项**：`@ConditionalOnExpression` 在 `LlmConfig` @Bean 与 `LlmServiceImpl`/`EmbeddingServiceImpl` 类上重复声明同一 SpEL（阶段 9 后审计 P1-10），功能完全正常仅 DRY 冗余，改 `@ConditionalOnBean` 有 Bean 注册顺序风险，权衡后保留现状 ✅
+
+### 已落地（阶段 9 后第二轮：回溯审计深化修复）
+
+> 承接第一轮回溯审计，对阶段 0-9 全量工作做第二轮回溯复审（5 并行子代理分模块走查 + 父代理核对关键 P1），修复 39 项（P1×6 / P2×13 / P3×20）。详见 `docs/implementation/阶段9后第二轮回溯审计修复记录.md`。
+> 全量 **362 项测试全绿**（common 146 + ai 29 + core 99 + security 75 + kg 3 + acquisition 10；bootstrap 1 项 @Disabled）。
+
+- **P1 关键修复**：`PageDTO` 移除 `@AllArgsConstructor` 改手写构造器钳制分页参数（`pageNum≥1`/`1≤pageSize≤100`），全局修复 4 个旧 Controller（Borrow/Reservation/UserCenter/AdminBorrow）手动构造时 `@Min/@Max` 不触发的 DoS/负 offset 缺口（构造器钳制 + 注解校验双层防护，+2 单测）；`EmbeddingServiceImpl.batchEmbed` 批次间失败隔离（单批失败降级零向量，保证整体部分可用）；OpenAPI trace `{id}`→`{bookId}`、keypath `targetId`→`targetBookId` 契约对齐；架构文档 §2.3 用户管理权限注释"Admin 专有"→"Librarian 及以上"（对齐 `AdminUserController @RequireRole`）；**JWT 默认密钥 `dev-only-do-not-use-in-prod`（27 字节 < 32）触发 `@PostConstruct` fail-fast 致开发环境启动失败**——第一轮加固引入的回归，`application.yml` + `JwtProperties` 默认值改为 ≥32 字节 ✅
+- **P2 实现质量**：`BookUpdateDTO.totalCopies` 补 `@Min(1)`；`ReservationServiceImpl.batchLoadQueuePositions` `zRange 0 -1` 全量拉取→按用户 `rank` 逐条查询（防大集合阻塞 Redis）；`LlmServiceImpl`/`EmbeddingServiceImpl` `.block` 超时改为 `readTimeout×(maxRetries+1)+20s` 预算（修复重试被切断）；`LlmServiceImpl.onStatus` 统一 `isError()`；`Neo4jRepository` 新增 `ALLOWED_REL_TYPES`+`requireValidLabel/requireValidRelType` 在 `pageRank`/`saveNode`/`batchMerge*` 入口校验（与 `countNodes` 白名单对称）；`OperationLogAspect` 异步写入 `ForkJoinPool.commonPool`→注入 `taskExecutor`（手写构造器 + 测试同步 `Runnable::run`）；`KgRecommendQueryService` 删 `$topN` 死参数 ✅
+- **P2 文档**：架构文档 §6.2.9 补 `/admin/stats/dashboard`；§12.4 配置示例同步（前言修正 + JWT secret + ES `http://` scheme + management prometheus）；§4.2.1 补 SPI 端口模式小节（`KgRecommendPort`/`KgRelatedBookPort`/`GapCoreBookPort`）；阶段9后审计修复记录 §八 355→360；架构文档版本 v1.13→v1.14 ✅
+- **P3 技术债清理**：死代码清理（`ContentBasedServiceImpl.toBookSimpleVO`/`DuplicateCheckServiceImpl.cosineSimilarity(String,String)`/`Neo4jRepository.shortestPathViaGds` 永远降级死分支/`LiteratureTracingServiceImpl.parseTracePaths safeDepth`/`LlmConfig·EmbeddingConfig` 未用 import）；`RecommendationProperties` `@Configuration`→`@Component`；`ReservationZsetReconcileJob` cron 4:00→4:30 错开 ES 重建；`OverdueCheckJob` while 加 `maxIterations` 防卡死；`GraphBuildServiceImpl.writeToNeo4j` 三段重复提取 `mergeEntities`；`TopicNetworkBuilderImpl` 边查询改无向匹配；`PredictionServiceImpl` 子查询补 `deleted=0`；`OperationLogAspect logResult` 拼接后整体截断防超列长；`JwtProperties.secret` Java 默认值同步；`MetricsConfig` 裸 Thread→`TaskScheduler` 调度；架构文档 §3.3.1 目录树 V6 `└──`→`├──`；OpenAPI dashboard 403 描述修正；阶段9完成记录限制#2 标注已解决 ✅
+- **记录保留项**：`GraphBuildServiceImpl.rebuildAll()` `@Transactional` 自调用（注释已如实说明事务为空、保留以备未来，非缺陷）；V6 `(user_id,book_id,status)` 全列唯一约束（线性状态机下安全，注释准确性已在审计记录说明，改部分索引需新建迁移权衡保留）；架构文档 §6.2.7 与 OpenAPI KG 端点顺序差异（P3 美观，不影响契约）✅
 
 ---
 

@@ -57,7 +57,7 @@ public class PredictionServiceImpl implements PredictionService {
         // 3. 业务因子修正（季节因子按每个预测月份独立计算，见循环内 getSeasonFactor(cursor.plusMonths(i))）
         long reservationHeat = reservationMapper.selectCount(
                 new QueryWrapper<Reservation>()
-                        .apply("book_id IN (SELECT id FROM book WHERE category_id = {0})", subjectId)
+                        .apply("book_id IN (SELECT id FROM book WHERE category_id = {0} AND deleted = 0)", subjectId)
                         .ge("reserve_time", LocalDate.now().minusDays(30)));
 
         // 4. 生成结果

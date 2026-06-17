@@ -2056,7 +2056,7 @@ paths:
         "404":
           description: 图书不存在或无关联图谱
 
-  /api/v1/kg/book/{id}/trace:
+  /api/v1/kg/book/{bookId}/trace:
     get:
       tags: [知识图谱]
       summary: 文献溯源
@@ -2066,7 +2066,7 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-        - name: id
+        - name: bookId
           in: path
           required: true
           schema:
@@ -2208,7 +2208,7 @@ paths:
             type: integer
             format: int64
           description: 源图书 ID
-        - name: targetId
+        - name: targetBookId
           in: query
           required: true
           schema:
@@ -2537,7 +2537,7 @@ paths:
                       data:
                         $ref: "#/components/schemas/DashboardVO"
         "403":
-          description: 无管理员权限
+          description: 无流通统计查看权限（需 Librarian 及以上角色）
 
   /api/v1/admin/users:
     get:

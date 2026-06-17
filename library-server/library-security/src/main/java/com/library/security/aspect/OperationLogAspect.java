@@ -8,12 +8,12 @@ import com.library.core.entity.OperationLogEntity;
 import com.library.core.service.OperationLogService;
 import com.library.security.context.LoginUser;
 import com.library.security.context.SecurityUtils;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * 操作日志 AOP 切面.
@@ -38,12 +39,21 @@ import java.util.concurrent.CompletableFuture;
  */
 @Aspect
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class OperationLogAspect {
 
     private final OperationLogService operationLogService;
     private final ObjectMapper objectMapper;
+    /** 异步日志写入专用线程池（注入 library-async taskExecutor，与 ForkJoinPool.commonPool 隔离） */
+    private final Executor taskExecutor;
+
+    public OperationLogAspect(OperationLogService operationLogService,
+                              ObjectMapper objectMapper,
+                              @Qualifier("taskExecutor") Executor taskExecutor) {
+        this.operationLogService = operationLogService;
+        this.objectMapper = objectMapper;
+        this.taskExecutor = taskExecutor;
+    }
 
     private static final int MAX_PARAMS_LENGTH = 2000;
     private static final int MAX_ERROR_LENGTH = 500;
@@ -89,9 +99,10 @@ public class OperationLogAspect {
             // logResult=true 时记录返回摘要到 requestParams 后缀（errorMessage 仅用于 FAIL）
             if (opLog.logResult()) {
                 String summary = truncate(toJson(result), MAX_ERROR_LENGTH);
-                record.setRequestParams(
-                        (record.getRequestParams() != null ? record.getRequestParams() + " | " : "")
-                                + "result:" + summary);
+                String combined = (record.getRequestParams() != null ? record.getRequestParams() + " | " : "")
+                        + "result:" + summary;
+                // 拼接后整体截断至列长上限（operation_log.request_params VARCHAR(2000)），避免写入超长
+                record.setRequestParams(truncate(combined, MAX_PARAMS_LENGTH));
             }
             asyncInsert(record);
             return result;
@@ -121,7 +132,7 @@ public class OperationLogAspect {
                 log.error("操作日志写入失败: module={}, action={}, operator={}",
                         record.getModule(), record.getAction(), record.getOperatorName(), e);
             }
-        });
+        }, taskExecutor);
     }
 
     /**
@@ -165,6 +176,8 @@ public class OperationLogAspect {
             if (param.isAnnotationPresent(org.springframework.web.bind.annotation.PathVariable.class)) {
                 String name = param.getAnnotation(org.springframework.web.bind.annotation.PathVariable.class).value();
                 if (name.isEmpty()) {
+                    // 回退到反射参数名：依赖编译期 -parameters 选项（Spring Boot 3 默认开启），
+                    // 否则返回 arg0/arg1。当前所有 @PathVariable 均显式指定 value()，此分支极少触发。
                     name = param.getName();
                 }
                 return name + ":" + args[i];

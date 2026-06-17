@@ -113,12 +113,32 @@ public class Neo4jRepository {
     private static final java.util.Set<String> ALLOWED_LABELS =
             java.util.Set.of("Book", "Author", "Keyword", "Subject", "Publication", "Conference");
 
+    /** 允许的关系类型白名单（防 Cypher 注入） */
+    private static final java.util.Set<String> ALLOWED_REL_TYPES =
+            java.util.Set.of("CITES", "AUTHORED_BY", "BELONGS_TO", "HAS_KEYWORD",
+                    "RELATED_TO", "CO_CITED", "PUBLISHED_IN", "PRESENTED_AT");
+
+    /** 校验节点标签是否在白名单内，防 Cypher 注入（与 countNodes 对称） */
+    private void requireValidLabel(String label) {
+        if (!ALLOWED_LABELS.contains(label)) {
+            throw new IllegalArgumentException("非法的节点标签（不在白名单）: " + label);
+        }
+    }
+
+    /** 校验关系类型是否在白名单内，防 Cypher 注入 */
+    private void requireValidRelType(String relType) {
+        if (!ALLOWED_REL_TYPES.contains(relType)) {
+            throw new IllegalArgumentException("非法的关系类型（不在白名单）: " + relType);
+        }
+    }
+
     // ---- 节点与关系写入 ----
 
     /**
      * 幂等写入节点（MERGE 语义）.
      */
     public void saveNode(String label, Map<String, Object> matchProps, Map<String, Object> setProps) {
+        requireValidLabel(label);
         Map<String, Object> params = new HashMap<>();
         StringBuilder cypher = new StringBuilder("MERGE (n:").append(label).append(" {");
         boolean first = true;
@@ -148,6 +168,9 @@ public class Neo4jRepository {
     public void saveRelationship(String fromLabel, Map<String, Object> fromMatch,
                                  String toLabel, Map<String, Object> toMatch,
                                  String relType, Map<String, Object> relProps) {
+        requireValidLabel(fromLabel);
+        requireValidLabel(toLabel);
+        requireValidRelType(relType);
         Map<String, Object> params = new HashMap<>();
         StringBuilder cypher = new StringBuilder("MATCH (a:").append(fromLabel).append(" {");
         mergeEntryParams(fromMatch, "f", params, cypher);
@@ -180,6 +203,7 @@ public class Neo4jRepository {
      * @param keyValues 属性值列表
      */
     public void batchMergeNodes(String label, String key, List<String> keyValues) {
+        requireValidLabel(label);
         if (keyValues == null || keyValues.isEmpty()) return;
 
         Map<String, Object> params = Map.of("rows",
@@ -205,6 +229,9 @@ public class Neo4jRepository {
     public void batchMergeRelationships(String srcLabel, String srcKey, Object srcValue,
                                         String tgtLabel, String tgtKey, String relType,
                                         List<Map<String, Object>> tgtValues) {
+        requireValidLabel(srcLabel);
+        requireValidLabel(tgtLabel);
+        requireValidRelType(relType);
         if (tgtValues == null || tgtValues.isEmpty()) return;
 
         Map<String, Object> params = new HashMap<>();
@@ -223,6 +250,8 @@ public class Neo4jRepository {
 
     public Map<Long, Double> pageRank(String nodeLabel, String relType,
                                        double damping, int iterations) {
+        requireValidLabel(nodeLabel);
+        requireValidRelType(relType);
         if (gdsProvider.isAvailable()) {
             return pageRankViaGds(nodeLabel, relType);
         }
@@ -231,10 +260,9 @@ public class Neo4jRepository {
     }
 
     public List<Long> shortestPath(Long fromBookId, Long toBookId, String relType) {
-        if (gdsProvider.isAvailable()) {
-            return shortestPathViaGds(fromBookId, toBookId, relType);
-        }
-        log.info("GDS 不可用，使用 Cypher shortestPath() 降级");
+        requireValidRelType(relType);
+        // 直接使用 Cypher shortestPath()：GDS Dijkstra 需 CITES 关系带 weight 属性，
+        // 当前 CITES 关系未构建且无权重，GDS 路径不可用，Cypher 降级为常态（课设量级足够）。
         return shortestPathViaCypher(fromBookId, toBookId, relType);
     }
 
@@ -349,24 +377,6 @@ public class Neo4jRepository {
             scores.put(entry.getKey(), rank[entry.getValue()]);
         }
         return scores;
-    }
-
-    private List<Long> shortestPathViaGds(Long from, Long to, String relType) {
-        try {
-            List<Object> result = query(
-                    "MATCH (s:Book {id: $fromId}), (t:Book {id: $toId}) "
-                            + "CALL gds.shortestPath.dijkstra.stream('citationGraph', {"
-                            + "sourceNode: id(s), targetNode: id(t), relationshipWeightProperty: 'weight'}) "
-                            + "YIELD nodeIds RETURN nodeIds LIMIT 1",
-                    Map.of("fromId", from, "toId", to),
-                    rec -> rec.get("nodeIds").asList());
-            if (result.isEmpty()) return Collections.emptyList();
-            return ((List<?>) result.get(0)).stream()
-                    .map(id -> ((Number) id).longValue()).toList();
-        } catch (Exception e) {
-            log.warn("GDS Dijkstra 失败，降级: {}", e.getMessage());
-            return shortestPathViaCypher(from, to, relType);
-        }
     }
 
     private List<Long> shortestPathViaCypher(Long from, Long to, String relType) {

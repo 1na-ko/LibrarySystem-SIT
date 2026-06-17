@@ -60,7 +60,7 @@ public class KgRecommendQueryService implements KgRecommendPort {
                 + "LIMIT " + safeTopN;
 
         List<Map<String, Object>> results = neo4jRepository.query(cypher,
-                Map.of("seeds", seedIds, "topN", safeTopN * 2),
+                Map.of("seeds", seedIds),
                 (rec) -> Map.of(
                         "bookId", (Object) rec.get("bookId").asLong(),
                         "pagerank", (Object) rec.get("pagerank").asDouble(),

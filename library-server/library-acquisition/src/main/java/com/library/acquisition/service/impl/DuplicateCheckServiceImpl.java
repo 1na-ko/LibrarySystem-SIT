@@ -101,13 +101,6 @@ public class DuplicateCheckServiceImpl implements DuplicateCheckService {
                 .build();
     }
 
-    private double cosineSimilarity(String a, String b) {
-        if (a == null || b == null) return 0.0;
-        List<String> tokensA = nlpService.tokenize(a);
-        Map<String, Long> freqA = buildFreqMap(tokensA);
-        return cosineSimilarity(tokensA, freqA, b);
-    }
-
     /**
      * 余弦相似度（接受预计算的输入侧分词和频率 Map，避免循环内重复 NLP 调用）.
      */

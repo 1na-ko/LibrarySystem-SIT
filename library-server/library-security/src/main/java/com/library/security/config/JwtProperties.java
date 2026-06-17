@@ -21,8 +21,9 @@ import java.nio.charset.StandardCharsets;
 @ConfigurationProperties(prefix = "jwt")
 public class JwtProperties {
 
-    /** HS256 签名密钥（须 ≥ 32 字节，建议由 {@code openssl rand -base64 48} 生成） */
-    private String secret = "";
+    /** HS256 签名密钥（须 ≥ 32 字节，建议由 {@code openssl rand -base64 48} 生成）。
+     *  默认值仅开发环境兜底（≥32 字节通过 @PostConstruct 校验）；生产环境必须由 JWT_SECRET 环境变量注入强随机密钥 */
+    private String secret = "library-system-dev-jwt-secret-replace-in-production-2026";
 
     /** Access Token 有效期（毫秒），默认 2 小时 */
     private long accessTokenExpiration = 7_200_000L;

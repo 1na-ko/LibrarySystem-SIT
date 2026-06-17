@@ -175,6 +175,9 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         String label = resolveLabel(nodeVal);
         GraphNodeType type = resolveType(nodeVal);
 
+        // Book 节点含业务 id 属性 → 用业务 id；Keyword/Author/Subject 节点以 name 为唯一键
+        // （见 KgSchemaInitializer），无 id 属性 → 退化为 Neo4j 内部 id()。可视化层据此匹配节点，
+        // 前端不应使用非 Book 节点的 id 反查 MySQL（这些实体仅存于图数据库）。
         Long entityId = neoId;
         if (props.containsKey("id") && props.get("id") instanceof Number) {
             entityId = ((Number) props.get("id")).longValue();
