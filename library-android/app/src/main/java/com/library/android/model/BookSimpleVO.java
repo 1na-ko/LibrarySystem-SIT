@@ -2,10 +2,13 @@ package com.library.android.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
+
 /**
  * 图书摘要信息（列表/嵌套引用等轻量场景）.
  */
-public class BookSimpleVO {
+public class BookSimpleVO implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @SerializedName("id")
     private long id;

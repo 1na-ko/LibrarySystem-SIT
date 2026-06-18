@@ -35,6 +35,22 @@ public class Result<T> {
         return timestamp;
     }
 
+    public void setCode(int code) {
+        this.code = code;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public boolean isSuccess() {
         return code == 200;
     }

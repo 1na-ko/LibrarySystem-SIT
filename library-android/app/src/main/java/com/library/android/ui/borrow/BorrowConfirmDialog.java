@@ -14,7 +14,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.DialogBorrowConfirmBinding;
-import com.library.android.model.BookVO;
+import com.library.android.model.BookSimpleVO;
 import com.library.android.viewmodel.BorrowViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -32,10 +32,10 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
 
     private DialogBorrowConfirmBinding binding;
     private BorrowViewModel viewModel;
-    private BookVO book;
+    private BookSimpleVO book;
 
     /** 创建借阅确认弹窗实例. */
-    public static BorrowConfirmDialog newInstance(BookVO book) {
+    public static BorrowConfirmDialog newInstance(BookSimpleVO book) {
         BorrowConfirmDialog dialog = new BorrowConfirmDialog();
         Bundle args = new Bundle();
         args.putSerializable("book", book);
@@ -66,7 +66,7 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
         viewModel = new ViewModelProvider(requireActivity()).get(BorrowViewModel.class);
 
         if (getArguments() != null) {
-            book = (BookVO) getArguments().getSerializable("book");
+            book = (BookSimpleVO) getArguments().getSerializable("book");
         }
 
         displayBookInfo();

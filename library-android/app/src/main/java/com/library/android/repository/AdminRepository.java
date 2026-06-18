@@ -21,9 +21,9 @@ public class AdminRepository {
 
     /** 用户列表（分页+筛选）. */
     public Single<Result<PageResult<UserManageVO>>> listUsers(String role, String status, String keyword,
-                                                               int pageNum, int pageSize) {
+                                                               int page, int size) {
         return Single.fromCallable(() ->
-                api.listUsers(role, status, keyword, pageNum, pageSize).execute().body());
+                api.listUsers(role, status, keyword, page, size).execute().body());
     }
 
     /** 变更用户状态. */

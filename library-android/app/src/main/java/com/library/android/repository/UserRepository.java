@@ -31,7 +31,8 @@ public class UserRepository {
         return Single.fromCallable(() -> api.getMyProfile().execute().body());
     }
 
-    public Single<Result<UserProfile>> updateMyProfile(Map<String, String> body) {
+    /** 后端返回 Result&lt;Void&gt;，更新成功后需重新调用 getMyProfile() 刷新. */
+    public Single<Result<Void>> updateMyProfile(Map<String, String> body) {
         return Single.fromCallable(() -> api.updateMyProfile(body).execute().body());
     }
 

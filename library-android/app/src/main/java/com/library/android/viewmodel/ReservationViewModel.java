@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.PageResult;
-import com.library.android.model.QueuePositionVO;
 import com.library.android.model.ReservationVO;
 import com.library.android.repository.ReservationRepository;
 import com.library.android.ui.common.LoadingState;
@@ -36,7 +35,7 @@ public class ReservationViewModel extends ViewModel {
     private final MutableLiveData<List<ReservationVO>> reservationList = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private final MutableLiveData<Boolean> cancelResult = new MutableLiveData<>();
-    private final MutableLiveData<QueuePositionVO> queuePosition = new MutableLiveData<>();
+    private final MutableLiveData<Integer> queuePosition = new MutableLiveData<>();
 
     private int currentPage = 1;
     private int totalPages = 0;
@@ -52,7 +51,8 @@ public class ReservationViewModel extends ViewModel {
     public LiveData<List<ReservationVO>> getReservationList() { return reservationList; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
     public LiveData<Boolean> getCancelResult() { return cancelResult; }
-    public LiveData<QueuePositionVO> getQueuePosition() { return queuePosition; }
+    /** 排队序号（后端当前仅返回 Integer 序号，不含 totalWaiting）. */
+    public LiveData<Integer> getQueuePosition() { return queuePosition; }
 
     /** 加载预约列表. */
     public void loadReservations(String status) {

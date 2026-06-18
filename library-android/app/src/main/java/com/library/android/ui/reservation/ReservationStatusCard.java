@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.library.android.R;
-import com.library.android.model.QueuePositionVO;
 import com.library.android.model.ReservationVO;
 import com.library.android.viewmodel.ReservationViewModel;
 
@@ -142,10 +141,10 @@ public class ReservationStatusCard extends MaterialCardView {
         });
     }
 
-    private void displayQueueInfo(QueuePositionVO queue) {
-        if (queue != null) {
+    private void displayQueueInfo(Integer position) {
+        if (position != null) {
             textQueuePosition.setText(getContext().getString(
-                    R.string.queue_detail_format, queue.getPosition(), queue.getTotalWaiting()));
+                    R.string.queue_position_format, position));
         }
     }
 

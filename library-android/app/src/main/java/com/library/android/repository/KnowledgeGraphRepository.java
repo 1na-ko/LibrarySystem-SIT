@@ -39,9 +39,39 @@ public class KnowledgeGraphRepository {
                 api.getSubjectNetwork(subjectName, topK).execute().body());
     }
 
-    /** 知识实体搜索. */
+    /** 知识实体搜索（后端返回 KnowledgeGraphVO，此处转换为 List&lt;EntitySearchResult&gt;）. */
     public Single<Result<List<EntitySearchResult>>> searchEntities(String entity, String type) {
-        return Single.fromCallable(() ->
-                api.searchEntities(entity, type).execute().body());
+        return Single.fromCallable(() -> {
+            Result<KnowledgeGraphVO> result = api.searchEntities(entity, type).execute().body();
+            if (result == null || !result.isSuccess() || result.getData() == null) {
+                // 将 KnowledgeGraphVO 的 Result 转换为 List 的 Result
+                Result<List<EntitySearchResult>> converted = new Result<>();
+                if (result != null) {
+                    converted.setCode(result.getCode());
+                    converted.setMessage(result.getMessage());
+                }
+                return converted;
+            }
+            KnowledgeGraphVO graph = result.getData();
+            List<EntitySearchResult> entities = new java.util.ArrayList<>();
+            if (graph.getNodes() != null) {
+                for (GraphNode node : graph.getNodes()) {
+                    EntitySearchResult entityResult = new EntitySearchResult();
+                    entityResult.setEntityId(node.getId());
+                    entityResult.setEntityName(node.getLabel());
+                    entityResult.setEntityType(node.getType());
+                    if (node.getProperties() != null && node.getProperties().containsKey("pagerank")) {
+                        Object pr = node.getProperties().get("pagerank");
+                        entityResult.setPagerank(pr instanceof Number ? ((Number) pr).doubleValue() : 0.0);
+                    }
+                    entities.add(entityResult);
+                }
+            }
+            Result<List<EntitySearchResult>> converted = new Result<>();
+            converted.setCode(result.getCode());
+            converted.setMessage(result.getMessage());
+            converted.setData(entities);
+            return converted;
+        });
     }
 }

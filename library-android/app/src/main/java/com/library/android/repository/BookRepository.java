@@ -22,8 +22,8 @@ public class BookRepository {
         this.api = api;
     }
 
-    public Single<Result<PageResult<BookVO>>> searchBooks(String keyword, String author, Long categoryId,
-                                                           String sortBy, int pageNum, int pageSize) {
+    public Single<Result<PageResult<BookSimpleVO>>> searchBooks(String keyword, String author, Long categoryId,
+                                                                  String sortBy, int pageNum, int pageSize) {
         return Single.fromCallable(() ->
                 api.searchBooks(keyword, author, categoryId, sortBy, pageNum, pageSize).execute().body());
     }
@@ -36,7 +36,7 @@ public class BookRepository {
         return Single.fromCallable(() -> api.getRelatedBooks(bookId, limit).execute().body());
     }
 
-    public Single<Result<List<BookVO>>> getHotBooks(Long categoryId, int limit) {
+    public Single<Result<List<BookSimpleVO>>> getHotBooks(Long categoryId, int limit) {
         return Single.fromCallable(() -> api.hotBooks(categoryId, limit).execute().body());
     }
 
@@ -48,7 +48,7 @@ public class BookRepository {
         return Single.fromCallable(() -> api.suggest(prefix, limit).execute().body());
     }
 
-    public Single<Result<PageResult<BookVO>>> advancedSearch(
+    public Single<Result<PageResult<BookSimpleVO>>> advancedSearch(
             String title, String author, String isbn, String publisher,
             Integer pubYearFrom, Integer pubYearTo, Long categoryId,
             Boolean onlyAvailable, int pageNum, int pageSize) {

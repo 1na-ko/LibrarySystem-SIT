@@ -28,7 +28,8 @@ public class AuthRepository {
         return Single.fromCallable(() -> api.login(new LoginRequest(username, password)).execute().body());
     }
 
-    public Single<Result<Void>> register(String username, String password, String realName, String email, String phone) {
+    /** 后端注册即登录，返回 LoginResponse（含 token 对）. */
+    public Single<Result<LoginResponse>> register(String username, String password, String realName, String email, String phone) {
         return Single.fromCallable(() ->
                 api.register(new RegisterRequest(username, password, realName, email, phone)).execute().body());
     }

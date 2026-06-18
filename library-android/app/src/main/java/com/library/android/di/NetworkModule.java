@@ -2,12 +2,14 @@ package com.library.android.di;
 
 import android.content.Context;
 
+import com.google.gson.GsonBuilder;
 import com.library.android.BuildConfig;
 import com.library.android.network.AuthApiService;
 import com.library.android.network.AuthInterceptor;
 import com.library.android.network.LibraryApi;
 import com.library.android.network.TokenAuthenticator;
 import com.library.android.network.MockInterceptor;
+import com.library.android.network.Utf8FixTypeAdapterFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -56,11 +58,7 @@ public class NetworkModule {
                 : HttpLoggingInterceptor.Level.NONE);
 
         MockInterceptor mockInterceptor = new MockInterceptor();
-        if (BuildConfig.DEBUG) {
-            mockInterceptor.setEnabled(true);  // 调试模式启用模拟，无需后端即可测试
-        } else {
-            mockInterceptor.setEnabled(false); // 发布模式连接真实后端
-        }
+        mockInterceptor.setEnabled(BuildConfig.MOCK_ENABLED);
 
         return new OkHttpClient.Builder()
                 .addInterceptor(mockInterceptor)          // 模拟拦截（最优先）
@@ -75,10 +73,14 @@ public class NetworkModule {
     @Provides
     @Singleton
     static Retrofit provideRetrofit(OkHttpClient client) {
+        // 通过 TypeAdapterFactory 修复 UTF-8 双重编码乱码（不干扰 Gson 类型系统）
+        com.google.gson.Gson gson = new GsonBuilder()
+                .registerTypeAdapterFactory(new Utf8FixTypeAdapterFactory())
+                .create();
         return new Retrofit.Builder()
                 .baseUrl(BuildConfig.BASE_URL)
                 .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
                 .build();
     }
