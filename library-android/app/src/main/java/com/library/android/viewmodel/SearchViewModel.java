@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.library.android.model.BookVO;
+import com.library.android.model.BookSimpleVO;
 import com.library.android.model.CategoryVO;
 import com.library.android.model.PageResult;
 import com.library.android.model.Result;
@@ -36,8 +36,8 @@ public class SearchViewModel extends ViewModel {
 
     private final BookRepository bookRepository;
 
-    private final MutableLiveData<List<BookVO>> searchResults = new MutableLiveData<>();
-    private final MutableLiveData<List<BookVO>> hotBooks = new MutableLiveData<>();
+    private final MutableLiveData<List<BookSimpleVO>> searchResults = new MutableLiveData<>();
+    private final MutableLiveData<List<BookSimpleVO>> hotBooks = new MutableLiveData<>();
     private final MutableLiveData<List<CategoryVO>> categories = new MutableLiveData<>();
     private final MutableLiveData<List<Map<String, String>>> suggestions = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
@@ -62,8 +62,8 @@ public class SearchViewModel extends ViewModel {
         this.bookRepository = bookRepository;
     }
 
-    public LiveData<List<BookVO>> getSearchResults() { return searchResults; }
-    public LiveData<List<BookVO>> getHotBooks() { return hotBooks; }
+    public LiveData<List<BookSimpleVO>> getSearchResults() { return searchResults; }
+    public LiveData<List<BookSimpleVO>> getHotBooks() { return hotBooks; }
     public LiveData<List<CategoryVO>> getCategories() { return categories; }
     public LiveData<List<Map<String, String>>> getSuggestions() { return suggestions; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
@@ -126,7 +126,7 @@ public class SearchViewModel extends ViewModel {
                     result -> {
                         loading.setValue(false);
                         if (result.isSuccess() && result.getData() != null) {
-                            PageResult<BookVO> page = result.getData();
+                            PageResult<BookSimpleVO> page = result.getData();
                             searchResults.setValue(page.getList());
                             totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());
@@ -162,7 +162,7 @@ public class SearchViewModel extends ViewModel {
                     result -> {
                         loading.setValue(false);
                         if (result.isSuccess() && result.getData() != null) {
-                            PageResult<BookVO> page = result.getData();
+                            PageResult<BookSimpleVO> page = result.getData();
                             searchResults.setValue(page.getList());
                             totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());
@@ -187,7 +187,7 @@ public class SearchViewModel extends ViewModel {
         currentPage++;
         loading.setValue(true);
 
-        io.reactivex.rxjava3.core.Single<Result<PageResult<BookVO>>> source;
+        io.reactivex.rxjava3.core.Single<Result<PageResult<BookSimpleVO>>> source;
         if (isAdvancedMode()) {
             source = bookRepository.advancedSearch(
                     advTitle, advAuthor, advIsbn, advPublisher,
@@ -205,8 +205,8 @@ public class SearchViewModel extends ViewModel {
                     result -> {
                         loading.setValue(false);
                         if (result.isSuccess() && result.getData() != null) {
-                            PageResult<BookVO> page = result.getData();
-                            List<BookVO> currentList = searchResults.getValue();
+                            PageResult<BookSimpleVO> page = result.getData();
+                            List<BookSimpleVO> currentList = searchResults.getValue();
                             if (currentList != null) {
                                 currentList.addAll(page.getList());
                                 searchResults.setValue(currentList);
@@ -254,7 +254,7 @@ public class SearchViewModel extends ViewModel {
                     result -> {
                         loading.setValue(false);
                         if (result.isSuccess() && result.getData() != null) {
-                            PageResult<BookVO> page = result.getData();
+                            PageResult<BookSimpleVO> page = result.getData();
                             searchResults.setValue(page.getList());
                             totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.core.enums.RoleEnum;
 import com.library.security.context.LoginUser;
 import com.library.security.jwt.JwtUtils;
+import com.library.security.token.TokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -38,13 +39,16 @@ class JwtAuthenticationFilterTest {
     @Mock
     private JwtUtils jwtUtils;
 
+    @Mock
+    private TokenService tokenService;
+
     private JwtAuthenticationFilter filter;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        filter = new JwtAuthenticationFilter(jwtUtils, objectMapper);
+        filter = new JwtAuthenticationFilter(jwtUtils, objectMapper, tokenService);
         SecurityContextHolder.clearContext();
     }
 
@@ -78,8 +82,10 @@ class JwtAuthenticationFilterTest {
         when(claims.getSubject()).thenReturn("123");
         when(claims.get(eq(JwtUtils.CLAIM_USERNAME), eq(String.class))).thenReturn("alice");
         when(claims.get(eq(JwtUtils.CLAIM_ROLE), eq(String.class))).thenReturn("ADMIN");
+        when(claims.getIssuedAt()).thenReturn(new java.util.Date(System.currentTimeMillis() - 1000));
         when(jwtUtils.parse("valid.token.here")).thenReturn(claims);
         when(jwtUtils.isAccess(claims)).thenReturn(true);
+        // tokenService.isAccessTokenLoggedOut Mock 默认返回 false（未登出），无需显式 stub
 
         filter.doFilter(request, response, chain);
 

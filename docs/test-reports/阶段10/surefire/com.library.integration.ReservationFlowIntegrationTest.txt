@@ -1,0 +1,28 @@
+-------------------------------------------------------------------------------
+Test set: com.library.integration.ReservationFlowIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 39.59 s <<< FAILURE! -- in com.library.integration.ReservationFlowIntegrationTest
+com.library.integration.ReservationFlowIntegrationTest.shouldNotifyWaiterWhenReservedBookReturned -- Time elapsed: 10.86 s <<< ERROR!
+org.awaitility.core.ConditionTimeoutException: 
+Assertion condition defined as a Lambda expression in com.library.integration.ReservationFlowIntegrationTest 
+Expecting value to be true but was false within 10 seconds.
+	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
+	at org.awaitility.core.AssertionCondition.await(AssertionCondition.java:119)
+	at org.awaitility.core.AssertionCondition.await(AssertionCondition.java:31)
+	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:1006)
+	at org.awaitility.core.ConditionFactory.untilAsserted(ConditionFactory.java:790)
+	at com.library.integration.ReservationFlowIntegrationTest.shouldNotifyWaiterWhenReservedBookReturned(ReservationFlowIntegrationTest.java:58)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: org.opentest4j.AssertionFailedError: 
+Expecting value to be true but was false
+	at com.library.integration.ReservationFlowIntegrationTest.lambda$shouldNotifyWaiterWhenReservedBookReturned$1(ReservationFlowIntegrationTest.java:68)
+	at org.awaitility.core.AssertionCondition.lambda$new$0(AssertionCondition.java:53)
+	at org.awaitility.core.ConditionAwaiter$ConditionPoller.call(ConditionAwaiter.java:248)
+	at org.awaitility.core.ConditionAwaiter$ConditionPoller.call(ConditionAwaiter.java:235)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+

@@ -1,25 +1,24 @@
 package com.library.kg.listener;
 
-import com.library.core.event.BookCreatedEvent;
-import com.library.core.event.BookDeletedEvent;
-import com.library.core.event.BookUpdatedEvent;
+import com.library.core.event.EventBusConstants;
 import com.library.kg.repository.Neo4jRepository;
 import com.library.kg.service.GraphBuildService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Map;
 
 /**
- * 知识图谱自动构建监听器.
+ * 知识图谱自动构建消费者.
  * <p>
- * 监听 BookCreated/Updated/Deleted 事件，异步同步 MySQL → Neo4j。
- * 使用 {@code @TransactionalEventListener(AFTER_COMMIT, fallbackExecution=true)}
- * 确保发布者事务提交后才读取 MySQL 数据。
- * Neo4j 不可用时仅记 ERROR 日志，不阻塞主流程。
+ * 阶段 10 改为 {@code @RabbitListener} 消费 {@code q.kg-build} 队列（原
+ * {@code @TransactionalEventListener(AFTER_COMMIT)} 的提交后语义由 {@code EventBusBridge} 保留）。
+ * <p>
+ * 消费图书增/改/删事件，异步同步 MySQL → Neo4j。Neo4j 不可用时仅记日志，不阻塞主流程。
+ * 构建失败由 Spring AMQP RetryTemplate（3 次指数退避）重试，耗尽进死信队列。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -36,27 +35,29 @@ public class KgBuildListener {
         this.neo4jRepository = neo4jRepository;
     }
 
-    private static final int MAX_RETRIES = 3;
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void onBookCreated(BookCreatedEvent event) {
-        buildWithRetry(event.bookId(), "新增");
-    }
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void onBookUpdated(BookUpdatedEvent event) {
-        buildWithRetry(event.bookId(), "更新");
+    /**
+     * 消费 MQ 图书事件 → 同步 Neo4j.
+     *
+     * @param bookId     图书 ID（消息体）
+     * @param routingKey 事件类型（book.created/updated/deleted）
+     */
+    @RabbitListener(queues = EventBusConstants.QUEUE_KG_BUILD)
+    public void onBookEvent(Long bookId,
+                            @Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey) {
+        if (EventBusConstants.RK_BOOK_DELETED.equals(routingKey)) {
+            deleteFromNeo4j(bookId);
+            return;
+        }
+        graphBuildService.buildGraph(bookId);
+        log.info("KG 构建：bookId={}, routingKey={}", bookId, routingKey);
     }
 
     /**
-     * 监听图书删除 → 清理 Neo4j 节点及关联关系.
+     * 删除图书 → 清理 Neo4j 节点及关联关系.
+     * <p>
+     * 容错：节点不存在不视为异常（可能从未构建过图谱）。
      */
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void onBookDeleted(BookDeletedEvent event) {
-        Long bookId = event.bookId();
+    private void deleteFromNeo4j(Long bookId) {
         log.info("KG 同步删除: bookId={}", bookId);
         try {
             String cypher = "MATCH (b:Book {id: $bookId}) DETACH DELETE b";
@@ -64,33 +65,6 @@ public class KgBuildListener {
             log.info("KG 删除同步成功: bookId={}", bookId);
         } catch (Exception e) {
             log.warn("KG 删除同步失败（可能节点不存在）: bookId={}, error={}", bookId, e.getMessage());
-        }
-    }
-
-    private void buildWithRetry(Long bookId, String operation) {
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                graphBuildService.buildGraph(bookId);
-                log.info("KG 构建：图书{}成功, bookId={}", operation, bookId);
-                return;
-            } catch (Exception e) {
-                log.warn("KG 构建：图书{}失败 (attempt {}/{}), bookId={}, error={}",
-                        operation, attempt, MAX_RETRIES, bookId, e.getMessage());
-                if (attempt < MAX_RETRIES) {
-                    sleepWithBackoff(attempt);
-                } else {
-                    log.error("KG 构建：图书{}最终失败, bookId={}", operation, bookId);
-                }
-            }
-        }
-    }
-
-    private void sleepWithBackoff(int attempt) {
-        long[] backoff = {100, 500, 2000};
-        try {
-            Thread.sleep(backoff[attempt - 1]);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
         }
     }
 }

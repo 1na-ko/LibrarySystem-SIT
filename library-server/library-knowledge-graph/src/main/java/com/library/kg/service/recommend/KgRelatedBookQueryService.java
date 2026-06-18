@@ -22,8 +22,12 @@ import java.util.Map;
 /**
  * KG 相关图书查询服务.
  * <p>
- * 通过 Neo4j 1 跳邻居（HAS_KEYWORD/AUTHORED_BY/BELONGS_TO）查询与指定图书相关的图书，
+ * 通过 Neo4j 2 跳路径查询与指定图书相关的图书：
+ * {@code (Book)-[:HAS_KEYWORD|AUTHORED_BY|BELONGS_TO]-(中间实体)-[同上]-(Book)}，
  * 按邻居 PageRank 排序。
+ * <p>
+ * 注：本系统 KG 不构建 Book 之间的直接 CITES 边（{@link com.library.kg.service.GraphBuildService}
+ * 仅创建 HAS_KEYWORD/AUTHORED_BY/BELONGS_TO），故不能用 1 跳查询，必须经中间实体 2 跳。
  * 仅在 Neo4jClient Bean 可用时注入。
  *
  * @author LibrarySystem Team
@@ -43,9 +47,11 @@ public class KgRelatedBookQueryService implements KgRelatedBookPort {
     public List<BookRecommendVO> getRelated(Long bookId, int limit) {
         int safeLimit = Math.min(limit, 20);
 
-        // Cypher: 从目标书出发 1 跳邻居 Book 节点，按 PageRank 排序
+        // Cypher: 通过共享关键词/作者/分类的 2 跳路径查询相关 Book，按邻居 PageRank 排序
+        // 用显式关系类型限定，避免遍历到不预期的关系（如未来引入的 CITES）
         String cypher = """
-                MATCH (b:Book {id: $bookId})-[*1]-(neighbor:Book)
+                MATCH (b:Book {id: $bookId})-[:HAS_KEYWORD|AUTHORED_BY|BELONGS_TO]-()
+                      -[:HAS_KEYWORD|AUTHORED_BY|BELONGS_TO]-(neighbor:Book)
                 WHERE neighbor.id <> $bookId
                 RETURN DISTINCT neighbor.id AS bookId,
                        coalesce(neighbor.pagerank, 0.0) AS pagerank

@@ -86,7 +86,7 @@ public class ProfileViewModel extends ViewModel {
         );
     }
 
-    /** 更新个人信息. */
+    /** 更新个人信息（后端返回 Void，成功后重新加载 profile）. */
     public void updateProfile(String email, String phone) {
         loading.setValue(true);
         Map<String, String> body = new HashMap<>();
@@ -99,13 +99,12 @@ public class ProfileViewModel extends ViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
                         if (result.isSuccess()) {
                             saveSuccess.setValue(true);
-                            if (result.getData() != null) {
-                                userProfile.setValue(result.getData());
-                            }
+                            // 后端返回 Void，需要重新拉取个人信息
+                            loadProfile();
                         } else {
+                            loading.setValue(false);
                             errorMessage.setValue(result.getMessage());
                         }
                     },

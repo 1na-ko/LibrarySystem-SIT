@@ -84,10 +84,17 @@ class TokenServiceImplTest {
     }
 
     @Test
-    @DisplayName("revoke 应删除 auth:refresh:{userId}")
+    @DisplayName("revoke 应删除 auth:refresh:{userId} 并写 auth:logout:{userId} 时间戳")
     void shouldDeleteKeyOnRevoke() {
+        org.springframework.data.redis.core.ValueOperations<String, String> valueOps =
+                org.mockito.Mockito.mock(org.springframework.data.redis.core.ValueOperations.class);
+        when(redis.opsForValue()).thenReturn(valueOps);
+
         tokenService.revoke(42L);
 
         verify(redis).delete("auth:refresh:42");
+        // logout 时间戳：key=auth:logout:{userId}，value 为当前 epoch 秒，TTL=AT 有效期
+        verify(valueOps).set(eq("auth:logout:42"), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(java.time.Duration.class));
     }
 }

@@ -42,5 +42,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-neo4j</artifactId>
         </dependency>
+        <!-- RabbitMQ：阶段10 事件总线。KgBuildListener 改为 @RabbitListener 消费 book 增改删事件构建图谱 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
     </dependencies>
 </project>

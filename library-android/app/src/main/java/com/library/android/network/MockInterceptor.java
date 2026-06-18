@@ -118,23 +118,27 @@ public class MockInterceptor implements Interceptor {
         }
 
         // ======================== 借阅管理模块 ========================
-        if (path.contains("/borrows/overdue") && method.equals("GET")) {
+        // 注意：匹配顺序从具体到宽泛，避免路径包含冲突
+        if (path.contains("/admin/borrows/overdue") && method.equals("GET")) {
             return mockOverdueRecords();
         }
         if (path.contains("/borrows/") && path.contains("/return") && method.equals("PUT")) {
-            return mockSuccess("归还成功");
+            return mockBorrowReturn();
         }
         if (path.contains("/borrows/") && path.contains("/renew") && method.equals("PUT")) {
             return mockRenewResult();
         }
+        // POST /borrows — 借书
+        if (path.endsWith("/borrows") && method.equals("POST")) {
+            return mockBorrowResult();
+        }
+        // GET /borrows/{id} — 借阅详情（必须先于 /borrows 列表匹配）
         if (path.contains("/borrows/") && method.equals("GET")) {
             return mockBorrowDetail();
         }
-        if (path.contains("/borrows") && method.equals("POST")) {
-            return mockBorrowResult();
-        }
-        if (path.contains("/borrows/my") && method.equals("GET")) {
-            return mockMyBorrows();
+        // GET /borrows — 我的借阅列表（后端认证用户自动限定本人）
+        if (path.endsWith("/borrows") && method.equals("GET")) {
+            return mockMyBorrows(query);
         }
 
         // ======================== 预约管理模块 ========================
@@ -144,10 +148,12 @@ public class MockInterceptor implements Interceptor {
         if (path.contains("/reservations/") && method.equals("DELETE")) {
             return mockSuccess("取消预约成功");
         }
-        if (path.contains("/reservations") && method.equals("POST")) {
+        // POST /reservations — 创建预约
+        if (path.endsWith("/reservations") && method.equals("POST")) {
             return mockReservationCreated();
         }
-        if (path.contains("/reservations/my") && method.equals("GET")) {
+        // GET /reservations — 我的预约列表（后端认证用户自动限定本人）
+        if (path.endsWith("/reservations") && method.equals("GET")) {
             return mockMyReservations();
         }
 
@@ -156,7 +162,7 @@ public class MockInterceptor implements Interceptor {
             return mockBorrowStats();
         }
         if (path.contains("/users/me/history") && method.equals("GET")) {
-            return mockBorrowHistory();
+            return mockBorrowHistory(query);
         }
         if (path.contains("/users/me/recommendations") && method.equals("GET")) {
             return mockRecommendations();
@@ -169,10 +175,15 @@ public class MockInterceptor implements Interceptor {
         }
 
         // ======================== 知识图谱模块 ========================
+        // 注意：/kg/book/{bookId}/trace 先于 /kg/book/{bookId} 匹配
         if (path.contains("/kg/book/") && path.contains("/trace") && method.equals("GET")) {
             return mockLiteratureTrace();
         }
-        if (path.contains("/kg/book/") && path.contains("/graph") && method.equals("GET")) {
+        if (path.contains("/kg/book/") && path.contains("/keypath") && method.equals("GET")) {
+            return mockLiteratureTrace();  // keypath 返回 TraceGraph 同溯源
+        }
+        // GET /kg/book/{bookId} — 图书知识图谱（后端无 /graph 后缀）
+        if (path.contains("/kg/book/") && method.equals("GET")) {
             return mockKnowledgeGraph();
         }
         if (path.contains("/kg/subject/") && method.equals("GET")) {
@@ -232,6 +243,19 @@ public class MockInterceptor implements Interceptor {
 
     private String now() {
         return "2026-06-16";
+    }
+
+    /** 从 URL query 字符串中提取指定参数值. */
+    private String getQueryParam(String query, String key) {
+        if (query == null || query.isEmpty()) return null;
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            String[] kv = pair.split("=", 2);
+            if (kv.length == 2 && kv[0].equals(key)) {
+                return kv[1];
+            }
+        }
+        return null;
     }
 
     // ================================================================
@@ -417,18 +441,35 @@ public class MockInterceptor implements Interceptor {
     // 借阅管理 mock 数据
     // ================================================================
 
-    private String mockMyBorrows() {
-        Log.d(TAG, "  → 模拟我的借阅");
+    /** 模拟我的借阅 — 按 status 查询参数过滤. */
+    private String mockMyBorrows(String query) {
+        String statusFilter = getQueryParam(query, "status");
+        Log.d(TAG, "  → 模拟我的借阅 (status=" + statusFilter + ")");
+        // Build all records as an array of strings, filter by status
+        String[] all = {
+            borrowRecordJson(1, 1, "数据结构与算法分析", "Mark Allen Weiss", "计算机科学", "2026-05-15", "2026-06-14", null, "BORROWED", 0, 0.0),
+            borrowRecordJson(2, 3, "人工智能：一种现代方法", "Stuart Russell", "人工智能", "2026-05-20", "2026-06-19", null, "BORROWED", 1, 0.0),
+            borrowRecordJson(3, 7, "Python编程：从入门到实践", "Eric Matthes", "编程语言", "2026-04-10", "2026-05-10", "2026-05-05", "RETURNED", 0, 0.0),
+            borrowRecordJson(4, 4, "设计模式", "GoF", "软件工程", "2026-03-01", "2026-03-30", "2026-03-28", "RETURNED", 0, 0.0),
+            borrowRecordJson(5, 6, "计算机网络", "James Kurose", "网络技术", "2026-04-15", "2026-05-15", null, "OVERDUE", 0, 5.5),
+            borrowRecordJson(6, 10, "机器学习实战", "Peter Harrington", "人工智能", "2026-05-01", "2026-05-31", null, "RENEWED", 1, 0.0),
+        };
+        // Map record index → status string in the JSON (for filtering)
+        String[] statuses = {"BORROWED", "BORROWED", "RETURNED", "RETURNED", "OVERDUE", "RENEWED"};
+        java.util.List<String> filtered = new java.util.ArrayList<>();
+        for (int i = 0; i < all.length; i++) {
+            if (statusFilter == null || statusFilter.isEmpty() || statusFilter.equals(statuses[i])) {
+                filtered.add(all[i]);
+            }
+        }
+        StringBuilder records = new StringBuilder();
+        for (int i = 0; i < filtered.size(); i++) {
+            if (i > 0) records.append(",");
+            records.append(filtered.get(i));
+        }
         return "{\"code\":200,\"message\":\"查询成功\",\"data\":{" +
-                "\"records\":[" +
-                borrowRecordJson(1, 1, "数据结构与算法分析", "Mark Allen Weiss", "计算机科学", "2026-05-15", "2026-06-14", null, "BORROWED", 0, 0.0) + "," +
-                borrowRecordJson(2, 3, "人工智能：一种现代方法", "Stuart Russell", "人工智能", "2026-05-20", "2026-06-19", null, "BORROWED", 1, 0.0) + "," +
-                borrowRecordJson(3, 7, "Python编程：从入门到实践", "Eric Matthes", "编程语言", "2026-04-10", "2026-05-10", "2026-05-05", "RETURNED", 0, 0.0) + "," +
-                borrowRecordJson(4, 4, "设计模式", "GoF", "软件工程", "2026-03-01", "2026-03-30", "2026-03-28", "RETURNED", 0, 0.0) + "," +
-                borrowRecordJson(5, 6, "计算机网络", "James Kurose", "网络技术", "2026-04-15", "2026-05-15", null, "OVERDUE", 0, 5.5) + "," +
-                borrowRecordJson(6, 10, "机器学习实战", "Peter Harrington", "人工智能", "2026-05-01", "2026-05-31", null, "RENEWED", 1, 0.0) +
-                "]," +
-                "\"total\":6,\"pageNum\":1,\"pageSize\":10,\"totalPages\":1" +
+                "\"records\":[" + records + "]," +
+                "\"total\":" + filtered.size() + ",\"pageNum\":1,\"pageSize\":10,\"totalPages\":1" +
                 "},\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
@@ -454,6 +495,15 @@ public class MockInterceptor implements Interceptor {
                 "\"borrowId\":1,\"newDueDate\":\"2026-07-14\"," +
                 "\"renewCount\":1,\"maxRenewReached\":false" +
                 "},\"timestamp\":" + System.currentTimeMillis() + "}";
+    }
+
+    /** 归还图书 mock — 后端返回 BorrowRecordVO. */
+    private String mockBorrowReturn() {
+        Log.d(TAG, "  → 模拟归还结果");
+        return "{\"code\":200,\"message\":\"归还成功\",\"data\":" +
+                borrowRecordJson(1, 1, "数据结构与算法分析", "Mark Allen Weiss", "计算机科学",
+                        "2026-05-15", "2026-06-14", now(), "RETURNED", 0, 0.0) +
+                ",\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
     private String mockOverdueRecords() {
@@ -497,10 +547,9 @@ public class MockInterceptor implements Interceptor {
     }
 
     private String mockQueuePosition() {
-        Log.d(TAG, "  → 模拟排队位置");
-        return "{\"code\":200,\"message\":\"查询成功\",\"data\":{" +
-                "\"reservationId\":1,\"queuePosition\":3,\"totalWaiting\":5" +
-                "},\"timestamp\":" + System.currentTimeMillis() + "}";
+        Log.d(TAG, "  → 模拟排队位置（后端返回 Integer 序号）");
+        return "{\"code\":200,\"message\":\"查询成功\",\"data\":3" +
+                ",\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
     // ================================================================
@@ -518,26 +567,38 @@ public class MockInterceptor implements Interceptor {
     }
 
     private String mockUpdateProfile() {
-        Log.d(TAG, "  → 模拟更新个人信息");
-        return "{\"code\":200,\"message\":\"更新成功\",\"data\":{" +
-                "\"id\":1,\"username\":\"2024001001\",\"realName\":\"模拟用户\"," +
-                "\"role\":\"STUDENT\",\"email\":\"newemail@university.edu.cn\"," +
-                "\"phone\":\"13900139000\",\"maxBooks\":5,\"status\":\"ACTIVE\"," +
-                "\"createTime\":\"2024-09-01\"" +
-                "},\"timestamp\":" + System.currentTimeMillis() + "}";
+        Log.d(TAG, "  → 模拟更新个人信息（后端返回 Void）");
+        return "{\"code\":200,\"message\":\"更新成功\",\"data\":null" +
+                ",\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
-    private String mockBorrowHistory() {
-        Log.d(TAG, "  → 模拟借阅历史");
+    /** 模拟借阅历史 — 按 year 查询参数过滤. */
+    private String mockBorrowHistory(String query) {
+        String yearStr = getQueryParam(query, "year");
+        Log.d(TAG, "  → 模拟借阅历史 (year=" + yearStr + ")");
+        String[] all = {
+            borrowRecordJson(3, 7, "Python编程：从入门到实践", "Eric Matthes", "编程语言", "2026-04-10", "2026-05-10", "2026-05-05", "RETURNED", 0, 0.0),
+            borrowRecordJson(4, 4, "设计模式", "GoF", "软件工程", "2026-03-01", "2026-03-30", "2026-03-28", "RETURNED", 0, 0.0),
+            borrowRecordJson(8, 8, "数据库系统概念", "Abraham Silberschatz", "计算机科学", "2025-12-01", "2025-12-30", "2025-12-25", "RETURNED", 0, 0.0),
+            borrowRecordJson(9, 9, "Spring实战", "Craig Walls", "软件工程", "2025-10-15", "2025-11-14", "2025-11-10", "RETURNED", 0, 0.0),
+            borrowRecordJson(10, 15, "算法导论", "Thomas Cormen", "计算机科学", "2025-09-01", "2025-09-30", "2025-09-28", "RETURNED", 0, 0.0),
+        };
+        // Extract year from borrowDate (4th date param in borrowRecordJson: "2026-04-10")
+        String[] years = {"2026", "2026", "2025", "2025", "2025"};
+        java.util.List<String> filtered = new java.util.ArrayList<>();
+        for (int i = 0; i < all.length; i++) {
+            if (yearStr == null || yearStr.isEmpty() || yearStr.equals(years[i])) {
+                filtered.add(all[i]);
+            }
+        }
+        StringBuilder records = new StringBuilder();
+        for (int i = 0; i < filtered.size(); i++) {
+            if (i > 0) records.append(",");
+            records.append(filtered.get(i));
+        }
         return "{\"code\":200,\"message\":\"查询成功\",\"data\":{" +
-                "\"records\":[" +
-                borrowRecordJson(3, 7, "Python编程：从入门到实践", "Eric Matthes", "编程语言", "2026-04-10", "2026-05-10", "2026-05-05", "RETURNED", 0, 0.0) + "," +
-                borrowRecordJson(4, 4, "设计模式", "GoF", "软件工程", "2026-03-01", "2026-03-30", "2026-03-28", "RETURNED", 0, 0.0) + "," +
-                borrowRecordJson(8, 8, "数据库系统概念", "Abraham Silberschatz", "计算机科学", "2025-12-01", "2025-12-30", "2025-12-25", "RETURNED", 0, 0.0) + "," +
-                borrowRecordJson(9, 9, "Spring实战", "Craig Walls", "软件工程", "2025-10-15", "2025-11-14", "2025-11-10", "RETURNED", 0, 0.0) + "," +
-                borrowRecordJson(10, 15, "算法导论", "Thomas Cormen", "计算机科学", "2025-09-01", "2025-09-30", "2025-09-28", "RETURNED", 0, 0.0) +
-                "]," +
-                "\"total\":5,\"pageNum\":1,\"pageSize\":10,\"totalPages\":1" +
+                "\"records\":[" + records + "]," +
+                "\"total\":" + filtered.size() + ",\"pageNum\":1,\"pageSize\":10,\"totalPages\":1" +
                 "},\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
@@ -670,15 +731,18 @@ public class MockInterceptor implements Interceptor {
                 "},\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
+    /** 后端返回 KnowledgeGraphVO（nodes+edges），Repository 层会转换为 EntitySearchResult 列表. */
     private String mockEntitySearch() {
-        Log.d(TAG, "  → 模拟实体搜索");
-        return "{\"code\":200,\"message\":\"查询成功\",\"data\":[" +
-                "{\"entityId\":1,\"entityName\":\"数据结构与算法分析\",\"entityType\":\"BOOK\",\"pagerank\":0.85}," +
-                "{\"entityId\":2,\"entityName\":\"Mark Allen Weiss\",\"entityType\":\"AUTHOR\",\"pagerank\":0.72}," +
-                "{\"entityId\":3,\"entityName\":\"算法\",\"entityType\":\"KEYWORD\",\"pagerank\":0.91}," +
-                "{\"entityId\":8,\"entityName\":\"算法导论\",\"entityType\":\"BOOK\",\"pagerank\":0.88}," +
-                "{\"entityId\":24,\"entityName\":\"数据结构\",\"entityType\":\"KEYWORD\",\"pagerank\":0.67}" +
-                "],\"timestamp\":" + System.currentTimeMillis() + "}";
+        Log.d(TAG, "  → 模拟实体搜索（KnowledgeGraphVO 格式）");
+        return "{\"code\":200,\"message\":\"查询成功\",\"data\":{" +
+                "\"nodes\":[" +
+                "{\"id\":1,\"label\":\"数据结构与算法分析\",\"type\":\"BOOK\",\"properties\":{\"pagerank\":0.85,\"borrowCount\":128}}," +
+                "{\"id\":2,\"label\":\"Mark Allen Weiss\",\"type\":\"AUTHOR\",\"properties\":{\"pagerank\":0.72}}," +
+                "{\"id\":3,\"label\":\"算法\",\"type\":\"KEYWORD\",\"properties\":{\"pagerank\":0.91}}," +
+                "{\"id\":8,\"label\":\"算法导论\",\"type\":\"BOOK\",\"properties\":{\"pagerank\":0.88}}," +
+                "{\"id\":24,\"label\":\"数据结构\",\"type\":\"KEYWORD\",\"properties\":{\"pagerank\":0.67}}" +
+                "],\"edges\":[]" +
+                "},\"timestamp\":" + System.currentTimeMillis() + "}";
     }
 
     // ================================================================

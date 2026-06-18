@@ -26,7 +26,7 @@ public interface LibraryApi {
     Call<Result<LoginResponse>> login(@Body LoginRequest request);
 
     @POST("auth/register")
-    Call<Result<Void>> register(@Body RegisterRequest request);
+    Call<Result<LoginResponse>> register(@Body RegisterRequest request);
 
     @POST("auth/refresh")
     Call<Result<RefreshResponse>> refreshToken(@Body RefreshRequest request);
@@ -36,8 +36,9 @@ public interface LibraryApi {
 
     // ======================== 图书检索模块（人员 A 主导） ========================
 
+    /** 后端实际返回 BookSimpleVO（列表摘要不含 description/location/totalCopies/borrowCount）. */
     @GET("books/search")
-    Call<Result<PageResult<BookVO>>> searchBooks(
+    Call<Result<PageResult<BookSimpleVO>>> searchBooks(
             @Query("keyword") String keyword,
             @Query("author") String author,
             @Query("categoryId") Long categoryId,
@@ -46,8 +47,9 @@ public interface LibraryApi {
             @Query("pageSize") int pageSize
     );
 
+    /** 后端实际返回 BookSimpleVO. */
     @GET("books/search/advanced")
-    Call<Result<PageResult<BookVO>>> advancedSearch(
+    Call<Result<PageResult<BookSimpleVO>>> advancedSearch(
             @Query("title") String title,
             @Query("author") String author,
             @Query("isbn") String isbn,
@@ -63,8 +65,9 @@ public interface LibraryApi {
     @GET("books/suggest")
     Call<Result<List<Map<String, String>>>> suggest(@Query("prefix") String prefix, @Query("limit") int limit);
 
+    /** 后端实际返回 BookSimpleVO. */
     @GET("books/hot")
-    Call<Result<List<BookVO>>> hotBooks(@Query("categoryId") Long categoryId, @Query("limit") int limit);
+    Call<Result<List<BookSimpleVO>>> hotBooks(@Query("categoryId") Long categoryId, @Query("limit") int limit);
 
     @GET("books/{id}")
     Call<Result<BookDetailVO>> getBookDetail(@Path("id") long bookId);
@@ -88,7 +91,8 @@ public interface LibraryApi {
     @POST("borrows")
     Call<Result<BorrowResultVO>> borrowBook(@Body BorrowRequest request);
 
-    @GET("borrows/my")
+    /** 后端路径 /borrows（非 /borrows/my），认证用户自动限定本人数据. */
+    @GET("borrows")
     Call<Result<PageResult<BorrowRecordVO>>> getMyBorrows(
             @Query("status") String status,
             @Query("pageNum") int pageNum,
@@ -99,12 +103,13 @@ public interface LibraryApi {
     Call<Result<BorrowRecordVO>> getBorrowDetail(@Path("id") long borrowId);
 
     @PUT("borrows/{id}/return")
-    Call<Result<Void>> returnBook(@Path("id") long borrowId);
+    Call<Result<BorrowRecordVO>> returnBook(@Path("id") long borrowId);
 
     @PUT("borrows/{id}/renew")
     Call<Result<RenewResultVO>> renewBook(@Path("id") long borrowId);
 
-    @GET("borrows/overdue")
+    /** 需 LIBRARIAN/ADMIN 角色，路径在 /admin 下. */
+    @GET("admin/borrows/overdue")
     Call<Result<PageResult<BorrowRecordVO>>> getOverdueRecords(
             @Query("pageNum") int pageNum,
             @Query("pageSize") int pageSize
@@ -115,7 +120,8 @@ public interface LibraryApi {
     @POST("reservations")
     Call<Result<ReservationVO>> reserveBook(@Body ReservationRequest request);
 
-    @GET("reservations/my")
+    /** 后端路径 /reservations（非 /reservations/my），认证用户自动限定本人数据. */
+    @GET("reservations")
     Call<Result<PageResult<ReservationVO>>> getMyReservations(
             @Query("status") String status,
             @Query("pageNum") int pageNum,
@@ -125,16 +131,18 @@ public interface LibraryApi {
     @DELETE("reservations/{id}")
     Call<Result<Void>> cancelReservation(@Path("id") long reservationId);
 
+    /** 后端当前返回 Result&lt;Integer&gt;（仅排队序号），非含 totalWaiting 的对象. */
     @GET("reservations/{id}/queue-position")
-    Call<Result<QueuePositionVO>> getQueuePosition(@Path("id") long reservationId);
+    Call<Result<Integer>> getQueuePosition(@Path("id") long reservationId);
 
     // ======================== 个人中心模块（人员 A 主导） ========================
 
     @GET("users/me")
     Call<Result<UserProfile>> getMyProfile();
 
+    /** 后端返回 Result&lt;Void&gt;（data 为 null），编辑成功后需重新 GET /users/me 刷新. */
     @PUT("users/me")
-    Call<Result<UserProfile>> updateMyProfile(@Body Map<String, String> body);
+    Call<Result<Void>> updateMyProfile(@Body Map<String, String> body);
 
     @GET("users/me/history")
     Call<Result<PageResult<BorrowRecordVO>>> getMyHistory(
@@ -151,12 +159,13 @@ public interface LibraryApi {
 
     // ======================== 知识图谱模块（人员 B 主导） ========================
 
-    @GET("kg/book/{id}/graph")
-    Call<Result<KnowledgeGraphVO>> getBookGraph(@Path("id") long bookId, @Query("depth") int depth);
+    /** 后端路径 /kg/book/{bookId}（无 /graph 后缀）. */
+    @GET("kg/book/{bookId}")
+    Call<Result<KnowledgeGraphVO>> getBookGraph(@Path("bookId") long bookId, @Query("depth") int depth);
 
-    @GET("kg/book/{id}/trace")
+    @GET("kg/book/{bookId}/trace")
     Call<Result<TraceGraph>> traceLiterature(
-            @Path("id") long bookId,
+            @Path("bookId") long bookId,
             @Query("direction") String direction,
             @Query("maxDepth") int maxDepth
     );
@@ -164,21 +173,23 @@ public interface LibraryApi {
     @GET("kg/subject/{name}")
     Call<Result<KnowledgeGraphVO>> getSubjectNetwork(@Path(value = "name", encoded = true) String name, @Query("topK") int topK);
 
+    /** 后端返回 KnowledgeGraphVO（nodes+edges），Repository 层转换为 List&lt;EntitySearchResult&gt;. */
     @GET("kg/search")
-    Call<Result<List<EntitySearchResult>>> searchEntities(
+    Call<Result<KnowledgeGraphVO>> searchEntities(
             @Query("entity") String entity,
             @Query("type") String type
     );
 
     // ======================== 系统管理模块（人员 B 主导） ========================
 
+    /** 后端分页参数名为 page / size（非 pageNum / pageSize）. */
     @GET("admin/users")
     Call<Result<PageResult<UserManageVO>>> listUsers(
             @Query("role") String role,
             @Query("status") String status,
             @Query("keyword") String keyword,
-            @Query("pageNum") int pageNum,
-            @Query("pageSize") int pageSize
+            @Query("page") int page,
+            @Query("size") int size
     );
 
     @PUT("admin/users/{id}/status")
@@ -196,19 +207,24 @@ public interface LibraryApi {
     // ======================== 智能采编模块（人员 B·可选） ========================
 
     @GET("acquisition/predict")
-    Call<Result<List<Map<String, Object>>>> predictDemand(@Query("subjectId") long subjectId, @Query("months") int months);
+    Call<Result<List<PurchasePredictionVO>>> predictDemand(@Query("subjectId") long subjectId, @Query("months") int months);
 
     @POST("acquisition/duplicate-check")
-    Call<Result<Map<String, Object>>> checkDuplicate(@Body Map<String, String> body);
+    Call<Result<DuplicateCheckResult>> checkDuplicate(@Body Map<String, String> body);
 
     @GET("acquisition/gap-analysis")
-    Call<Result<Map<String, Object>>> analyzeGap(@Query("subjectId") long subjectId);
+    Call<Result<GapAnalysisResult>> analyzeGap(@Query("subjectId") long subjectId);
 
+    /** 后端使用 @RequestParam（Query 参数），非 RequestBody. */
     @POST("acquisition/negotiation")
-    Call<Result<Map<String, Object>>> createNegotiation(@Body Map<String, Object> body);
+    Call<Result<NegotiationSuggestion>> createNegotiation(
+            @Query("resourceId") long resourceId,
+            @Query("supplierId") long supplierId,
+            @Query("negotiatorId") long negotiatorId
+    );
 
     @GET("acquisition/negotiation/{id}/suggestion")
-    Call<Result<Map<String, Object>>> getNegotiationSuggestion(@Path("id") long negotiationId);
+    Call<Result<NegotiationSuggestion>> getNegotiationSuggestion(@Path("id") long negotiationId);
 
     // ======================== 系统 ========================
 

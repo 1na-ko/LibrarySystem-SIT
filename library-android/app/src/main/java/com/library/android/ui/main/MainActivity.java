@@ -55,13 +55,6 @@ public class MainActivity extends AppCompatActivity {
             R.id.registerFragment
     ));
 
-    /** 主 Tab 页面（返回按钮隐藏） */
-    private static final Set<Integer> TOP_LEVEL_DESTINATIONS = new HashSet<>(Arrays.asList(
-            R.id.searchFragment,
-            R.id.borrowFragment,
-            R.id.profileFragment
-    ));
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,12 +92,12 @@ public class MainActivity extends AppCompatActivity {
                 binding.bottomNavigation.setVisibility(View.VISIBLE);
                 binding.dividerBottomNav.setVisibility(View.VISIBLE);
 
-                // 返回按钮：主 Tab 隐藏，子页面显示
-                binding.btnGlobalBack.setVisibility(
-                        TOP_LEVEL_DESTINATIONS.contains(destId) ? View.GONE : View.VISIBLE);
+                // 返回按钮：无上一页时隐藏，有可返回的上层页面时显示
+                boolean hasPrevious = navController.getPreviousBackStackEntry() != null;
+                binding.btnGlobalBack.setVisibility(hasPrevious ? View.VISIBLE : View.GONE);
 
-                // 主 Tab 页面恢复默认标题
-                if (TOP_LEVEL_DESTINATIONS.contains(destId)) {
+                // 无上一页（栈底）时恢复默认标题
+                if (!hasPrevious) {
                     setGlobalTitle("图书馆");
                 }
             }

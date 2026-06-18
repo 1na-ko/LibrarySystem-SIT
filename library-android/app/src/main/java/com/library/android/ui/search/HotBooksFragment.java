@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.chip.Chip;
 import com.library.android.R;
 import com.library.android.databinding.FragmentHotBooksBinding;
-import com.library.android.model.BookVO;
+import com.library.android.model.BookSimpleVO;
 import com.library.android.model.CategoryVO;
 import com.library.android.repository.BookRepository;
 import com.library.android.ui.common.BaseAdapter;
@@ -145,17 +145,17 @@ public class HotBooksFragment extends Fragment {
 
     // ======================== BookAdapter ========================
 
-    private static class BookAdapter extends BaseAdapter<BookVO, com.library.android.databinding.ItemBookBinding> {
+    private static class BookAdapter extends BaseAdapter<BookSimpleVO, com.library.android.databinding.ItemBookBinding> {
 
         BookAdapter() {
-            super(R.layout.item_book, new DiffUtil.ItemCallback<BookVO>() {
+            super(R.layout.item_book, new DiffUtil.ItemCallback<BookSimpleVO>() {
                 @Override
-                public boolean areItemsTheSame(@NonNull BookVO oldItem, @NonNull BookVO newItem) {
+                public boolean areItemsTheSame(@NonNull BookSimpleVO oldItem, @NonNull BookSimpleVO newItem) {
                     return oldItem.getId() == newItem.getId();
                 }
 
                 @Override
-                public boolean areContentsTheSame(@NonNull BookVO oldItem, @NonNull BookVO newItem) {
+                public boolean areContentsTheSame(@NonNull BookSimpleVO oldItem, @NonNull BookSimpleVO newItem) {
                     return oldItem.getTitle().equals(newItem.getTitle());
                 }
             });
@@ -167,10 +167,10 @@ public class HotBooksFragment extends Fragment {
         }
 
         @Override
-        protected void bind(com.library.android.databinding.ItemBookBinding binding, BookVO item, int position) {
+        protected void bind(com.library.android.databinding.ItemBookBinding binding, BookSimpleVO item, int position) {
             binding.tvTitle.setText(item.getTitle());
             binding.tvAuthor.setText(item.getAuthor());
-            binding.tvAvailCopies.setText("可借 " + item.getAvailCopies() + "/" + item.getTotalCopies());
+            binding.tvAvailCopies.setText("可借 " + item.getAvailCopies());
         }
     }
 }

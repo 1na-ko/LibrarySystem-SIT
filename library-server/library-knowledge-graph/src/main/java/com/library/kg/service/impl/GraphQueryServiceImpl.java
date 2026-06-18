@@ -36,21 +36,58 @@ public class GraphQueryServiceImpl implements GraphQueryService {
     private final KnowledgeGraphProperties kgProperties;
 
     private static final String BOOK_LABEL = "Book";
-    /** 允许的节点类型白名单（防 Cypher 注入） */
-    private static final java.util.Set<String> ALLOWED_NODE_TYPES =
-            java.util.Set.of("Book", "Author", "Keyword", "Subject", "Publication", "Conference");
+    /**
+     * 允许的节点类型白名单（Cypher 注入防护）.
+     * <p>
+     * 接受前端两种命名风格：Neo4j 标签 PascalCase（{@code Book/Author/...}）+ 上层契约
+     * UPPER_CASE（{@code BOOK/AUTHOR/...}）。Controller Javadoc 与 OpenAPI 契约约定后者，
+     * 此处统一通过 {@link #normalizeNodeType} 映射到实际 Neo4j 标签。
+     */
+    private static final java.util.Map<String, String> ALLOWED_NODE_TYPE_MAP = java.util.Map.ofEntries(
+            java.util.Map.entry("Book", "Book"),
+            java.util.Map.entry("BOOK", "Book"),
+            java.util.Map.entry("Author", "Author"),
+            java.util.Map.entry("AUTHOR", "Author"),
+            java.util.Map.entry("Keyword", "Keyword"),
+            java.util.Map.entry("KEYWORD", "Keyword"),
+            java.util.Map.entry("Subject", "Subject"),
+            java.util.Map.entry("SUBJECT", "Subject"),
+            java.util.Map.entry("Publication", "Publication"),
+            java.util.Map.entry("PUBLICATION", "Publication"),
+            java.util.Map.entry("Conference", "Conference"),
+            java.util.Map.entry("CONFERENCE", "Conference")
+    );
+
+    private static String normalizeNodeType(String input) {
+        return input == null ? null : ALLOWED_NODE_TYPE_MAP.get(input);
+    }
 
     @Override
     public KnowledgeGraphVO getBookGraph(Long bookId, int depth) {
         int safeDepth = clamp(depth, 1, kgProperties.getMaxQueryDepth());
 
         // 路径查询：以书为中心，取 depth 跳内邻居
-        // 注意：可变长度深度参数无法用 $param 绑定，使用整数白名单校验后字符串拼接
+        // 注意：1) 可变长度深度参数无法用 $param 绑定，使用整数白名单校验后字符串拼接；
+        //       2) Neo4j Driver 5.x 对 PATH 类型不支持 .asList()（抛 Cannot coerce PATH to Java List），
+        //          故 Cypher 端用 nodes(p) + relationships(p) 解构后由 Java 端重组交替序列，
+        //          保持 buildGraphFromPaths 的"NODE/REL/NODE/REL/NODE"列表契约不变
         String cypher = "MATCH p = (b:Book {id: $bookId})-[*1.." + safeDepth + "]-(n) "
-                + "RETURN p LIMIT 200";
+                + "RETURN nodes(p) AS pathNodes, relationships(p) AS pathRels LIMIT 200";
         List<List<Object>> paths = neo4jRepository.query(cypher,
                 Map.of("bookId", bookId),
-                (rec) -> rec.get("p").asList());
+                (rec) -> {
+                    List<Value> nodes = rec.get("pathNodes").asList(v -> v);
+                    List<Value> rels = rec.get("pathRels").asList(v -> v);
+                    // 按 path 顺序重组交替序列：N0, R0, N1, R1, N2, ...
+                    List<Object> alternating = new ArrayList<>(nodes.size() + rels.size());
+                    for (int i = 0; i < nodes.size(); i++) {
+                        alternating.add(nodes.get(i));
+                        if (i < rels.size()) {
+                            alternating.add(rels.get(i));
+                        }
+                    }
+                    return alternating;
+                });
 
         return buildGraphFromPaths(bookId, paths);
     }
@@ -62,12 +99,13 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         params.put("entity", entity);
 
         if (type != null && !type.isEmpty()) {
-            // 白名单校验，防 Cypher 注入
-            if (!ALLOWED_NODE_TYPES.contains(type)) {
+            // 白名单校验 + 大小写兼容映射，防 Cypher 注入
+            String resolvedLabel = normalizeNodeType(type);
+            if (resolvedLabel == null) {
                 log.warn("非法的实体类型参数: type={}, 已拒绝", type);
                 return KnowledgeGraphVO.builder().nodes(List.of()).edges(List.of()).build();
             }
-            cypher.append("MATCH (n:").append(type).append(") ")
+            cypher.append("MATCH (n:").append(resolvedLabel).append(") ")
                     .append("WHERE n.name CONTAINS $entity OR n.title CONTAINS $entity ")
                     .append("RETURN n ORDER BY coalesce(n.pagerank, 0.0) DESC LIMIT 50");
         } else {

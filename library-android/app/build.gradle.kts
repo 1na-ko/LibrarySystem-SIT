@@ -1,6 +1,8 @@
 // =============================================================================
 // 图书馆智能管理系统 — Android 应用模块构建配置
 // =============================================================================
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("com.google.dagger.hilt.android")
@@ -19,8 +21,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 后端 API 基地址
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
+        // 后端 API 基地址（优先从 local.properties 读取，不入 git；否则使用模拟器默认值）
+        val localProps = Properties()
+        val localFile = rootProject.file("local.properties")
+        if (localFile.exists()) localProps.load(localFile.inputStream())
+        val baseUrl = localProps.getProperty("api.base.url", "http://10.0.2.2:8080/api/v1/")
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        // Mock 模式（默认 false 连真实后端；设为 true 使用本地模拟数据）
+        val mockEnabled = localProps.getProperty("mock.enabled", "false")
+        buildConfigField("boolean", "MOCK_ENABLED", mockEnabled)
     }
 
     buildTypes {

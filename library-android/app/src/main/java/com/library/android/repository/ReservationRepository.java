@@ -37,8 +37,8 @@ public class ReservationRepository {
                 api.cancelReservation(reservationId).execute().body());
     }
 
-    /** 查询排队位置. */
-    public Single<Result<QueuePositionVO>> getQueuePosition(long reservationId) {
+    /** 查询排队位置（后端当前返回 Result&lt;Integer&gt;，仅排队序号）. */
+    public Single<Result<Integer>> getQueuePosition(long reservationId) {
         return Single.fromCallable(() ->
                 api.getQueuePosition(reservationId).execute().body());
     }

@@ -687,6 +687,17 @@ class BookServiceTest {
 }
 ```
 
+### 7.4 集成测试规范（阶段10）
+
+集成测试连接 **docker-compose 预启动的真实中间件**（MySQL/Redis/ES+IK/Neo4j/RabbitMQ），与单元测试物理隔离：
+
+- **位置**：`library-bootstrap/src/test/java/com/library/integration/`，继承 `AbstractIntegrationTest`（5 中间件健康前置 + Flyway clean+migrate 重置基线）
+- **前置**：`make up` 启动 docker-compose 中间件（首次需 `make es-ik-check` 安装 IK 分词器）
+- **运行**：`make itest`（或 Docker Desktop 29 兼容方案 `make itest-tcp`）；日常 `mvn test` 仅跑单元测试（surefire 排除 `**/integration/**` 与 `LibraryApplicationTests`）
+- **种子数据**：`src/test/resources/db/test-data/V100__test_seed.sql`，仅 test profile 加载（物理+配置+版本号三重隔离，防污染生产）
+- **异步断言**：MQ 消费等异步场景用 Awaitility `await().atMost(...).untilAsserted()`，禁用 `Thread.sleep` 轮询
+- **命名**：仍遵循 `should{预期行为}When{条件}`，集成测试类命名 `{场景}IntegrationTest`
+
 ---
 
 ## 8. PR 模板

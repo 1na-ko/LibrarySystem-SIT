@@ -37,8 +37,8 @@ public class BorrowRepository {
                 api.getBorrowDetail(borrowId).execute().body());
     }
 
-    /** 归还图书. */
-    public Single<Result<Void>> returnBook(long borrowId) {
+    /** 归还图书（后端返回 BorrowRecordVO 含归还详情）. */
+    public Single<Result<BorrowRecordVO>> returnBook(long borrowId) {
         return Single.fromCallable(() ->
                 api.returnBook(borrowId).execute().body());
     }

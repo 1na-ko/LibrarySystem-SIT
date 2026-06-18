@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.library.integration.XssSecurityTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 28.81 s -- in com.library.integration.XssSecurityTest

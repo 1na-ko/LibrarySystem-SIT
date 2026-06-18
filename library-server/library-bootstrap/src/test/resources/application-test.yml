@@ -1,0 +1,32 @@
+# ============================================================
+# 测试环境配置（集成测试专用，-Pintegration profile 激活）
+# 中间件由 docker-compose 预启动，连接用 application.yml 默认 localhost 配置（端口/密码与 docker-compose 一致）
+# 此处仅声明需覆盖的业务配置
+# ============================================================
+spring:
+  flyway:
+    # 追加 test-data 目录加载 V100 测试种子（生产 application.yml 仅 classpath:db/migration）
+    locations: classpath:db/migration,classpath:db/test-data
+    # 显式允许 clean：AbstractIntegrationTest @BeforeAll 用 flyway.clean()+migrate() 重置中间件到种子状态
+    clean-disabled: false
+    # AbstractIntegrationTest @BeforeAll 在 ApplicationContext 启动后立即 clean+migrate；
+    # 关闭 validate-on-migrate 防止 docker MySQL 残留旧 checksum 导致 ApplicationContext 启动失败
+    validate-on-migrate: false
+
+# AI 基础设施：留空 api-key 触发 LLM/Embedding 本地降级（支撑 10.9 降级验证）
+ai:
+  deepseek:
+    api-key:
+  dashscope:
+    api-key:
+
+# 限流容量调大，避免性能/安全测试被限流阻断
+ratelimit:
+  login:         { capacity: 10000, refill-per-min: 10000 }
+  register:      { capacity: 10000, refill-per-min: 10000 }
+  authenticated: { capacity: 10000, refill-per-min: 10000 }
+  anonymous:     { capacity: 10000, refill-per-min: 10000 }
+
+logging:
+  level:
+    com.library: INFO
