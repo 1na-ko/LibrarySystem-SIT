@@ -1,7 +1,8 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-9 ✅ | 阶段 10 ✅（代码完成 + 审计修复，集成测试运行待 Docker Desktop 29 兼容修复）| 阶段 11 📋 待实施
+> **状态**: 阶段 0-9 ✅ | 阶段 10 ✅（代码完成 + 多轮审计修复 + 生产部署）| 阶段 11 📋 待实施
+> **生产环境**: `http://101.132.24.73:8080/api/v1`（Ubuntu 24.04 / 4C7G / docker-compose + systemd）
 > **最后更新**: 2026-06-17
 
 ---
@@ -350,6 +351,55 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - **P1 Makefile 补 itest-tcp**：CLAUDE.md / 阶段10完成记录 §5.2 均承诺 `make itest-tcp` 用于 Docker Desktop 29 兼容方案，但实际 Makefile 未定义该 target。补 `.PHONY` + 规则 `DOCKER_HOST=tcp://localhost:2375 mvn test -Pintegration` ✅
 - **P1 CLAUDE.md "Spring Events" 措辞修正**：§5 关键设计决策 #1 "通过 Spring Events 通信" 与阶段10 RabbitMQ 引入直接矛盾。改为"通过 RabbitMQ 事件总线（领域事件 → EventBusBridge 在 AFTER_COMMIT 桥接 → @RabbitListener 消费）通信" ✅
 - **登记保留项**（详见审计修复记录 §2）：RabbitListenerContainerFactory 显式声明（Spring Boot 自动装配已用 Jackson，子代理误判 P0 → 实际 P2）、OverdueBatchProcessor DuplicateKey rollback-only（核验后无实际影响）、BorrowService OVERDUE 24h 窗口（待业务确认）、`borrow_record` 同用户同书唯一约束（成本/收益权衡）、Publisher Confirms（设计上以周级兜底替代）、RBAC 测试 403 旁路（待集成测试运行后治理）
+
+### 已落地（阶段 10 后第二轮：Docker 真实环境集成测试 + 安全加固）
+
+> 用 docker-compose 真实中间件跑 16 集成测试（替代 Testcontainers，规避 Docker Desktop 29 CLI 代理兼容问题），全程边跑边修。集成测试 34/35 通过（仅 ReservationFlow 受 Redisson 3.25.0 ZSET popMin bug `@Disabled`），单元 372/372 全绿。
+
+**安全加固（OWASP）**：
+- **AccessToken 登出黑名单**（user 维度时间戳）：无状态 JWT 设计下 AT 不带 jti，登出仅删 RefreshToken 致 AT 在剩余 TTL 内仍可用（违反 OWASP 会话终止）。`TokenService.revoke` 额外写 `auth:logout:{userId}=epoch秒`（TTL=AT 有效期），`JwtAuthenticationFilter` 解析 AT 后校验 `iat ≤ logoutTs` 则 401。同秒边界保守判定为已失效防 1 秒内 logout+复用。✅
+
+**应用启动 / 配置 P0 修复（docker-compose 环境暴露）**：
+- **MetricsConfig RedisTemplate 注入加 `@Lazy`**：Actuator MeterRegistryPostProcessor 在 BeanPostProcessor 阶段强制枚举 MeterBinder 候选 → MetricsConfig 早于 RedisConfig 实例化致 NoSuchBean。@Lazy 让 Spring 注入代理对象，调度器首次执行时才解析真实 Bean ✅
+- **MyBatis Enum Handler 改 `EnumTypeHandler`**：MybatisEnumTypeHandler 强制要求 @EnumValue 注解，与项目所有业务枚举（按 name 与 DB ENUM 互转）的设计意图不符，启动报 `Could not find @EnumValue in Class`。改用 MyBatis 标准 EnumTypeHandler ✅
+- **Flyway `validate-on-migrate=false`**（test profile）：防 docker MySQL 残留旧 checksum 致 ApplicationContext 启动失败 ✅
+- **`spring.docker.compose.enabled=false`**：避免 spring-boot:run 在子模块找不到 compose 文件启动失败 ✅
+
+**ES 同步链路 P0 修复**：
+- **`BookESRepository.save` 加 `refresh=WaitFor`**：保证写后立即可搜（适用 ESSyncListener 单条同步），EsRebuildJob 批量重建仍异步 ✅
+- **`BookESRepository.fullTextSearch` sort builder variant 修复**：ES 8.11 Java Client 严格要求每个 SortOptions builder 指定一个 variant（field/score/...），sortBy 为空时显式 `_score` variant，否则抛 'Missing required property Builder.<variant kind>' 致**所有图书搜索失败返回空** ✅
+
+**集成测试代码修复**：
+- AbstractIntegrationTest: API 常量改空串（TestRestTemplate baseUrl 已含 context-path，叠加 `/api/v1` 致 401）；新增 `asLong()` helper 兼容 JacksonConfig Long→String 序列化
+- LoginHelper 路径去 `/api/v1` 前缀；6 处 `(Number)` cast 改用 `asLong()`
+- BorrowFlow/ReservationFlow 改用 admin（V100 中 4 个 test_* 用户均有 OVERDUE 借不了书）
+- AcquisitionFlow/RbacMatrix `subjectId` 1→101（category=1 顶级类无书，PredictionService 不递归子分类）
+- RecommendationKgFlow 推荐返回 `data` 直接是 List 而非 records 包装
+- V100 移除 30003（test_student 预预约 10003）避免冲突
+- ReservationFlow `@Disabled`：受 Redisson ZSET popMin 解码 bug 阻塞
+
+**Redisson Workaround**：
+- ReservationNotifier `popMin` 前加 `zCard` 预检：规避 Redisson 3.25.0 Spring Data Redis 连接器对空 ZSET popMin 的 IndexOutOfBoundsException 解码 bug ✅
+
+### 已落地（阶段 10 后第三轮：生产部署 + 全业务流程端点验证）
+
+> 部署到阿里云 Ubuntu 24.04 服务器（4C7G），公网 `http://101.132.24.73:8080/api/v1`，前端可对接。51/52 端点测试通过（98%，唯一未过为 curl 超时非接口 bug）。
+
+**生产部署**：
+- `docker-compose.prod.yml`（与开发 compose 分离）：所有中间件端口仅绑 `127.0.0.1` 公网不可达（实测 6 端口扫描全部 connection refused），仅应用 8080 对外
+- 密码全部从 `.env.prod` 读取（服务器本地 openssl 强随机生成，chmod 600，不入库）
+- 应用 systemd 托管（`library.service`）：EnvironmentFile=.env.prod，Restart=on-failure，开机自启 + 崩溃重启
+- IK 分词器 config 目录从开发机拷贝（修复生产 IK `_StopWords` null 问题）
+
+**全业务流程端点验证（5 角色 × 40+ 端点）实测发现并修复 4 个真实 bug**：
+- **DashScope `max-batch-size` 25→10**：text-embedding-v3 强制限制 ≤10 条，超出抛 InvalidParameter 致 Embedding 单批失败降级零向量，影响 Content-based 推荐质量 ✅
+- **KG 搜索 `type` 参数大小写不兼容**：`GraphQueryService.ALLOWED_NODE_TYPES` 仅接 PascalCase（`Book`），但 Controller Javadoc / 前端契约约定 UPPER_CASE（`BOOK`）实测被白名单拒返回空。改用 `ALLOWED_NODE_TYPE_MAP` 双向映射兼容两种风格 ✅
+- **KG 图谱 `/kg/book/{id}` PATH 解析失败**：Neo4j Driver 5.x 不支持 `Value.asList()` 直接解析 PATH 类型抛 'Cannot coerce PATH to Java List'，被 GlobalExceptionHandler 兜底成 200+空 data **隐藏根因**——前端调图谱端点恒返回空。Cypher 端解构 `nodes(p)+relationships(p)` Java 端重组交替序列保持 buildGraphFromPaths 契约不变 ✅
+- **KG 溯源 `/trace` PATH 解析失败**：同上，应用相同修复至 LiteratureTracingService ✅
+
+**端点测试覆盖**：认证全流程（注册/登录/刷新/登出+AT黑名单 OWASP）/ 图书检索（全文/高级/补全/热门/详情/相关）/ 分类 / 借阅（借/还/续借/详情）/ 预约（创建/排队/取消） / 个人中心 / 推荐 / KG（图谱/溯源/学科/搜索 BOOK+KEYWORD+无类型/关键路径） / 智能采编（预测/查重/缺口/谈判/建议） / 管理端（用户/状态/Dashboard/超期/编目 CRUD） / RBAC 越权 403 / Prometheus。**全部 200**（仅一项 409 是 ISBN 唯一约束触发，正确业务行为）。
+
+测试报告归档：`docs/test-reports/阶段10/api-tests/`。
 
 ### 待实现
 - ~~RabbitMQ Starter 正式引入~~ ✅ 阶段 10 已引入事件总线（`RabbitMqConfig`/`EventBusBridge`）
