@@ -98,7 +98,10 @@ public class ReservationServiceImpl implements ReservationService {
                 throw new BizException(ErrorCode.ALREADY_RESERVED);
             }
 
-            // 5. 持久化预约记录（queuePosition 为近似快照：锁保护下 = 已有 WAITING 数 + 1；
+            // 5. 清理逻辑删除残留（deleted=1 的 WAITING 记录仍占据 V6 UNIQUE 索引槽位）
+            reservationMapper.physicalCleanStaleWaiting(userId, bookId);
+
+            // 6. 持久化预约记录（queuePosition 为近似快照：锁保护下 = 已有 WAITING 数 + 1；
             //    权威实时位置由查询接口从 Redis 计算）
             int queuePosition = (int) existingCount + 1;
             Reservation reservation = new Reservation();
@@ -180,7 +183,11 @@ public class ReservationServiceImpl implements ReservationService {
         if (!reservation.getUserId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN);
         }
-        if (reservation.getStatus() != ReservationStatusEnum.WAITING) {
+        // 仅拒绝已完结的终态取消（WAITING/NOTIFIED 允许，已锁定/完成/过期/已取消暂不可逆）
+        if (reservation.getStatus() == ReservationStatusEnum.RESERVED
+                || reservation.getStatus() == ReservationStatusEnum.COMPLETED
+                || reservation.getStatus() == ReservationStatusEnum.EXPIRED
+                || reservation.getStatus() == ReservationStatusEnum.CANCELLED) {
             throw new BizException(ErrorCode.CONFLICT);
         }
 
@@ -195,8 +202,17 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         // 2. 更新 DB 状态（DB 为权威数据源）
+        //    若同用户同书已有 CANCELLED 记录（UNIQUE(user_id,book_id,status) 约束），
+        //    先逻辑删除当前 WAITING → 再物理清理 released=1 的记录释放索引槽位
         reservation.setStatus(ReservationStatusEnum.CANCELLED);
-        reservationMapper.updateById(reservation);
+        try {
+            reservationMapper.updateById(reservation);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.info("取消失败（唯一约束冲突），逻辑删除后物理清理释放索引槽位: reservationId={}, userId={}, bookId={}",
+                    reservationId, userId, reservation.getBookId());
+            reservationMapper.deleteById(reservationId);  // 设 deleted=1, status 保持 WAITING
+            reservationMapper.physicalCleanStaleWaiting(userId, reservation.getBookId());  // 物理删除
+        }
 
         log.info("预约已取消: reservationId={}, userId={}, bookId={}",
                 reservationId, userId, reservation.getBookId());

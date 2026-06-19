@@ -21,14 +21,14 @@ public class AcquisitionProperties {
     private int predictionMinMonths = 6;
     /** 预测历史月数（默认 12） */
     private int predictionHistoryMonths = 12;
-    /** 查重标题阈值（默认 0.8） */
-    private double duplicateTitleThreshold = 0.8;
+    /** 查重标题阈值（默认 0.6，WP-0：原 0.8 对短标题 NLP 分词偏严，已配合 LIKE 前置降低门槛） */
+    private double duplicateTitleThreshold = 0.6;
     /** 查重作者+标题阈值（默认 0.7） */
     private double duplicateAuthorTitleThreshold = 0.7;
     /** 缺口核心书 Top-N（默认 50） */
     private int gapCoreBookTopN = 50;
-    /** 缺口热度阈值（默认 0.7） */
-    private double gapHeatThreshold = 0.7;
+    /** 缺口热度阈值（默认 0.4，WP-0：原 0.7 过苛仅"几乎全借出"算缺口，已放宽并配合 avail/total<0.4） */
+    private double gapHeatThreshold = 0.4;
     /** 缺口覆盖率阈值（默认 0.8） */
     private double gapCoverageThreshold = 0.8;
     /** 谈判历史月数（默认 24） */

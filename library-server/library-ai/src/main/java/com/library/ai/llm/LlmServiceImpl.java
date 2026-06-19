@@ -1,6 +1,7 @@
 package com.library.ai.llm;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.library.ai.common.AiExceptionUtils;
 import com.library.ai.config.LlmConfig;
@@ -9,8 +10,12 @@ import com.library.ai.llm.dto.LlmChatResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.util.retry.Retry;
 
 import java.io.IOException;
@@ -73,6 +78,46 @@ public class LlmServiceImpl implements LlmService {
                     jsonContent.length() > 200 ? jsonContent.substring(0, 200) + "..." : jsonContent, e);
             throw new LlmUnavailableException(
                     "LLM JSON 输出解析失败: " + e.getMessage(), e, "PARSE_ERROR");
+        }
+    }
+
+    @Override
+    public Flux<String> chatStream(String prompt) {
+        // 流式模式：stream=true，DeepSeek 返回 text/event-stream，逐 chunk 推送 delta.content
+        LlmChatRequest request = buildRequest(prompt, false);
+        request.setStream(true);
+
+        return deepseekWebClient.post()
+                .uri("/v1/chat/completions")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                .map(ServerSentEvent::data)
+                .filter(data -> data != null && !data.isBlank() && !"[DONE]".equals(data.trim()))
+                .map(this::extractDeltaContent)
+                .filter(s -> s != null && !s.isEmpty())
+                .doOnError(e -> log.warn("DeepSeek 流式调用失败: {}", e.getMessage()))
+                .onErrorResume(e -> Flux.empty());  // 流式失败静默结束（调用方应有降级文案）
+    }
+
+    /**
+     * 从 DeepSeek stream chunk 中提取增量 token.
+     * <p>
+     * chunk 格式: {@code {"choices":[{"delta":{"content":"根"}}]}}
+     *
+     * @param data SSE event 的 data 字段（JSON 字符串）
+     * @return 增量 token；无 content 或解析失败时返回空串（Reactor .map 不允许返回 null，
+     *         空串由调用方 filter 过滤）
+     */
+    private String extractDeltaContent(String data) {
+        try {
+            JsonNode node = objectMapper.readTree(data);
+            JsonNode content = node.path("choices").path(0).path("delta").path("content");
+            return content.asText("");
+        } catch (Exception e) {
+            log.debug("解析 DeepSeek stream chunk 失败: {}", data);
+            return "";
         }
     }
 

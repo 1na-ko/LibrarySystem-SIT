@@ -18,6 +18,7 @@ import com.library.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -102,6 +103,113 @@ public class NegotiationAdvisorImpl implements NegotiationAdvisor {
         riskWarnings = List.of("注意隐性费用（如平台费/手续费）", "确认数据永久使用权条款",
                 "注意年度涨幅上限");
         return buildVO(resource, supplier, priceRange, strategies, keyTerms, riskWarnings);
+    }
+
+    @Override
+    public PriceRangeDTO calculatePriceRange(Long resourceId, Long supplierId) {
+        ElectronicResource resource = resourceMapper.selectById(resourceId);
+        if (resource == null || (resource.getDeleted() != null && resource.getDeleted() == 1)) {
+            throw new BizException(ErrorCode.ELECTRONIC_RESOURCE_NOT_FOUND);
+        }
+        Supplier supplier = supplierMapper.selectById(supplierId);
+        if (supplier == null || (supplier.getDeleted() != null && supplier.getDeleted() == 1)) {
+            throw new BizException(ErrorCode.SUPPLIER_NOT_FOUND);
+        }
+        List<DealRecord> historyDeals = dealRecordMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<DealRecord>()
+                        .eq(DealRecord::getSupplierId, supplierId)
+                        .eq(DealRecord::getCategory, resource.getCategory())
+                        .ge(DealRecord::getDealDate,
+                                LocalDate.now().minusMonths(props.getNegotiationHistoryMonths()))
+                        .eq(DealRecord::getDeleted, 0));
+        return calculatePriceRange(historyDeals, resource.getAnnualBudget());
+    }
+
+    @Override
+    public Flux<String> streamSuggestionText(Long resourceId, Long supplierId) {
+        ElectronicResource resource = resourceMapper.selectById(resourceId);
+        Supplier supplier = supplierMapper.selectById(supplierId);
+        if (resource == null || supplier == null) {
+            return Flux.just("资源或供应商不存在，请检查参数。");
+        }
+        List<DealRecord> historyDeals = dealRecordMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<DealRecord>()
+                        .eq(DealRecord::getSupplierId, supplierId)
+                        .eq(DealRecord::getCategory, resource.getCategory())
+                        .ge(DealRecord::getDealDate,
+                                LocalDate.now().minusMonths(props.getNegotiationHistoryMonths()))
+                        .eq(DealRecord::getDeleted, 0));
+        PriceRangeDTO pr = calculatePriceRange(historyDeals, resource.getAnnualBudget());
+
+        if (llmService == null) {
+            // LLM 不可用：返回降级文案
+            return Flux.just(buildFallbackText(resource, supplier, pr));
+        }
+        String prompt = buildStreamPrompt(resource, supplier, pr, historyDeals.size());
+        return llmService.chatStream(prompt);
+    }
+
+    /**
+     * 构建流式 Prompt — 输出纯文本（非 JSON），便于逐 token 流式渲染.
+     */
+    private String buildStreamPrompt(ElectronicResource r, Supplier s, PriceRangeDTO pr, int dealCount) {
+        return String.format("""
+                你是高校图书馆电子资源采购谈判顾问。请根据以下信息生成一份结构化的谈判建议报告，
+                以纯文本（Markdown 风格小标题）输出，不要使用 JSON 或代码块标记。
+
+                ## 资源信息
+                - 名称：%s
+                - 类别：%s
+                - 年度预算：%s 元
+                - 预计使用人数：%d
+
+                ## 供应商画像
+                - 名称：%s
+                - 合作年限：%d 年
+                - 可靠度评分：%s
+                - 市场份额：%s
+
+                ## 参考价位
+                - 最低价：%s 元
+                - 最高价：%s 元
+                - 中位价：%s 元
+                - 建议报价：%s 元
+
+                ## 历史成交记录数：%d 条
+
+                请按以下结构输出（每节用换行分隔，每节内 3-5 条要点，每条 30-60 字）：
+
+                【谈判策略】（按优先级降序，标注 [P数字] 前缀，如 [P90] 锚定低价：…）
+                【关键条款】（合同/SLA/数据使用权等需重点协商的条款）
+                【风险预警】（隐性费用、价格陷阱、续约风险等）
+
+                直接输出报告内容，不要寒暄不要总结，语气专业简洁。""",
+                r.getName(), r.getCategory(), r.getAnnualBudget(), r.getUserCount(),
+                s.getName(), s.getPartnershipYears(), s.getReliability(), s.getMarketShare(),
+                pr.getFloorPrice(), pr.getCeilingPrice(), pr.getMedianPrice(), pr.getSuggestedOffer(),
+                dealCount);
+    }
+
+    private String buildFallbackText(ElectronicResource r, Supplier s, PriceRangeDTO pr) {
+        return String.format("""
+                【谈判策略】
+                [P90] 标准谈判：建议按中位价 %s 元以下报价，预留 15%%-20%% 谈判空间。
+                [P80] 长期合作：合作 %d 年的供应商，可争取额外 10%%-15%% 折扣。
+                [P70] 多源竞价：市场份额 %s 的供应商，可引入备选议价。
+
+                【关键条款】
+                · 订阅范围与权限
+                · 续约条款与年度涨幅上限（建议 ≤3%%）
+                · 数据永久使用权（合同终止后存档权）
+                · SLA 服务级别协议
+
+                【风险预警】
+                · 注意隐性费用（平台费/手续费/技术支持费）
+                · 确认数据永久使用权条款
+                · 防范年度涨幅超出预期
+                """, pr.getMedianPrice(),
+                s.getPartnershipYears() != null ? s.getPartnershipYears() : 0,
+                s.getMarketShare() != null ? s.getMarketShare() : "未知");
     }
 
     private PriceRangeDTO calculatePriceRange(List<DealRecord> deals, BigDecimal budget) {

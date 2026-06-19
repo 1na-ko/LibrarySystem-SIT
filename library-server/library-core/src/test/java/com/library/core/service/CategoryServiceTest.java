@@ -148,4 +148,63 @@ class CategoryServiceTest {
                     .hasMessageContaining("分类不存在");
         }
     }
+
+    @Nested
+    @DisplayName("collectDescendantIds (WP-0)")
+    class CollectDescendantIds {
+
+        @Test
+        @DisplayName("顶级分类应返回自身+所有子孙")
+        void shouldCollectAllDescendantsForRoot() {
+            // 计算机科学(1) -> 编程语言(101) -> 编程语言深层(10101)
+            Category deep = new Category();
+            deep.setId(10101L);
+            deep.setName("Java");
+            deep.setParentId(101L);
+            deep.setSortOrder(1);
+
+            when(categoryMapper.selectList(null))
+                    .thenReturn(List.of(computerScience, programming, literature, deep));
+
+            List<Long> ids = categoryService.collectDescendantIds(1L);
+
+            assertThat(ids).containsExactlyInAnyOrder(1L, 101L, 10101L);
+        }
+
+        @Test
+        @DisplayName("叶子分类应只返回自身")
+        void shouldReturnSelfWhenLeaf() {
+            when(categoryMapper.selectList(null))
+                    .thenReturn(List.of(computerScience, programming, literature));
+
+            List<Long> ids = categoryService.collectDescendantIds(101L);
+
+            assertThat(ids).containsExactly(101L);
+        }
+
+        @Test
+        @DisplayName("不存在的分类应返回自身（容错）")
+        void shouldReturnSelfWhenNotFound() {
+            when(categoryMapper.selectList(null))
+                    .thenReturn(List.of(computerScience));
+
+            List<Long> ids = categoryService.collectDescendantIds(9999L);
+
+            assertThat(ids).containsExactly(9999L);
+        }
+
+        @Test
+        @DisplayName("null 输入应返回空列表")
+        void shouldReturnEmptyWhenNull() {
+            assertThat(categoryService.collectDescendantIds(null)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("分类表为空时应只返回自身")
+        void shouldReturnSelfWhenTableEmpty() {
+            when(categoryMapper.selectList(null)).thenReturn(Collections.emptyList());
+
+            assertThat(categoryService.collectDescendantIds(1L)).containsExactly(1L);
+        }
+    }
 }

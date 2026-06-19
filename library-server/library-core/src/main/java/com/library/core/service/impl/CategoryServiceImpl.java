@@ -106,4 +106,43 @@ public class CategoryServiceImpl implements CategoryService {
                 .sortOrder(entity.getSortOrder())
                 .build();
     }
+
+    @Override
+    public List<Long> collectDescendantIds(Long parentId) {
+        if (parentId == null) {
+            return List.of();
+        }
+        // 一次加载全表（分类规模通常 < 1000，O(n) 内存构建优于递归 SQL）
+        List<Category> all = categoryMapper.selectList(null);
+        if (all.isEmpty()) {
+            return List.of(parentId);
+        }
+        // parentId → children IDs
+        Map<Long, List<Long>> childrenMap = new java.util.HashMap<>();
+        for (Category c : all) {
+            if (c.getParentId() != null) {
+                childrenMap.computeIfAbsent(c.getParentId(), k -> new ArrayList<>()).add(c.getId());
+            }
+        }
+        // BFS 收集
+        List<Long> result = new ArrayList<>();
+        result.add(parentId);
+        java.util.Deque<Long> queue = new java.util.ArrayDeque<>();
+        queue.add(parentId);
+        java.util.Set<Long> visited = new java.util.HashSet<>();
+        visited.add(parentId);
+        while (!queue.isEmpty()) {
+            Long cur = queue.poll();
+            List<Long> kids = childrenMap.get(cur);
+            if (kids != null) {
+                for (Long kid : kids) {
+                    if (visited.add(kid)) {
+                        result.add(kid);
+                        queue.add(kid);
+                    }
+                }
+            }
+        }
+        return result;
+    }
 }
