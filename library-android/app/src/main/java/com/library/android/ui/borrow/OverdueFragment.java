@@ -8,47 +8,35 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.library.android.R;
 import com.library.android.databinding.FragmentOverdueBinding;
 import com.library.android.databinding.ItemBorrowRecordBinding;
 import com.library.android.model.BorrowRecordVO;
-import com.library.android.repository.BorrowRepository;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.common.PagingScrollListener;
 import com.library.android.ui.main.MainActivity;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.library.android.viewmodel.OverdueViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
-
-import javax.inject.Inject;
 
 /**
- * 超期管理 Fragment — 管理员查看所有超期未还记录（人员 B 主导）.
+ * 超期管理 Fragment — 管理员查看所有超期未还记录（WP2.2 重构为 MVVM）.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class OverdueFragment extends Fragment {
+public class OverdueFragment extends BaseFragment {
 
     private FragmentOverdueBinding binding;
+    private OverdueViewModel viewModel;
     private OverdueAdapter adapter;
     private PagingScrollListener scrollListener;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
-    private int currentPage = 1;
-    private int totalPages = 0;
-    private boolean isLoading = false;
-
-    @Inject
-    BorrowRepository borrowRepository;
 
     @Nullable
     @Override
@@ -61,9 +49,14 @@ public class OverdueFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewModel = new ViewModelProvider(this).get(OverdueViewModel.class);
+
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_overdue));
+
+        // WP-8：错误事件订阅（原版无 observeError，加载失败无提示）
+        observeError(viewModel.getErrorEvent());
 
         adapter = new OverdueAdapter();
-        ((MainActivity) requireActivity()).setGlobalTitle("超期管理");
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
         binding.recyclerView.setLayoutManager(layoutManager);
         binding.recyclerView.setAdapter(adapter);
@@ -71,64 +64,37 @@ public class OverdueFragment extends Fragment {
         scrollListener = new PagingScrollListener(layoutManager) {
             @Override
             protected void loadMore() {
-                loadMoreData();
+                if (viewModel.hasMore()) {
+                    viewModel.loadNextPage();
+                }
             }
         };
         binding.recyclerView.addOnScrollListener(scrollListener);
 
-        loadData();
-    }
+        // 观察数据
+        viewModel.getOverdueList().observe(getViewLifecycleOwner(), records -> {
+            if (records != null) {
+                adapter.submitListSync(records);
+                binding.layoutEmpty.setVisibility(records.isEmpty() ? View.VISIBLE : View.GONE);
+                scrollListener.setHasMore(viewModel.hasMore());
+            }
+        });
 
-    private void loadData() {
-        currentPage = 1;
-        binding.textLoading.setVisibility(View.VISIBLE);
+        // 观察加载状态
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state -> {
+            if (state == null) return;
+            binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE);
+            if (state == LoadingState.ERROR) {
+                binding.layoutEmpty.setVisibility(View.GONE);
+            }
+        });
 
-        disposables.add(borrowRepository.getOverdueRecords(currentPage, 20)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    if (binding == null) return;
-                    binding.textLoading.setVisibility(View.GONE);
-                    if (result != null && result.isSuccess() && result.getData() != null) {
-                        List<BorrowRecordVO> records = result.getData().getRecords();
-                        adapter.submitListSync(records);
-                        totalPages = result.getData().getTotalPages();
-                        binding.layoutEmpty.setVisibility(records.isEmpty() ? View.VISIBLE : View.GONE);
-                        scrollListener.setHasMore(!records.isEmpty());
-                    }
-                }, throwable -> {
-                    if (binding == null) return;
-                    binding.textLoading.setVisibility(View.GONE);
-                }));
-    }
-
-    private void loadMoreData() {
-        if (isLoading || currentPage >= totalPages) return;
-        isLoading = true;
-        currentPage++;
-
-        disposables.add(borrowRepository.getOverdueRecords(currentPage, 20)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    isLoading = false;
-                    scrollListener.setLoading(false);
-                    if (result != null && result.isSuccess() && result.getData() != null) {
-                        List<BorrowRecordVO> current = new ArrayList<>(adapter.getCurrentList());
-                        current.addAll(result.getData().getRecords());
-                        adapter.submitListSync(current);
-                        scrollListener.setHasMore(currentPage < result.getData().getTotalPages());
-                    }
-                }, throwable -> {
-                    isLoading = false;
-                    scrollListener.setLoading(false);
-                }));
+        viewModel.loadFirstPage();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 
@@ -153,9 +119,11 @@ public class OverdueFragment extends Fragment {
             b.textBorrowDate.setText(item.getBorrowDate());
             b.textDueDate.setText(item.getDueDate());
             b.textStatus.setText(b.getRoot().getContext().getString(R.string.status_overdue_short));
-            if (item.getFineAmount() != null && item.getFineAmount() > 0) {
+            if (item.getFineAmount() != null
+                    && item.getFineAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
                 b.textFine.setVisibility(View.VISIBLE);
-                b.textFine.setText(b.getRoot().getContext().getString(R.string.fine_overdue_format, item.getFineAmount()));
+                b.textFine.setText(b.getRoot().getContext().getString(
+                        R.string.fine_overdue_format, item.getFineAmountDouble()));
             }
         }
 
@@ -166,7 +134,7 @@ public class OverdueFragment extends Fragment {
             }
             @Override
             public boolean areContentsTheSame(@NonNull BorrowRecordVO o, @NonNull BorrowRecordVO n) {
-                return o.getStatus().equals(n.getStatus());
+                return java.util.Objects.equals(o.getStatus(), n.getStatus());
             }
         }
     }

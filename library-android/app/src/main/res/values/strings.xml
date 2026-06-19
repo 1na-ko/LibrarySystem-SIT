@@ -4,9 +4,58 @@
     <string name="appbar_scrolling_view_behavior" translatable="false">com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior</string>
 
     <!-- 底部导航 -->
+    <string name="nav_home">首页</string>
     <string name="nav_search">搜索</string>
     <string name="nav_borrow">借阅</string>
     <string name="nav_profile">我的</string>
+
+    <!-- WP-1：二级页面 toolbar -->
+    <string name="toolbar_back">返回</string>
+    <string name="toolbar_action">操作</string>
+
+    <!-- WP-1：nav_graph 各 destination 标签（资源化） -->
+    <string name="page_title_search">搜索</string>
+    <string name="page_title_login">登录</string>
+    <string name="page_title_register">注册</string>
+    <string name="page_title_book_detail">图书详情</string>
+    <string name="page_title_advanced_search">高级搜索</string>
+    <string name="page_title_category_tree">分类浏览</string>
+    <string name="page_title_hot_books">热门图书</string>
+    <string name="hot_books_filter_category">筛选分类</string>
+    <string name="search_results_title">搜索结果</string>
+    <string name="search_no_results">未找到匹配的图书，请尝试其他关键词</string>
+    <string name="search_again">继续搜索</string>
+    <string name="page_title_edit_profile">编辑资料</string>
+    <string name="page_title_borrow_history">借阅历史</string>
+    <string name="page_title_borrow_stats">借阅统计</string>
+    <string name="page_title_recommendations">个性化推荐</string>
+    <string name="page_title_borrow_detail">借阅详情</string>
+    <string name="page_title_overdue">超期管理</string>
+    <string name="page_title_reservations">我的预约</string>
+    <string name="page_title_kg">知识图谱</string>
+    <string name="page_title_kg_trace">文献溯源</string>
+    <string name="page_title_kg_subject">学科网络</string>
+    <string name="page_title_kg_entity">实体搜索</string>
+    <string name="page_title_admin_users">用户管理</string>
+    <string name="page_title_admin_dashboard">数据看板</string>
+    <string name="page_title_acquisition">智能采编</string>
+    <string name="page_title_purchase_predict">采购预测</string>
+    <string name="page_title_duplicate_check">图书查重</string>
+    <string name="page_title_gap_analysis">缺口分析</string>
+    <string name="page_title_negotiation">智能谈判</string>
+    <string name="page_title_negotiation_detail">谈判建议详情</string>
+
+    <!-- 首页（WP1 混合首页） -->
+    <string name="home_title">图书馆</string>
+    <string name="home_section_recommend">为你推荐</string>
+    <string name="home_section_hot">热门图书</string>
+    <string name="home_section_category">分类导航</string>
+    <string name="home_view_all_recommend">查看全部推荐</string>
+    <string name="home_view_all_hot">查看全部 ▸</string>
+    <string name="home_view_all_category">浏览全部 ▸</string>
+    <string name="home_load_failed">加载失败，请下拉重试</string>
+    <string name="home_recommend_empty">借几本书后，这里会出现专属推荐</string>
+    <string name="home_search_hint">点击搜索图书</string>
 
     <!-- 借阅 -->
     <string name="tab_all">全部</string>
@@ -54,6 +103,7 @@
     <string name="confirm_cancel_reservation">确认取消预约</string>
     <string name="cannot_cancel">当前状态不可取消</string>
     <string name="cancel_success">取消成功</string>
+    <string name="cancel_failed">取消失败，请稍后重试</string>
     <string name="queue_position_format">排队第%d位</string>
     <string name="status_waiting">等待中</string>
     <string name="status_notified">已通知</string>
@@ -73,6 +123,16 @@
     <string name="chip_author">作者</string>
     <string name="chip_keyword">关键词</string>
     <string name="chip_subject">学科</string>
+    <string name="kg_tab_trace">文献溯源</string>
+    <string name="kg_tab_subject">学科网络</string>
+    <string name="kg_tab_entity">实体搜索</string>
+    <string name="kg_relation_authored_by">作者</string>
+    <string name="kg_relation_has_keyword">关键词</string>
+    <string name="kg_relation_belongs_to">属于</string>
+    <string name="kg_relation_related_to">关联</string>
+    <string name="kg_relation_published_in">出版</string>
+    <string name="kg_relation_co_cited">共引</string>
+    <string name="kg_relation_cites">引用</string>
 
     <!-- 系统管理 -->
     <string name="search_user_hint">搜索用户名/姓名</string>
@@ -113,10 +173,13 @@
     <string name="location_hint">馆藏位置</string>
     <string name="description_hint">图书简介</string>
     <string name="keywords_hint">关键词（逗号分隔）</string>
+    <string name="category_hint">分类（点击选择）</string>
 
     <!-- 条码扫描 -->
     <string name="scan_isbn_hint">将 ISBN 条码置于取景框内</string>
     <string name="scan_result_format">扫描结果: %s</string>
+    <string name="scan_status_hint">将 ISBN 条码对准取景框中央</string>
+    <string name="scan_camera_permission_denied">需要摄像头权限才能扫码，请在系统设置中授权后重试</string>
 
     <!-- 通用 -->
     <string name="retry">重试</string>
@@ -135,6 +198,12 @@
     <string name="validation_isbn_required">ISBN 不能为空</string>
     <string name="no_graph_data">暂无图谱数据</string>
     <string name="no_trace_data">暂无溯源数据</string>
+    <string name="entity_search_empty">未搜索到匹配的知识实体</string>
+    <string name="overdue_hint">本页展示所有超期未还记录，罚款由系统每日自动计算并记录，无需手动操作。</string>
+    <string name="profile_email_invalid">邮箱格式不正确</string>
+    <string name="profile_phone_invalid">手机号格式不正确（11 位）</string>
+    <string name="profile_save_failed">保存失败，请稍后重试</string>
+    <string name="borrow_duration_format">借阅: %1$s — %2$s</string>
     <string name="render_failed_format">渲染失败: %s</string>
     <string name="default_subject">计算机科学</string>
     <string name="source_book_label">来源图书</string>
@@ -159,4 +228,190 @@
     <string name="current_borrows_label">当前借阅</string>
     <string name="total_borrows_label">历史借阅</string>
     <string name="overdue_label">超期次数</string>
+    <string name="profile_admin_tools">管理工具</string>
+    <string name="profile_user_mgmt">用户管理</string>
+    <string name="profile_overdue_mgmt">超期管理</string>
+    <string name="profile_login_btn">登录</string>
+    <string name="profile_logout_btn">退出登录</string>
+    <string name="profile_my_reservations">我的预约</string>
+
+    <!-- 会话与全局错误 -->
+    <string name="session_expired_toast">登录已过期，请重新登录</string>
+    <string name="error_network">网络异常，请检查连接</string>
+    <string name="error_permission_denied">权限不足，无法执行此操作</string>
+    <string name="error_service_unavailable">服务暂时不可用，请稍后重试</string>
+    <string name="error_validation">提交内容有误，请检查输入</string>
+    <string name="error_unknown">发生未知错误，请稍后重试</string>
+
+    <!-- 图书详情页 -->
+    <string name="borrow_this_book">借阅此书</string>
+    <string name="reserve_this_book">预约此书</string>
+    <string name="view_knowledge_graph">查看知识图谱</string>
+    <string name="section_description">图书简介</string>
+    <string name="section_keywords">关键词</string>
+    <string name="section_related_books">相关推荐</string>
+    <string name="detail_avail_format">可借 %1$d / %2$d 册</string>
+    <string name="detail_reservation_format">%d 人预约</string>
+    <string name="reserve_success_format">预约成功，排队第 %d 位</string>
+    <string name="reserve_failed">预约失败，请稍后重试</string>
+
+    <!-- 管理端 Dashboard（C.2） -->
+    <string name="dashboard_title">数据看板</string>
+    <string name="dashboard_today_borrows">今日借阅</string>
+    <string name="dashboard_today_returns">今日归还</string>
+    <string name="dashboard_today_overdue">今日超期</string>
+    <string name="dashboard_active_borrowers">活跃读者</string>
+    <string name="dashboard_month_trend">本月借/还趋势</string>
+    <string name="dashboard_hot_categories">热门分类 Top-10</string>
+    <string name="dashboard_rebuild_kg">重建知识图谱</string>
+    <string name="dashboard_rebuild_kg_confirm">图书信息变更后图谱未更新时可手动触发重建；重建将耗时较长，确定继续吗？</string>
+    <string name="dashboard_rebuild_kg_running">重建中…</string>
+    <string name="dashboard_rebuild_kg_done_format">图谱重建完成，已处理 %d 本图书</string>
+
+    <!-- 智能采编（C.1） -->
+    <string name="acquisition_title">智能采编</string>
+    <string name="acquisition_predict">采购预测</string>
+    <string name="acquisition_predict_desc">基于学科借阅趋势预测未来需求</string>
+    <string name="acquisition_duplicate">图书查重</string>
+    <string name="acquisition_duplicate_desc">通过 ISBN/标题/作者识别重复采购</string>
+    <string name="acquisition_gap">缺口分析</string>
+    <string name="acquisition_gap_desc">学科核心书复本不足分析</string>
+    <string name="acquisition_negotiation">智能谈判</string>
+    <string name="acquisition_negotiation_desc">LLM 生成的谈判策略与建议</string>
+    <string name="acquisition_subject_id_hint">学科 ID</string>
+    <string name="acquisition_months_hint">预测月数（1-12）</string>
+    <string name="acquisition_isbn_hint">ISBN（可选）</string>
+    <string name="acquisition_title_hint">书名</string>
+    <string name="acquisition_author_hint">作者（可选）</string>
+    <string name="acquisition_resource_id_hint">资源 ID</string>
+    <string name="acquisition_supplier_id_hint">供应商 ID</string>
+    <string name="acquisition_run">查询</string>
+    <string name="acquisition_create">创建谈判</string>
+    <string name="acquisition_no_data">暂无数据</string>
+    <string name="acquisition_select_both">请选择电子资源与供应商</string>
+    <string name="acquisition_select_resource">选择电子资源</string>
+    <string name="acquisition_select_supplier">选择供应商</string>
+    <string name="acquisition_resource_loading">电子资源加载中，请稍后重试</string>
+    <string name="acquisition_supplier_loading">供应商加载中，请稍后重试</string>
+    <string name="acquisition_select_subject">选择学科分类</string>
+    <string name="acquisition_analyzing">分析中…</string>
+    <string name="acquisition_category_loading">分类加载中，请稍后</string>
+
+    <!-- 推荐加载态（LLM 生成理由耗时） -->
+    <string name="recommend_loading_hint">AI 正在为您生成个性化推荐…</string>
+    <string name="recommend_loading_subhint">基于您的借阅历史分析，约需 10-20 秒</string>
+    <string name="recommend_load_failed">推荐生成失败，请下拉重试</string>
+    <string name="recommend_ai_title">AI 推荐助手</string>
+    <string name="recommend_ai_initial">正在为您挑选合适的图书…</string>
+    <string name="recommend_empty">还没有推荐，多借几本书再来看看吧。</string>
+    <string name="recommend_books_loading">正在精选推荐书目…</string>
+
+    <!-- ========== WP3.1：字符串外部化 — 登录/注册/个人中心/搜索/采编 ========== -->
+
+    <!-- 登录页 -->
+    <string name="login_title">图书馆管理系统</string>
+    <string name="login_subtitle">学术 · 严谨 · 知识</string>
+    <string name="login_username_hint">学号/工号</string>
+    <string name="login_password_hint">密码</string>
+    <string name="login_btn">登录</string>
+    <string name="login_no_account">还没有账号？立即注册</string>
+
+    <!-- 注册页 -->
+    <string name="register_title">用户注册</string>
+    <string name="register_username_hint">学号/工号</string>
+    <string name="register_realname_hint">真实姓名</string>
+    <string name="register_email_hint">邮箱</string>
+    <string name="register_phone_hint">手机号（选填）</string>
+    <string name="register_password_hint">密码</string>
+    <string name="register_btn">注册</string>
+    <string name="register_has_account">已有账号？去登录</string>
+    <string name="register_fill_required">请填写所有必填项</string>
+    <string name="register_phone_invalid">手机号格式不正确</string>
+
+    <!-- 个人中心 -->
+    <string name="profile_current_borrows">当前借阅</string>
+    <string name="profile_total_borrows">累计借阅</string>
+    <string name="profile_overdue_count">超期</string>
+    <string name="profile_edit_profile">编辑资料</string>
+    <string name="profile_email_hint">邮箱</string>
+    <string name="profile_phone_hint">手机号</string>
+    <string name="profile_not_logged_in">未登录</string>
+
+    <!-- 搜索页 -->
+    <string name="clear">清空</string>
+    <string name="search_hint">搜索图书、作者、ISBN</string>
+    <string name="advanced_search">高级搜索</string>
+    <string name="category_browse">分类浏览</string>
+    <string name="hot_search">热门搜索</string>
+    <string name="category_nav">分类导航</string>
+    <string name="hot_books">热门图书</string>
+    <string name="search_result_count">找到 %d 条结果</string>
+    <string name="search_result_with_keyword">%1$s "%2$s" 找到 %3$d 条结果</string>
+    <string name="no_borrow_trace">还没有借阅轨迹，去发现一本好书吧。</string>
+    <string name="network_error_msg">连接中断，请检查网络</string>
+    <string name="loading_text">— 加载中 —</string>
+    <string name="no_category_data">暂无分类数据</string>
+    <string name="no_hot_books">暂无热门图书</string>
+    <string name="no_borrow_records">暂无借阅记录</string>
+    <string name="no_overdue_records">暂无超期记录</string>
+    <string name="no_reservation_records">还没有预约记录</string>
+    <string name="no_subject_network">暂无学科网络数据</string>
+    <string name="render_failed">渲染失败: </string>
+    <string name="load_failed_prefix">加载失败：</string>
+
+    <!-- 高级搜索 -->
+    <string name="as_title_hint">书名</string>
+    <string name="as_author_hint">作者</string>
+    <string name="as_isbn_hint">ISBN</string>
+    <string name="as_publisher_hint">出版社</string>
+    <string name="as_year_from">起始年份</string>
+    <string name="as_year_to">结束年份</string>
+    <string name="as_only_available">仅显示可借图书</string>
+    <string name="as_title">高级搜索</string>
+
+    <!-- 借阅统计 -->
+    <string name="stats_total_fines">罚款总额</string>
+    <string name="stats_category_dist">分类分布</string>
+    <string name="stats_monthly_trend">月度趋势</string>
+    <string name="stats_title">借阅统计</string>
+
+    <!-- 谈判详情 -->
+    <string name="negotiation_price_ref">参考价位</string>
+    <string name="negotiation_price_loading">价格区间加载中...</string>
+    <string name="negotiation_ai_advisor">AI 谈判顾问</string>
+    <string name="negotiation_ai_drafting">AI 正在为您起草谈判策略、关键条款与风险预警...</string>
+    <string name="negotiation_create_hint">创建会话后将跳转至建议详情</string>
+    <string name="negotiation_price_format">底价：¥%1$s\n中位价：¥%2$s\n顶价：¥%3$s\n建议报价：¥%4$s</string>
+
+    <!-- 通用 -->
+    <string name="avail_copies_format">可借 %d 册</string>
+
+    <!-- 采编 -->
+    <string name="acquisition_enter_isbn_or_title">请至少输入 ISBN 或书名</string>
+    <string name="acquisition_searching">查询中...</string>
+    <string name="acquisition_duplicate_found">⚠ 检测到 %d 本可能重复的图书</string>
+    <string name="acquisition_no_duplicate">✓ 未发现重复图书</string>
+    <string name="acquisition_duplicate_hint">输入 ISBN 或书名后点击查重，结果以卡片展示</string>
+    <string name="acquisition_gap_hint">选择一个学科分类后点击查询，查看馆藏缺口分析</string>
+    <string name="acquisition_gap_books">缺口图书</string>
+    <string name="acquisition_gap_owned">已馆藏: %1$d</string>
+    <string name="acquisition_gap_total">核心书: %1$d</string>
+    <string name="acquisition_coverage_format">覆盖率 %d%%</string>
+    <string name="acquisition_similarity_format">相似度 %d%%</string>
+    <string name="acquisition_match_strategy">匹配策略: </string>
+    <string name="acquisition_predict_select_subject">请选择学科分类</string>
+    <string name="acquisition_predict_months_error">月数格式错误</string>
+    <string name="acquisition_predict_category_loading">分类加载中，请稍后</string>
+    <string name="acquisition_predict_select_category">选择学科分类</string>
+
+    <!-- 图书编目 -->
+    <string name="bookedit_category_load_failed">分类加载失败</string>
+    <string name="bookedit_category_loading">分类加载中，请稍后再试</string>
+    <string name="bookedit_select_category">请选择分类</string>
+
+    <!-- 借阅状态 -->
+    <string name="borrow_overdue_status">已超期</string>
+    <string name="borrow_active_status">借阅中</string>
+    <string name="borrow_returned_status">已归还</string>
+    <string name="borrow_lost_status">已丢失</string>
 </resources>

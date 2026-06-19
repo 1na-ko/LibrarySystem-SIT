@@ -20,7 +20,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="高级搜索"
+                android:text="@string/as_title"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary" />
@@ -30,7 +30,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.Library.TextInputLayout"
-                android:hint="书名"
+                android:hint="@string/as_title_hint"
                 android:layout_marginTop="@dimen/space_xl">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -47,7 +47,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.Library.TextInputLayout"
-                android:hint="作者"
+                android:hint="@string/as_author_hint"
                 android:layout_marginTop="@dimen/space_md">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -64,7 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.Library.TextInputLayout"
-                android:hint="ISBN"
+                android:hint="@string/as_isbn_hint"
                 android:layout_marginTop="@dimen/space_md">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -81,7 +81,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.Library.TextInputLayout"
-                android:hint="出版社"
+                android:hint="@string/as_publisher_hint"
                 android:layout_marginTop="@dimen/space_md">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -149,7 +149,7 @@
                 android:id="@+id/switchOnlyAvailable"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="仅显示可借图书"
+                android:text="@string/as_only_available"
                 android:textColor="@color/text_secondary"
                 android:layout_marginTop="@dimen/space_md" />
 

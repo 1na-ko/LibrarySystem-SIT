@@ -2,6 +2,8 @@ package com.library.android;
 
 import android.app.Application;
 
+import androidx.appcompat.app.AppCompatDelegate;
+
 import dagger.hilt.android.HiltAndroidApp;
 
 /**
@@ -19,6 +21,8 @@ public class LibraryApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Hilt 自动注入，全局初始化逻辑在此处追加
+        // D.4：全局暗色模式跟随系统（替代之前按 destination 切换的做法，统一体验）
+        // 各页面如需强制特定主题（如 KG WebView），通过 ThemeManager.wrapContext 局部应用
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
     }
 }

@@ -7,6 +7,16 @@
     android:orientation="vertical"
     android:background="@color/bg_primary">
 
+    <!-- WP-8：功能说明，消除"超期管理有啥用"疑惑 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/space_md"
+        android:background="@color/bg_card"
+        android:text="@string/overdue_hint"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp" />
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -30,7 +40,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="暂无超期记录"
+                android:text="@string/no_overdue_records"
                 android:textColor="@color/text_tertiary"
                 android:textSize="15sp" />
 
@@ -41,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="— 加载中 —"
+            android:text="@string/loading_text"
             android:textColor="@color/text_placeholder"
             android:textSize="15sp"
             android:visibility="gone" />

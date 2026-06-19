@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  二级页面通用 toolbar（WP-1 治本：让二级页面拥有独立 AppBar，不再复用 Activity 级全局 header）.
+
+  使用方式：在二级页面 layout 顶部 <include layout="@layout/page_toolbar" />，
+  Fragment 继承 BaseFragment 后调 setupToolbar(R.string.xxx) 绑定返回 + 标题居中.
+
+  布局：返回按钮（左 40dp）+ 标题（约束到父容器居中，与按钮无依赖）+ 操作按钮槽位（右 40dp 默认隐藏）.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/page_toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:background="?attr/colorSurface">
+
+    <ImageButton
+        android:id="@+id/btnPageBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="@dimen/space_sm"
+        android:src="@drawable/ic_back_vector"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/toolbar_back"
+        app:tint="?android:attr/textColorPrimary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <TextView
+        android:id="@+id/tvPageTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="56dp"
+        android:layout_marginEnd="56dp"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="18sp"
+        android:fontFamily="serif"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:gravity="center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 右侧操作按钮槽位（默认隐藏，需要时在 Fragment 内显示并设置 icon/listener） -->
+    <ImageButton
+        android:id="@+id/btnPageAction"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="@dimen/space_sm"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:visibility="gone"
+        app:tint="?android:attr/textColorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:ignore="ContentDescription" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/border_light"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

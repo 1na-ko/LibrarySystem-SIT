@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.google.android.material.chip.Chip;
 import com.library.android.R;
 import com.library.android.databinding.FragmentHotBooksBinding;
 import com.library.android.model.BookSimpleVO;
@@ -20,6 +19,7 @@ import com.library.android.repository.BookRepository;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.main.MainActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -31,6 +31,9 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 热门图书排行榜 Fragment.
+ *
+ * <p>WP-14：标签改下拉菜单（MaterialAutoComplete + ExposedDropdownMenu），
+ * 节省空间、交互优雅（原 ChipGroup+HorizontalScrollView）。
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -46,6 +49,7 @@ public class HotBooksFragment extends Fragment {
     BookRepository bookRepository;
 
     private final CompositeDisposable disposables = new CompositeDisposable();
+    private final List<CategoryVO> flatCategories = new ArrayList<>();
 
     @Nullable
     @Override
@@ -59,14 +63,13 @@ public class HotBooksFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("热门图书");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_hot_books));
 
         adapter = new BookAdapter();
         binding.rvHotBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvHotBooks.setAdapter(adapter);
 
         loadCategories();
-        loadHotBooks(null);
     }
 
     private void loadCategories() {
@@ -78,43 +81,47 @@ public class HotBooksFragment extends Fragment {
                     result -> {
                         if (binding == null) return;
                         if (result.isSuccess() && result.getData() != null) {
-                            // 添加"全部"选项
-                            Chip allChip = new Chip(requireContext());
-                            allChip.setText("全部");
-                            allChip.setCheckable(true);
-                            allChip.setChecked(true);
-                            allChip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                                if (isChecked) {
-                                    selectedCategoryId = null;
-                                    loadHotBooks(null);
-                                }
-                            });
-                            binding.chipGroupCategories.addView(allChip);
+                            flatCategories.clear();
+                            flatten(result.getData());
 
-                            for (CategoryVO category : result.getData()) {
-                                Chip chip = new Chip(requireContext());
-                                chip.setText(category.getName());
-                                chip.setCheckable(true);
-                                chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                                    if (isChecked) {
-                                        selectedCategoryId = category.getId();
-                                        loadHotBooks(category.getId());
-                                    }
-                                });
-                                binding.chipGroupCategories.addView(chip);
-                            }
+                            // WP-7：下拉菜单项（第一项"全部"+分类列表）
+                            List<String> names = new ArrayList<>();
+                            names.add(getString(R.string.tab_all));
+                            for (CategoryVO c : flatCategories) names.add(c.getName() != null ? c.getName() : "");
+                            binding.etCategory.setAdapter(
+                                    new android.widget.ArrayAdapter<>(
+                                            requireContext(), android.R.layout.simple_list_item_1, names));
+                            binding.etCategory.setOnItemClickListener((parent, v1, position, id) -> {
+                                if (position == 0) {
+                                    selectedCategoryId = null;
+                                } else if (position >= 1 && position <= flatCategories.size()) {
+                                    selectedCategoryId = flatCategories.get(position - 1).getId();
+                                }
+                                loadHotBooks(selectedCategoryId);
+                            });
+                            binding.etCategory.setText(getString(R.string.tab_all), false);
+                            // 初始加载全部
+                            loadHotBooks(null);
                         }
                     },
                     throwable -> {
-                        if (binding == null) return;
-                        binding.layoutEmpty.setVisibility(View.VISIBLE);
+                        if (binding != null) binding.layoutEmpty.setVisibility(View.VISIBLE);
                     }
                 )
         );
     }
 
+    private void flatten(List<CategoryVO> nodes) {
+        if (nodes == null) return;
+        for (CategoryVO node : nodes) {
+            flatCategories.add(node);
+            if (node.getChildren() != null) flatten(node.getChildren());
+        }
+    }
+
     private void loadHotBooks(Long categoryId) {
         binding.layoutEmpty.setVisibility(View.GONE);
+        adapter.submitList(new ArrayList<>());
         disposables.add(
             bookRepository.getHotBooks(categoryId, 50)
                 .subscribeOn(Schedulers.io())
@@ -124,6 +131,9 @@ public class HotBooksFragment extends Fragment {
                         if (binding == null) return;
                         if (result.isSuccess() && result.getData() != null) {
                             adapter.submitList(result.getData());
+                            if (result.getData().isEmpty()) {
+                                binding.layoutEmpty.setVisibility(View.VISIBLE);
+                            }
                         } else {
                             binding.layoutEmpty.setVisibility(View.VISIBLE);
                         }
@@ -156,7 +166,7 @@ public class HotBooksFragment extends Fragment {
 
                 @Override
                 public boolean areContentsTheSame(@NonNull BookSimpleVO oldItem, @NonNull BookSimpleVO newItem) {
-                    return oldItem.getTitle().equals(newItem.getTitle());
+                    return java.util.Objects.equals(oldItem.getTitle(), newItem.getTitle());
                 }
             });
         }
@@ -168,9 +178,15 @@ public class HotBooksFragment extends Fragment {
 
         @Override
         protected void bind(com.library.android.databinding.ItemBookBinding binding, BookSimpleVO item, int position) {
-            binding.tvTitle.setText(item.getTitle());
-            binding.tvAuthor.setText(item.getAuthor());
-            binding.tvAvailCopies.setText("可借 " + item.getAvailCopies());
+            binding.tvTitle.setText(item.getTitle() != null ? item.getTitle() : "");
+            binding.tvAuthor.setText(item.getAuthor() != null ? item.getAuthor() : "");
+            binding.tvAvailCopies.setText(binding.getRoot().getContext().getString(R.string.avail_copies_format, item.getAvailCopies()));
+            binding.getRoot().setOnClickListener(v -> {
+                androidx.navigation.NavController nav = androidx.navigation.Navigation.findNavController(v);
+                Bundle args = new Bundle();
+                args.putLong("bookId", item.getId());
+                nav.navigate(R.id.bookDetailFragment, args);
+            });
         }
     }
 }

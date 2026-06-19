@@ -54,14 +54,14 @@ public class RegisterFragment extends Fragment {
             }
         });
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
+                Toast.makeText(requireContext(), throwable.getMessage() != null ? throwable.getMessage() : "", Toast.LENGTH_LONG).show();
             }
         });
 
-        viewModel.isLoading().observe(getViewLifecycleOwner(), loading -> {
-            binding.btnRegister.setEnabled(!loading);
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state -> {
+            binding.btnRegister.setEnabled(state != com.library.android.ui.common.LoadingState.LOADING);
         });
 
         binding.btnRegister.setOnClickListener(v -> {
@@ -69,12 +69,18 @@ public class RegisterFragment extends Fragment {
             String password = binding.etPassword.getText().toString().trim();
             String realName = binding.etRealName.getText().toString().trim();
             String email = binding.etEmail.getText().toString().trim();
+            String phone = binding.etPhone.getText().toString().trim();
             if (username.isEmpty() || password.isEmpty() || realName.isEmpty() || email.isEmpty()) {
-                Toast.makeText(requireContext(), "请填写所有必填项", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.register_fill_required), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // B.8 修复：手机号格式校验（与后端 ^1[3-9]\d{9}$ 对齐，选填）
+            if (!phone.isEmpty() && !phone.matches("^1[3-9]\\d{9}$")) {
+                Toast.makeText(requireContext(), getString(R.string.register_phone_invalid), Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            viewModel.register(username, password, realName, email, "");
+            viewModel.register(username, password, realName, email, phone);
         });
 
         binding.btnBackToLogin.setOnClickListener(v ->

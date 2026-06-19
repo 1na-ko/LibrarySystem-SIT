@@ -13,8 +13,9 @@ import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.library.android.ui.common.BaseFragment;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,40 +26,25 @@ import com.library.android.databinding.FragmentSearchBinding;
 import com.library.android.model.BookSimpleVO;
 import com.library.android.model.CategoryVO;
 import com.library.android.ui.common.BaseAdapter;
-import com.library.android.ui.common.PagingScrollListener;
-import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.SearchViewModel;
-
-import java.util.List;
-import java.util.Map;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 /**
- * 图书搜索 Fragment — 首页 + 搜索 + 结果分页.
- * v2.1: 搜索图标移至全局顶部栏（activity_main.xml），
- *       点击后展开搜索输入区域并弹出键盘.
+ * 图书搜索首页 — WP-14 重构：优雅搜索入口 + Tab 切换热门/分类，搜索结果独立页面.
+ *
+ * <p>搜索框（悬浮圆角卡片）+ TabLayout（热门搜索 / 分类浏览）→ 提交搜索后导航到 SearchResultsFragment.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class SearchFragment extends Fragment {
+public class SearchFragment extends BaseFragment {
 
     private FragmentSearchBinding binding;
     private SearchViewModel viewModel;
-
-    private BookAdapter searchResultAdapter;
-    private BookAdapter hotBookAdapter;
     private CategoryAdapter categoryAdapter;
     private SuggestionAdapter suggestionAdapter;
-    private PagingScrollListener pagingScrollListener;
-
-    /** 搜索输入区域是否展开 */
-    private boolean searchExpanded = false;
-
-    /** 分类导航是否展开 */
-    private boolean isCategoryExpanded = false;
 
     @Nullable
     @Override
@@ -71,121 +57,146 @@ public class SearchFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        setupToolbar(view, R.string.search);
+        // WP-14：必须用 Activity scope，与 SearchResultsFragment 共享同一 ViewModel 实例
+        viewModel = new ViewModelProvider(requireActivity()).get(SearchViewModel.class);
 
-        // CRITICAL: Reset state to prevent stale text from leaking on tab switch
-        searchExpanded = false;
-        binding.layoutSearchInput.setVisibility(View.GONE);
-
-        viewModel = new ViewModelProvider(this).get(SearchViewModel.class);
-
-        setupAdapters();
+        setupTabLayout();
+        setupCategoryAdapter();
+        setupSuggestionAdapter();
         setupSearchBar();
         setupObservers();
 
-        // 检查是否需自动展开搜索（由全局搜索图标触发）
+        // 接收高级搜索/扫码/分类导航参数 → 立即执行搜索并跳到结果页
         Bundle args = getArguments();
-        if (args != null && args.getBoolean("expandSearch", false)) {
-            expandSearch();
-            // 清除标记，避免旋转屏幕时再次触发
-            args.remove("expandSearch");
-        }
-
+        android.content.Intent activityIntent = requireActivity().getIntent();
         if (args != null && (args.containsKey("title") || args.containsKey("author")
                 || args.containsKey("isbn") || args.containsKey("publisher"))) {
             handleAdvancedSearchArgs(args);
-        } else if (!searchExpanded) {
+        } else if (activityIntent != null && activityIntent.hasExtra("isbn")) {
+            handleAdvancedSearchArgs(activityIntent.getExtras());
+            // 清除 Intent extra 防止 navigateUp 返回后重新触发导航（修复 ISBN 扫码后退死循环）
+            activityIntent.removeExtra("isbn");
+        } else if (activityIntent != null && activityIntent.hasExtra("categoryId")) {
+            long categoryId = activityIntent.getLongExtra("categoryId", 0);
+            String categoryName = activityIntent.getStringExtra("categoryName");
+            if (categoryName != null) binding.etSearch.setText(categoryName);
+            viewModel.searchByCategory(categoryId, categoryName);
+            Navigation.findNavController(view)
+                    .navigate(R.id.action_searchFragment_to_searchResultsFragment);
+            activityIntent.removeExtra("categoryId");
+            activityIntent.removeExtra("categoryName");
+        } else {
             viewModel.loadHomeData();
             addHotSearchChips();
         }
     }
 
-    /**
-     * 由 MainActivity 全局搜索图标调用 —— 展开搜索栏并弹出键盘.
-     * 若此 Fragment 尚未创建，会通过 arguments 延迟到 onViewCreated 展开.
-     */
-    public void expandSearchFromGlobal() {
-        if (binding != null && isAdded()) {
-            expandSearch();
-        } else {
-            Bundle args = getArguments() != null ? getArguments() : new Bundle();
-            args.putBoolean("expandSearch", true);
-            setArguments(args);
-        }
+    // ======================== Tab 切换 ========================
+
+    private void setupTabLayout() {
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.hot_search));
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.category_nav));
+        binding.tabLayout.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                if (tab.getPosition() == 0) {
+                    binding.layoutHotSearch.setVisibility(View.VISIBLE);
+                    binding.layoutCategoryBrowse.setVisibility(View.GONE);
+                } else {
+                    binding.layoutHotSearch.setVisibility(View.GONE);
+                    binding.layoutCategoryBrowse.setVisibility(View.VISIBLE);
+                }
+            }
+            @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+            @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+        });
     }
 
-    /** 展开搜索栏并弹出键盘. */
-    private void expandSearch() {
-        if (binding == null) return;
-        searchExpanded = true;
-        binding.layoutSearchInput.setVisibility(View.VISIBLE);
-        binding.etSearch.requestFocus();
+    // ======================== Adapters ========================
 
-        binding.etSearch.postDelayed(() -> {
-            InputMethodManager imm = (InputMethodManager) requireContext()
-                    .getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT);
-        }, 150);
+    private void setupCategoryAdapter() {
+        categoryAdapter = new CategoryAdapter(cat -> {
+            viewModel.searchByCategory(cat.getId(), cat.getName());
+            Navigation.findNavController(requireView())
+                    .navigate(R.id.action_searchFragment_to_searchResultsFragment);
+        });
+        binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvCategories.setAdapter(categoryAdapter);
     }
 
-    /** 收起搜索栏并隐藏键盘. */
-    private void collapseSearch() {
+    private void setupSuggestionAdapter() {
+        suggestionAdapter = new SuggestionAdapter(suggestion -> {
+            String text = suggestion.getText();
+            if (text != null) {
+                binding.etSearch.setText(text);
+                binding.etSearch.setSelection(text.length());
+                binding.rvSuggestions.setVisibility(View.GONE);
+                InputMethodManager imm = (InputMethodManager) requireContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+                viewModel.search(text);
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_searchFragment_to_searchResultsFragment);
+            }
+        });
+        binding.rvSuggestions.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvSuggestions.setAdapter(suggestionAdapter);
+    }
+
+    // ======================== Search ========================
+
+    private void setupSearchBar() {
+        // 回车搜索
+        binding.etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || (event != null && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                doSearch();
+                return true;
+            }
+            return false;
+        });
+
+        // 输入建议 + 清空按钮
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void afterTextChanged(Editable s) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String text = s.toString().trim();
+                binding.ivClear.setVisibility(text.length() > 0 ? View.VISIBLE : View.GONE);
+                if (text.length() >= 2) viewModel.loadSuggestions(text);
+                else binding.rvSuggestions.setVisibility(View.GONE);
+            }
+        });
+        binding.ivClear.setOnClickListener(v -> {
+            binding.etSearch.setText("");
+            binding.rvSuggestions.setVisibility(View.GONE);
+        });
+
+        // 高级搜索 BottomSheet
+        binding.btnAdvanced.setOnClickListener(v ->
+                new AdvancedSearchFragment().show(getChildFragmentManager(), AdvancedSearchFragment.TAG));
+
+        // 接收高级搜索返回
+        getChildFragmentManager().setFragmentResultListener(
+                AdvancedSearchFragment.RESULT_KEY, getViewLifecycleOwner(), (reqKey, bundle) -> {
+                    handleAdvancedSearchArgs(bundle);
+                });
+    }
+
+    private void doSearch() {
         if (binding == null) return;
-        searchExpanded = false;
+        String keyword = binding.etSearch.getText().toString().trim();
+        if (keyword.isEmpty()) return;
         InputMethodManager imm = (InputMethodManager) requireContext()
                 .getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
-
-        binding.etSearch.setText("");
         binding.rvSuggestions.setVisibility(View.GONE);
-        binding.layoutSearchInput.setVisibility(View.GONE);
-    }
-
-    /**
-     * 处理返回键：展开状态下收起搜索；搜索结果页中返回首页；
-     * 否则由 Activity 处理.
-     */
-    public boolean onBackPressed() {
-        if (searchExpanded) {
-            collapseSearch();
-            if (binding.layoutSearchResults.getVisibility() == View.VISIBLE) {
-                backToHome();
-            }
-            return true;
-        }
-        if (binding.layoutSearchResults.getVisibility() == View.VISIBLE
-                && binding.scrollHome.getVisibility() != View.VISIBLE) {
-            backToHome();
-            return true;
-        }
-        return false;
-    }
-
-    /** 控制全局返回按钮（通过 MainActivity）. */
-    private void setGlobalBack(boolean visible) {
-        if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).setGlobalBackVisible(visible);
-        }
-    }
-
-    /** 隐藏首页内容（热门搜索、分类导航、热门图书）. */
-    private void hideHomeContent() {
-        binding.scrollHome.setVisibility(View.GONE);
-        binding.chipGroupHotTags.removeAllViews();
-        binding.rvSuggestions.setVisibility(View.GONE);
-    }
-
-    /** 返回首页视图. */
-    private void backToHome() {
-        setGlobalBack(false);
-        binding.scrollHome.setVisibility(View.VISIBLE);
-        binding.layoutSearchResults.setVisibility(View.GONE);
-        binding.layoutResultHeader.setVisibility(View.GONE);
-        binding.etSearch.setText("");
-        binding.rvSuggestions.setVisibility(View.GONE);
-        binding.tvResultInfo.setText("");
-        viewModel.clearSearchState();
-        viewModel.loadHomeData();
-        addHotSearchChips();
+        viewModel.search(keyword);
+        Navigation.findNavController(requireView())
+                .navigate(R.id.action_searchFragment_to_searchResultsFragment);
     }
 
     private void handleAdvancedSearchArgs(Bundle args) {
@@ -196,168 +207,18 @@ public class SearchFragment extends Fragment {
         Integer pubYearFrom = args.containsKey("pubYearFrom") ? args.getInt("pubYearFrom") : null;
         Integer pubYearTo = args.containsKey("pubYearTo") ? args.getInt("pubYearTo") : null;
         Boolean onlyAvailable = args.containsKey("onlyAvailable") ? args.getBoolean("onlyAvailable") : null;
-
-        binding.layoutSearchInput.setVisibility(View.VISIBLE);
-        searchExpanded = true;
-        hideHomeContent();
-        binding.layoutSearchResults.setVisibility(View.VISIBLE);
-        binding.layoutResultHeader.setVisibility(View.GONE);
-        setGlobalBack(true);
-
         viewModel.searchAdvanced(title, author, isbn, publisher, pubYearFrom, pubYearTo, onlyAvailable);
+        Navigation.findNavController(requireView())
+                .navigate(R.id.action_searchFragment_to_searchResultsFragment);
     }
 
-    private void setupAdapters() {
-        // 搜索结果适配器
-        searchResultAdapter = new BookAdapter(book -> {
-            Bundle bundle = new Bundle();
-            bundle.putLong("bookId", book.getId());
-            Navigation.findNavController(requireView())
-                    .navigate(R.id.action_searchFragment_to_bookDetailFragment, bundle);
-        });
-
-        LinearLayoutManager resultLayoutManager = new LinearLayoutManager(requireContext());
-        binding.rvSearchResults.setLayoutManager(resultLayoutManager);
-        binding.rvSearchResults.setAdapter(searchResultAdapter);
-
-        pagingScrollListener = new PagingScrollListener(resultLayoutManager) {
-            @Override
-            protected void loadMore() {
-                viewModel.loadMore();
-            }
-        };
-        binding.rvSearchResults.addOnScrollListener(pagingScrollListener);
-
-        // 热门图书适配器
-        hotBookAdapter = new BookAdapter(book -> {
-            Bundle bundle = new Bundle();
-            bundle.putLong("bookId", book.getId());
-            Navigation.findNavController(requireView())
-                    .navigate(R.id.action_searchFragment_to_bookDetailFragment, bundle);
-        });
-        binding.rvHotBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.rvHotBooks.setAdapter(hotBookAdapter);
-
-        // 分类导航适配器
-        categoryAdapter = new CategoryAdapter(category -> {
-            hideHomeContent();
-            binding.layoutSearchResults.setVisibility(View.VISIBLE);
-            binding.layoutResultHeader.setVisibility(View.VISIBLE);
-            binding.tvResultTitle.setText(category.getName());
-            setGlobalBack(true);
-            viewModel.searchByCategory(category.getId(), category.getName());
-        });
-        binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.rvCategories.setAdapter(categoryAdapter);
-
-        // 搜索建议适配器
-        suggestionAdapter = new SuggestionAdapter(suggestion -> {
-            String text = suggestion.get("value");
-            if (text != null) {
-                binding.etSearch.setText(text);
-                binding.etSearch.setSelection(text.length());
-                binding.rvSuggestions.setVisibility(View.GONE);
-                InputMethodManager imm = (InputMethodManager) requireContext()
-                        .getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
-                setGlobalBack(true);
-                viewModel.search(text);
-            }
-        });
-        binding.rvSuggestions.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.rvSuggestions.setAdapter(suggestionAdapter);
-
-        // 高级搜索点击
-        binding.tvAdvancedSearch.setOnClickListener(v ->
-                Navigation.findNavController(requireView())
-                        .navigate(R.id.action_searchFragment_to_advancedSearchFragment));
-
-        // 分类导航可折叠标题点击
-        binding.tvCategoryHeader.setOnClickListener(v -> {
-            isCategoryExpanded = !isCategoryExpanded;
-            if (isCategoryExpanded) {
-                binding.rvCategories.setVisibility(View.VISIBLE);
-                binding.tvCategoryHeader.setText("分类导航 ▾");
-            } else {
-                binding.rvCategories.setVisibility(View.GONE);
-                binding.tvCategoryHeader.setText("分类导航 ▸");
-            }
-        });
-
-        // 分类浏览点击（搜索栏内链接 → 跳转分类树页面）
-        binding.tvCategoryBrowse.setOnClickListener(v ->
-                Navigation.findNavController(requireView())
-                        .navigate(R.id.action_searchFragment_to_categoryTreeFragment));
-    }
-
-    private void setupSearchBar() {
-        binding.etSearch.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH
-                    || (event != null && event.getAction() == KeyEvent.ACTION_DOWN
-                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-                String keyword = binding.etSearch.getText().toString().trim();
-                if (!keyword.isEmpty()) {
-                    InputMethodManager imm = (InputMethodManager) requireContext()
-                            .getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
-                    hideHomeContent();
-                    binding.layoutSearchResults.setVisibility(View.VISIBLE);
-                    binding.layoutResultHeader.setVisibility(View.GONE);
-                    setGlobalBack(true);
-                    viewModel.search(keyword);
-                }
-                return true;
-            }
-            return false;
-        });
-
-        binding.etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String text = s.toString().trim();
-                if (text.length() >= 2) {
-                    viewModel.loadSuggestions(text);
-                } else {
-                    binding.rvSuggestions.setVisibility(View.GONE);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-    }
+    // ======================== Observers ========================
 
     private void setupObservers() {
-        viewModel.getSearchResults().observe(getViewLifecycleOwner(), books -> {
-            if (books != null) {
-                hideHomeContent();
-                binding.layoutSearchResults.setVisibility(View.VISIBLE);
-                searchResultAdapter.submitList(books);
-                pagingScrollListener.setLoading(false);
-            }
-        });
-
-        viewModel.getHotBooks().observe(getViewLifecycleOwner(), books -> {
-            if (books != null) {
-                hotBookAdapter.submitList(books);
-            }
-        });
-
         viewModel.getCategories().observe(getViewLifecycleOwner(), categories -> {
-            if (categories != null) {
-                categoryAdapter.submitList(categories);
-            }
+            if (categories != null) categoryAdapter.submitList(categories);
         });
-
         viewModel.getSuggestions().observe(getViewLifecycleOwner(), suggestions -> {
-            // 搜索结果可见时禁止显示建议词（防止建议 API 后返回覆盖搜索结果）
-            if (binding.layoutSearchResults.getVisibility() == View.VISIBLE) {
-                binding.rvSuggestions.setVisibility(View.GONE);
-                return;
-            }
             if (suggestions != null && !suggestions.isEmpty()) {
                 suggestionAdapter.submitList(suggestions);
                 binding.rvSuggestions.setVisibility(View.VISIBLE);
@@ -365,40 +226,20 @@ public class SearchFragment extends Fragment {
                 binding.rvSuggestions.setVisibility(View.GONE);
             }
         });
-
-        viewModel.getTotalResults().observe(getViewLifecycleOwner(), total ->
-                binding.tvResultInfo.setText("找到 " + total + " 条结果"));
-
-        // 观察结果标题：Fragment 重建时自动恢复头部返回按钮
-        viewModel.getResultTitle().observe(getViewLifecycleOwner(), title -> {
-            if (title != null && !title.isEmpty()) {
-                hideHomeContent();
-                binding.layoutSearchResults.setVisibility(View.VISIBLE);
-                binding.layoutResultHeader.setVisibility(View.VISIBLE);
-                binding.tvResultTitle.setText(title);
-                setGlobalBack(true);
-            } else {
-                binding.layoutResultHeader.setVisibility(View.GONE);
-            }
-        });
-
-        viewModel.isLoading().observe(getViewLifecycleOwner(), loading -> {
-            if (!loading) {
-                pagingScrollListener.setLoading(false);
-            }
-        });
-
-        viewModel.hasMore().observe(getViewLifecycleOwner(), hasMore ->
-                pagingScrollListener.setHasMore(hasMore));
     }
 
-    /**
-     * 填充热门搜索标签（ChipGroup），每项点击后填入搜索框并执行搜索。
-     */
+    // ======================== Hot Tags ========================
+
     private void addHotSearchChips() {
         if (binding == null) return;
         binding.chipGroupHotTags.removeAllViews();
-        String[] hotTags = {"Java", "Python", "机器学习", "数据结构", "人工智能", "数据库", "操作系统", "计算机网络"};
+        String[] hotTags = {
+            "Java", "Python", "机器学习", "数据结构", "人工智能",
+            "数据库", "操作系统", "计算机网络", "算法导论", "深度学习",
+            "自然语言处理", "计算机视觉", "软件工程", "编译原理",
+            "离散数学", "线性代数", "概率论", "分布式系统",
+            "微服务", "云计算", "大数据", "区块链", "物联网"
+        };
         for (String tag : hotTags) {
             Chip chip = new Chip(requireContext());
             chip.setText(tag);
@@ -410,12 +251,12 @@ public class SearchFragment extends Fragment {
             chip.setCheckable(false);
             chip.setClickable(true);
             chip.setOnClickListener(v -> {
-                expandSearch();
                 binding.etSearch.setText(tag);
                 binding.etSearch.setSelection(tag.length());
                 binding.rvSuggestions.setVisibility(View.GONE);
-                setGlobalBack(true);
                 viewModel.search(tag);
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_searchFragment_to_searchResultsFragment);
             });
             binding.chipGroupHotTags.addView(chip);
         }
@@ -427,122 +268,63 @@ public class SearchFragment extends Fragment {
         binding = null;
     }
 
-    // ======================== Book Adapter ========================
-
-    private static class BookAdapter extends BaseAdapter<BookSimpleVO, com.library.android.databinding.ItemBookBinding> {
-
-        private final OnBookClickListener listener;
-
-        interface OnBookClickListener {
-            void onClick(BookSimpleVO book);
-        }
-
-        BookAdapter(OnBookClickListener listener) {
-            super(R.layout.item_book, new DiffUtil.ItemCallback<BookSimpleVO>() {
-                @Override
-                public boolean areItemsTheSame(@NonNull BookSimpleVO oldItem, @NonNull BookSimpleVO newItem) {
-                    return oldItem.getId() == newItem.getId();
-                }
-
-                @Override
-                public boolean areContentsTheSame(@NonNull BookSimpleVO oldItem, @NonNull BookSimpleVO newItem) {
-                    return oldItem.getTitle().equals(newItem.getTitle())
-                            && oldItem.getAvailCopies() == newItem.getAvailCopies();
-                }
-            });
-            this.listener = listener;
-        }
-
-        @Override
-        protected com.library.android.databinding.ItemBookBinding createBinding(LayoutInflater inflater, ViewGroup parent) {
-            return com.library.android.databinding.ItemBookBinding.inflate(inflater, parent, false);
-        }
-
-        @Override
-        protected void bind(com.library.android.databinding.ItemBookBinding binding, BookSimpleVO item, int position) {
-            binding.tvTitle.setText(item.getTitle());
-            binding.tvAuthor.setText(item.getAuthor());
-            binding.tvAvailCopies.setText("可借 " + item.getAvailCopies());
-            binding.getRoot().setOnClickListener(v -> listener.onClick(item));
-        }
+    public boolean onBackPressed() {
+        return false; // WP-2：返回直接交给 NavController
     }
 
-    // ======================== Category Adapter ========================
+    // ======================== Adapters ========================
 
     private static class CategoryAdapter extends BaseAdapter<CategoryVO, com.library.android.databinding.ItemCategoryBinding> {
-
         private final OnCategoryClickListener listener;
-
-        interface OnCategoryClickListener {
-            void onClick(CategoryVO category);
-        }
+        interface OnCategoryClickListener { void onClick(CategoryVO category); }
 
         CategoryAdapter(OnCategoryClickListener listener) {
             super(R.layout.item_category, new DiffUtil.ItemCallback<CategoryVO>() {
-                @Override
-                public boolean areItemsTheSame(@NonNull CategoryVO oldItem, @NonNull CategoryVO newItem) {
-                    return oldItem.getId() == newItem.getId();
-                }
-
-                @Override
-                public boolean areContentsTheSame(@NonNull CategoryVO oldItem, @NonNull CategoryVO newItem) {
-                    return oldItem.getName().equals(newItem.getName());
-                }
+                @Override public boolean areItemsTheSame(@NonNull CategoryVO o, @NonNull CategoryVO n) { return o.getId() == n.getId(); }
+                @Override public boolean areContentsTheSame(@NonNull CategoryVO o, @NonNull CategoryVO n) { return java.util.Objects.equals(o.getName(), n.getName()); }
             });
             this.listener = listener;
         }
-
-        @Override
-        protected com.library.android.databinding.ItemCategoryBinding createBinding(LayoutInflater inflater, ViewGroup parent) {
+        @Override protected com.library.android.databinding.ItemCategoryBinding createBinding(LayoutInflater inflater, ViewGroup parent) {
             return com.library.android.databinding.ItemCategoryBinding.inflate(inflater, parent, false);
         }
-
-        @Override
-        protected void bind(com.library.android.databinding.ItemCategoryBinding binding, CategoryVO item, int position) {
-            binding.tvCategoryName.setText(item.getName());
-            if (item.hasChildren()) {
-                binding.ivExpand.setVisibility(View.VISIBLE);
-            } else {
-                binding.ivExpand.setVisibility(View.GONE);
-            }
-            binding.getRoot().setOnClickListener(v -> listener.onClick(item));
+        @Override protected void bind(com.library.android.databinding.ItemCategoryBinding b, CategoryVO item, int position) {
+            b.tvCategoryName.setText(item.getName() != null ? item.getName() : "");
+            b.ivExpand.setVisibility(View.GONE);  // WP-14：搜索页分类不显箭头
+            b.getRoot().setOnClickListener(v -> listener.onClick(item));
         }
     }
 
-    // ======================== Suggestion Adapter ========================
-
-    private static class SuggestionAdapter extends BaseAdapter<Map<String, String>, com.library.android.databinding.ItemSuggestionBinding> {
-
+    private static class SuggestionAdapter extends BaseAdapter<com.library.android.model.SuggestVO, com.library.android.databinding.ItemSuggestionBinding> {
         private final OnSuggestionClickListener listener;
-
-        interface OnSuggestionClickListener {
-            void onClick(Map<String, String> suggestion);
-        }
+        interface OnSuggestionClickListener { void onClick(com.library.android.model.SuggestVO suggestion); }
 
         SuggestionAdapter(OnSuggestionClickListener listener) {
-            super(R.layout.item_suggestion, new DiffUtil.ItemCallback<Map<String, String>>() {
-                @Override
-                public boolean areItemsTheSame(@NonNull Map<String, String> oldItem, @NonNull Map<String, String> newItem) {
-                    return oldItem.get("value").equals(newItem.get("value"));
-                }
-
-                @Override
-                public boolean areContentsTheSame(@NonNull Map<String, String> oldItem, @NonNull Map<String, String> newItem) {
-                    return true;
-                }
+            super(R.layout.item_suggestion, new DiffUtil.ItemCallback<com.library.android.model.SuggestVO>() {
+                @Override public boolean areItemsTheSame(@NonNull com.library.android.model.SuggestVO o, @NonNull com.library.android.model.SuggestVO n) { return java.util.Objects.equals(o.getText(), n.getText()); }
+                @Override public boolean areContentsTheSame(@NonNull com.library.android.model.SuggestVO o, @NonNull com.library.android.model.SuggestVO n) { return java.util.Objects.equals(o.getType(), n.getType()); }
             });
             this.listener = listener;
         }
-
-        @Override
-        protected com.library.android.databinding.ItemSuggestionBinding createBinding(LayoutInflater inflater, ViewGroup parent) {
+        @Override protected com.library.android.databinding.ItemSuggestionBinding createBinding(LayoutInflater inflater, ViewGroup parent) {
             return com.library.android.databinding.ItemSuggestionBinding.inflate(inflater, parent, false);
         }
+        @Override protected void bind(com.library.android.databinding.ItemSuggestionBinding b, com.library.android.model.SuggestVO item, int position) {
+            b.tvSuggestion.setText(item.getText() != null ? item.getText() : "");
+            b.getRoot().setOnClickListener(v -> listener.onClick(item));
+        }
+    }
 
-        @Override
-        protected void bind(com.library.android.databinding.ItemSuggestionBinding binding, Map<String, String> item, int position) {
-            binding.tvSuggestion.setText(item.get("value"));
-            binding.getRoot().setOnClickListener(v -> listener.onClick(item));
+    // ======================== Global entry from MainActivity ========================
+
+    public void expandSearchFromGlobal() {
+        if (binding != null && isAdded()) {
+            binding.etSearch.requestFocus();
+            binding.etSearch.postDelayed(() -> {
+                InputMethodManager imm = (InputMethodManager) requireContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT);
+            }, 150);
         }
     }
 }

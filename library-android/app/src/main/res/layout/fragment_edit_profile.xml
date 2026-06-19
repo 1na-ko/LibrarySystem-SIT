@@ -21,7 +21,7 @@
                 style="@style/TextAppearance.Library.Title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="编辑资料" />
+                android:text="@string/edit_profile" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutEmail"
@@ -62,7 +62,7 @@
                 style="@style/Widget.Library.Button.Primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="保存"
+                android:text="@string/confirm"
                 android:layout_marginTop="@dimen/space_xl" />
 
         </LinearLayout>

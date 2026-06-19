@@ -1,14 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Navigation Graph — WP-1 治本：
+  - 标签全部资源化（@string/page_title_*）
+  - 删除 3 个死 action：home_to_category（重复）、search_to_hotBooks（SearchFragment 不调）、borrow_to_overdue（BorrowFragment 不调）
+  - borrowDetailFragment 补全 borrowId argument 声明
+  - WP-3 浏览全部分类入口由 home_to_categoryTree 提供
+-->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/searchFragment">
+    app:startDestination="@id/homeFragment">
 
     <!-- ======================== 主 Tab 目的地 ======================== -->
+
+    <!-- 混合首页：推荐 + 热门 + 分类导航，startDestination -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.library.android.ui.main.HomeFragment"
+        android:label="@string/home_title">
+        <action
+            android:id="@+id/action_homeFragment_to_bookDetailFragment"
+            app:destination="@id/bookDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_homeFragment_to_searchFragment"
+            app:destination="@id/searchFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <!-- WP-3：浏览全部分类入口（由首页分类区底部"浏览全部分类"按钮调用） -->
+        <action
+            android:id="@+id/action_homeFragment_to_categoryTreeFragment"
+            app:destination="@id/categoryTreeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_homeFragment_to_recommendationsFragment"
+            app:destination="@id/recommendationsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_homeFragment_to_hotBooksFragment"
+            app:destination="@id/hotBooksFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
     <fragment
         android:id="@+id/searchFragment"
         android:name="com.library.android.ui.search.SearchFragment"
-        android:label="搜索">
+        android:label="@string/page_title_search">
         <action
             android:id="@+id/action_searchFragment_to_bookDetailFragment"
             app:destination="@id/bookDetailFragment"
@@ -16,16 +67,18 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <!-- WP-14：搜索结果独立页面（与搜索首页分离） -->
         <action
-            android:id="@+id/action_searchFragment_to_advancedSearchFragment"
-            app:destination="@id/advancedSearchFragment"
+            android:id="@+id/action_searchFragment_to_searchResultsFragment"
+            app:destination="@id/searchResultsFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <!-- 高级搜索：BottomSheet 弹窗 -->
         <action
-            android:id="@+id/action_searchFragment_to_categoryTreeFragment"
-            app:destination="@id/categoryTreeFragment"
+            android:id="@+id/action_searchFragment_to_advancedSearchFragment"
+            app:destination="@id/advancedSearchFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
@@ -35,12 +88,20 @@
     <fragment
         android:id="@+id/borrowFragment"
         android:name="com.library.android.ui.borrow.BorrowFragment"
-        android:label="借阅" />
+        android:label="@string/nav_borrow">
+        <action
+            android:id="@+id/action_borrowFragment_to_borrowDetailFragment"
+            app:destination="@id/borrowDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.library.android.ui.profile.ProfileFragment"
-        android:label="我的">
+        android:label="@string/nav_profile">
         <action
             android:id="@+id/action_profileFragment_to_borrowHistoryFragment"
             app:destination="@id/borrowHistoryFragment"
@@ -51,13 +112,6 @@
         <action
             android:id="@+id/action_profileFragment_to_borrowStatsFragment"
             app:destination="@id/borrowStatsFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right" />
-        <action
-            android:id="@+id/action_profileFragment_to_recommendationsFragment"
-            app:destination="@id/recommendationsFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
@@ -76,13 +130,41 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_profileFragment_to_adminUserListFragment"
+            app:destination="@id/adminUserListFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_profileFragment_to_adminDashboardFragment"
+            app:destination="@id/adminDashboardFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_profileFragment_to_acquisitionFragment"
+            app:destination="@id/acquisitionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_profileFragment_to_overdueFragment"
+            app:destination="@id/overdueFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
-    <!-- ======================== 认证模块（人员 A） ======================== -->
+    <!-- ======================== 认证模块 ======================== -->
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.library.android.ui.login.LoginFragment"
-        android:label="登录">
+        android:label="@string/page_title_login">
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
             app:destination="@id/registerFragment"
@@ -95,22 +177,29 @@
     <fragment
         android:id="@+id/registerFragment"
         android:name="com.library.android.ui.login.RegisterFragment"
-        android:label="注册" />
+        android:label="@string/page_title_register" />
 
-    <!-- ======================== 图书检索模块（人员 A） ======================== -->
+    <!-- ======================== 图书检索模块 ======================== -->
     <fragment
         android:id="@+id/bookDetailFragment"
         android:name="com.library.android.ui.search.BookDetailFragment"
-        android:label="图书详情">
+        android:label="@string/page_title_book_detail">
         <argument
             android:name="bookId"
             app:argType="long" />
+        <action
+            android:id="@+id/action_bookDetailFragment_to_knowledgeGraphFragment"
+            app:destination="@id/knowledgeGraphFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
         android:id="@+id/advancedSearchFragment"
         android:name="com.library.android.ui.search.AdvancedSearchFragment"
-        android:label="高级搜索">
+        android:label="@string/page_title_advanced_search">
         <action
             android:id="@+id/action_advancedSearchFragment_to_searchFragment"
             app:destination="@id/searchFragment"
@@ -125,85 +214,194 @@
     <fragment
         android:id="@+id/categoryTreeFragment"
         android:name="com.library.android.ui.search.CategoryTreeFragment"
-        android:label="分类浏览" />
+        android:label="@string/page_title_category_tree" />
 
-    <!-- TODO: 暂不可达，待添加导航入口 -->
+    <!-- WP-14：搜索结果独立页面 -->
+    <fragment
+        android:id="@+id/searchResultsFragment"
+        android:name="com.library.android.ui.search.SearchResultsFragment"
+        android:label="@string/search_results_title" />
+
     <fragment
         android:id="@+id/hotBooksFragment"
         android:name="com.library.android.ui.search.HotBooksFragment"
-        android:label="热门图书" />
+        android:label="@string/page_title_hot_books" />
 
-    <!-- ======================== 个人中心（人员 A） ======================== -->
+    <!-- ======================== 个人中心 ======================== -->
     <fragment
         android:id="@+id/editProfileFragment"
         android:name="com.library.android.ui.profile.EditProfileFragment"
-        android:label="编辑资料" />
+        android:label="@string/page_title_edit_profile" />
 
     <fragment
         android:id="@+id/borrowHistoryFragment"
         android:name="com.library.android.ui.profile.BorrowHistoryFragment"
-        android:label="借阅历史" />
+        android:label="@string/page_title_borrow_history" />
 
     <fragment
         android:id="@+id/borrowStatsFragment"
         android:name="com.library.android.ui.profile.BorrowStatsFragment"
-        android:label="借阅统计" />
+        android:label="@string/page_title_borrow_stats" />
 
     <fragment
         android:id="@+id/recommendationsFragment"
         android:name="com.library.android.ui.profile.RecommendationsFragment"
-        android:label="个性化推荐" />
+        android:label="@string/page_title_recommendations" />
 
-    <!-- ======================== 借阅管理（人员 B） ======================== -->
+    <!-- ======================== 借阅管理 ======================== -->
+    <!-- WP-1：补 borrowId argument 声明，支持进程死亡后状态恢复 -->
     <fragment
         android:id="@+id/borrowDetailFragment"
         android:name="com.library.android.ui.borrow.BorrowDetailFragment"
-        android:label="借阅详情" />
+        android:label="@string/page_title_borrow_detail">
+        <argument
+            android:name="borrowId"
+            app:argType="long" />
+    </fragment>
 
     <fragment
         android:id="@+id/overdueFragment"
         android:name="com.library.android.ui.borrow.OverdueFragment"
-        android:label="超期管理" />
+        android:label="@string/page_title_overdue" />
 
-    <action
-        android:id="@+id/action_borrowFragment_to_borrowDetailFragment"
-        app:destination="@id/borrowDetailFragment"
-        app:enterAnim="@anim/slide_in_right"
-        app:exitAnim="@anim/slide_out_left"
-        app:popEnterAnim="@anim/slide_in_left"
-        app:popExitAnim="@anim/slide_out_right" />
-
-    <!-- ======================== 预约管理（人员 B） ======================== -->
+    <!-- ======================== 预约管理 ======================== -->
     <fragment
         android:id="@+id/reservationListFragment"
         android:name="com.library.android.ui.reservation.ReservationListFragment"
-        android:label="我的预约" />
+        android:label="@string/page_title_reservations" />
 
-    <!-- ======================== 知识图谱（人员 B） ======================== -->
+    <!-- ======================== 知识图谱 ======================== -->
     <fragment
         android:id="@+id/knowledgeGraphFragment"
         android:name="com.library.android.ui.kg.KnowledgeGraphFragment"
-        android:label="知识图谱" />
+        android:label="@string/page_title_kg">
+        <argument
+            android:name="bookId"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_knowledgeGraphFragment_to_literatureTraceFragment"
+            app:destination="@id/literatureTraceFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_knowledgeGraphFragment_to_subjectNetworkFragment"
+            app:destination="@id/subjectNetworkFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_knowledgeGraphFragment_to_entitySearchFragment"
+            app:destination="@id/entitySearchFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/literatureTraceFragment"
         android:name="com.library.android.ui.kg.LiteratureTraceFragment"
-        android:label="文献溯源" />
+        android:label="@string/page_title_kg_trace">
+        <argument
+            android:name="bookId"
+            app:argType="long" />
+    </fragment>
 
     <fragment
         android:id="@+id/subjectNetworkFragment"
         android:name="com.library.android.ui.kg.SubjectNetworkFragment"
-        android:label="学科网络" />
+        android:label="@string/page_title_kg_subject" />
 
     <fragment
         android:id="@+id/entitySearchFragment"
         android:name="com.library.android.ui.kg.EntitySearchFragment"
-        android:label="实体搜索" />
+        android:label="@string/page_title_kg_entity" />
 
-    <!-- ======================== 系统管理（人员 B） ======================== -->
+    <!-- ======================== 系统管理 ======================== -->
     <fragment
         android:id="@+id/adminUserListFragment"
         android:name="com.library.android.ui.admin.AdminUserListFragment"
-        android:label="用户管理" />
+        android:label="@string/page_title_admin_users" />
+
+    <fragment
+        android:id="@+id/adminDashboardFragment"
+        android:name="com.library.android.ui.admin.AdminDashboardFragment"
+        android:label="@string/page_title_admin_dashboard" />
+
+    <!-- ======================== 智能采编 ======================== -->
+    <fragment
+        android:id="@+id/acquisitionFragment"
+        android:name="com.library.android.ui.acquisition.AcquisitionFragment"
+        android:label="@string/page_title_acquisition">
+        <action
+            android:id="@+id/action_acquisitionFragment_to_purchasePredictFragment"
+            app:destination="@id/purchasePredictFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_acquisitionFragment_to_duplicateCheckFragment"
+            app:destination="@id/duplicateCheckFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_acquisitionFragment_to_gapAnalysisFragment"
+            app:destination="@id/gapAnalysisFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_acquisitionFragment_to_negotiationCreateFragment"
+            app:destination="@id/negotiationCreateFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/purchasePredictFragment"
+        android:name="com.library.android.ui.acquisition.PurchasePredictFragment"
+        android:label="@string/page_title_purchase_predict" />
+
+    <fragment
+        android:id="@+id/duplicateCheckFragment"
+        android:name="com.library.android.ui.acquisition.DuplicateCheckFragment"
+        android:label="@string/page_title_duplicate_check" />
+
+    <fragment
+        android:id="@+id/gapAnalysisFragment"
+        android:name="com.library.android.ui.acquisition.GapAnalysisFragment"
+        android:label="@string/page_title_gap_analysis" />
+
+    <fragment
+        android:id="@+id/negotiationCreateFragment"
+        android:name="com.library.android.ui.acquisition.NegotiationCreateFragment"
+        android:label="@string/page_title_negotiation">
+        <action
+            android:id="@+id/action_negotiationCreateFragment_to_negotiationDetailFragment"
+            app:destination="@id/negotiationDetailFragment"
+            app:popUpTo="@id/acquisitionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/negotiationDetailFragment"
+        android:name="com.library.android.ui.acquisition.NegotiationDetailFragment"
+        android:label="@string/page_title_negotiation_detail">
+        <argument
+            android:name="negotiationId"
+            app:argType="long" />
+    </fragment>
 
 </navigation>

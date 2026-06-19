@@ -8,8 +8,8 @@
          扫码主题：全屏黑色，用于条码扫描
          ============================================================ -->
 
-    <!-- ── 浅色主题（默认） ── -->
-    <style name="Theme.LibrarySystem" parent="Theme.Material3.Light.NoActionBar">
+    <!-- ── 浅色主题（默认，DayNight 支持系统暗色自动切换） ── -->
+    <style name="Theme.LibrarySystem" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- 主色：暗红 CTA -->
         <item name="colorPrimary">@color/m3_primary</item>
         <item name="colorOnPrimary">@color/m3_on_primary</item>

@@ -90,6 +90,9 @@
     <color name="m3_dark_on_surface_variant">#A0A0A0</color>
     <color name="m3_dark_outline">#3A3A3C</color>
 
+    <!-- ── 深色模式 Chip 背景 ── -->
+    <color name="dark_chip_bg">#3A3A3C</color>
+
     <!-- ── 保留旧兼容色 ── -->
     <color name="white">#FFFFFF</color>
     <color name="error">#B3261E</color>

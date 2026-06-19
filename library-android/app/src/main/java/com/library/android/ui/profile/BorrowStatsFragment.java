@@ -78,6 +78,10 @@ public class BorrowStatsFragment extends Fragment {
         binding.tvOverdueCount.setText(String.valueOf(stats.getTotalOverdue()));
         binding.tvTotalFines.setText(String.format("¥%.1f", stats.getTotalFines()));
 
+        // A.5 关键修复：每次回调先清空容器再添加新图表，避免重复 addView 导致视图泄漏与重叠
+        binding.layoutPieChart.removeAllViews();
+        binding.layoutLineChart.removeAllViews();
+
         // 分类分布饼图
         if (stats.getCategoryDistribution() != null && !stats.getCategoryDistribution().isEmpty()) {
             PieChart pieChart = new PieChart(requireContext());

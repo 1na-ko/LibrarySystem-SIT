@@ -15,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowDetailBinding;
 import com.library.android.model.BorrowRecordVO;
+import com.library.android.ui.common.Debounce;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.BorrowDetailViewModel;
 
@@ -58,7 +59,9 @@ public class BorrowDetailFragment extends Fragment {
     }
 
     private void setupButtons() {
+        // 续借/还书均加防抖：避免快速双击重复弹出确认框或重复发起 API
         binding.btnRenew.setOnClickListener(v -> {
+            if (!Debounce.allow(v)) return;
             new MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.confirm_renew_title)
                     .setMessage(R.string.confirm_renew_message)
@@ -68,6 +71,7 @@ public class BorrowDetailFragment extends Fragment {
         });
 
         binding.btnReturn.setOnClickListener(v -> {
+            if (!Debounce.allow(v)) return;
             new MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.confirm_return_title)
                     .setMessage(R.string.confirm_return_message)
@@ -78,15 +82,15 @@ public class BorrowDetailFragment extends Fragment {
     }
 
     private void observeViewModel() {
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), loading -> {
             // handled by progress bar if needed
         });
 
         viewModel.getBorrowDetail().observe(getViewLifecycleOwner(), this::displayDetail);
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null) {
-                Snackbar.make(binding.getRoot(), msg, Snackbar.LENGTH_SHORT).show();
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            if (throwable != null) {
+                Snackbar.make(binding.getRoot(), throwable.getMessage() != null ? throwable.getMessage() : "", Snackbar.LENGTH_SHORT).show();
             }
         });
 
@@ -94,6 +98,9 @@ public class BorrowDetailFragment extends Fragment {
             if (Boolean.TRUE.equals(success)) {
                 Snackbar.make(binding.getRoot(), R.string.return_success, Snackbar.LENGTH_SHORT).show();
                 binding.layoutActions.setVisibility(View.GONE);
+                // P1 修复：归还成功后刷新详情，使状态从"借阅中/已续借"更新为"已归还"并显示归还日期
+                // （原版只隐藏操作按钮，状态 TextView 停留在归还前的值）
+                viewModel.loadDetail(borrowId);
             }
         });
 
@@ -103,7 +110,7 @@ public class BorrowDetailFragment extends Fragment {
                         getString(R.string.renew_success_format, newDueDate),
                         Snackbar.LENGTH_SHORT).show();
                 viewModel.loadDetail(borrowId); // 刷新
-            } else if (newDueDate == null && viewModel.getErrorMessage().getValue() == null) {
+            } else if (newDueDate == null && viewModel.getErrorEvent().getValue() == null) {
                 // renewResult set to null means failure
             }
         });
@@ -135,10 +142,11 @@ public class BorrowDetailFragment extends Fragment {
         // 续借次数
         binding.textRenewCount.setText(getString(R.string.renew_count_format, detail.getRenewCount()));
 
-        // 罚款
-        if (detail.getFineAmount() != null && detail.getFineAmount() > 0) {
+        // 罚款（B.5 字段对齐：fineAmount 改为 BigDecimal，使用 compareTo 而非 > 0）
+        if (detail.getFineAmount() != null
+                && detail.getFineAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
             binding.layoutFine.setVisibility(View.VISIBLE);
-            binding.textFine.setText(getString(R.string.fine_format, detail.getFineAmount()));
+            binding.textFine.setText(getString(R.string.fine_format, detail.getFineAmountDouble()));
         }
 
         // 操作按钮可见性

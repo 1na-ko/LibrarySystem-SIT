@@ -43,7 +43,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="还没有预约记录"
+                android:text="@string/no_reservation_records"
                 android:textColor="@color/text_tertiary"
                 android:textSize="15sp" />
 
@@ -54,7 +54,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="— 加载中 —"
+            android:text="@string/loading_text"
             android:textColor="@color/text_placeholder"
             android:textSize="15sp"
             android:visibility="gone" />
@@ -70,7 +70,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="连接中断，请检查网络"
+                android:text="@string/network_error_msg"
                 android:textColor="@color/text_tertiary"
                 android:textSize="15sp" />
 

@@ -11,18 +11,27 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.textfield.TextInputLayout;
 import com.library.android.R;
 import com.library.android.databinding.ActivityBookEditBinding;
-import com.library.android.ui.theme.ThemeManager;
 import com.library.android.model.BookCreateRequest;
 import com.library.android.model.BookUpdateRequest;
-import com.library.android.model.BookVO;
+import com.library.android.model.CategoryVO;
+import com.library.android.repository.BookRepository;
 import com.library.android.viewmodel.AdminViewModel;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import dagger.hilt.android.AndroidEntryPoint;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
- * 图书编目 Activity — 新增/修改图书（人员 B 主导）.
+ * 图书编目 Activity — 新增/修改图书.
  *
- * <p>通过 Intent extra "bookId" 区分新增（bookId=-1）和编辑模式。
+ * <p>通过 Intent extra "bookId" 区分新增（bookId=-1）和编辑模式.
+ * <p>B.8 修复：原硬编码 categoryId=1，新增分类选择器（点击 inputCategory 弹出分类列表）.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -33,14 +42,23 @@ public class BookEditActivity extends AppCompatActivity {
     private ActivityBookEditBinding binding;
     private AdminViewModel viewModel;
 
+    @Inject
+    BookRepository bookRepository;
+
+    private final CompositeDisposable disposables = new CompositeDisposable();
+
     private boolean isEditMode = false;
     private long editBookId = -1;
-    private long categoryId = 1; // 默认分类 ID，后续可从分类选择器传入
+
+    /** 选中的分类 ID（-1 表示未选择，提交前必须选择）. */
+    private long categoryId = -1;
+
+    /** 展平后的分类列表（id + name），供 AlertDialog 选择器使用. */
+    private final List<FlatCategory> flatCategories = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        ThemeManager.getInstance().setDarkMode(true);
-        setTheme(R.style.Theme_LibrarySystem_Dark);
+        // WP3.2：深色主题已通过 AndroidManifest.xml 静态声明，不再硬编码修改全局 ThemeManager 状态
         super.onCreate(savedInstanceState);
         binding = ActivityBookEditBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -55,14 +73,63 @@ public class BookEditActivity extends AppCompatActivity {
             setTitle(R.string.edit_book_title);
             binding.btnDelete.setVisibility(View.VISIBLE);
             binding.btnDelete.setOnClickListener(v -> confirmDelete());
-            // 加载现有图书数据（简化处理，实际应从 API 获取后填充）
         } else {
             setTitle(R.string.add_book_title);
             binding.btnDelete.setVisibility(View.GONE);
         }
 
+        // 分类选择器：点击弹出 AlertDialog
+        binding.etCategory.setOnClickListener(v -> openCategoryPicker());
+
         binding.btnSave.setOnClickListener(v -> saveBook());
         observeViewModel();
+        loadCategories();
+    }
+
+    /** 加载分类树并展平为 List，供选择器使用. */
+    private void loadCategories() {
+        disposables.add(bookRepository.getCategoryTree()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(result -> {
+                    if (result != null && result.isSuccess() && result.getData() != null) {
+                        flatCategories.clear();
+                        flattenCategories(result.getData(), 0);
+                    }
+                }, throwable -> Toast.makeText(this, getString(R.string.bookedit_category_load_failed), Toast.LENGTH_SHORT).show()));
+    }
+
+    private void flattenCategories(List<CategoryVO> nodes, int depth) {
+        if (nodes == null) return;
+        String indent = depth == 0 ? "" : new String(new char[depth * 2]).replace('\0', ' ');
+        for (CategoryVO node : nodes) {
+            flatCategories.add(new FlatCategory(node.getId(), indent + node.getName()));
+            if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                flattenCategories(node.getChildren(), depth + 1);
+            }
+        }
+    }
+
+    private void openCategoryPicker() {
+        if (flatCategories.isEmpty()) {
+            Toast.makeText(this, getString(R.string.bookedit_category_loading), Toast.LENGTH_SHORT).show();
+            loadCategories();
+            return;
+        }
+        String[] names = new String[flatCategories.size()];
+        for (int i = 0; i < flatCategories.size(); i++) {
+            names[i] = flatCategories.get(i).name;
+        }
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.category_hint)
+                .setItems(names, (d, which) -> {
+                    FlatCategory selected = flatCategories.get(which);
+                    categoryId = selected.id;
+                    if (binding.etCategory != null) {
+                        binding.etCategory.setText(selected.name);
+                    }
+                })
+                .show();
     }
 
     private void saveBook() {
@@ -78,7 +145,7 @@ public class BookEditActivity extends AppCompatActivity {
             request.setLocation(getText(binding.inputLocation));
             request.setDescription(getText(binding.inputDescription));
             request.setKeywords(getText(binding.inputKeywords));
-            request.setCategoryId(categoryId);
+            if (categoryId > 0) request.setCategoryId(categoryId);
             viewModel.updateBook(editBookId, request);
         } else {
             BookCreateRequest request = new BookCreateRequest();
@@ -107,6 +174,12 @@ public class BookEditActivity extends AppCompatActivity {
         }
         if (!isEditMode && TextUtils.isEmpty(getText(binding.inputIsbn))) {
             binding.inputIsbn.setError(getString(R.string.validation_isbn_required));
+            return false;
+        }
+        // B.8 修复：新增模式下必须选择分类（原硬编码 1 不合理）
+        if (!isEditMode && categoryId <= 0) {
+            binding.inputCategory.setError(getString(R.string.bookedit_select_category));
+            Toast.makeText(this, getString(R.string.bookedit_select_category), Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -143,9 +216,9 @@ public class BookEditActivity extends AppCompatActivity {
             }
         });
 
-        viewModel.getErrorMessage().observe(this, msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        viewModel.getErrorEvent().observe(this, throwable -> {
+            if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
+                Toast.makeText(this, throwable.getMessage() != null ? throwable.getMessage() : "", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -166,6 +239,18 @@ public class BookEditActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        disposables.clear();
         binding = null;
+    }
+
+    /** 展平后的分类条目（含层级缩进）. */
+    private static class FlatCategory {
+        final long id;
+        final String name;
+
+        FlatCategory(long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
     }
 }

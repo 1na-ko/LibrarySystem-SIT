@@ -18,6 +18,8 @@ import com.library.android.databinding.FragmentSubjectNetworkBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.KnowledgeGraphVO;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
@@ -36,7 +38,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class SubjectNetworkFragment extends Fragment {
+public class SubjectNetworkFragment extends BaseFragment {
 
     private FragmentSubjectNetworkBinding binding;
     private KnowledgeGraphViewModel viewModel;
@@ -85,14 +87,16 @@ public class SubjectNetworkFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getSubjectNetwork().observe(getViewLifecycleOwner(), this::renderNetwork);
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        // WP-6 P0：Loading 类型修复（原 Boolean.TRUE.equals 永远 false 致指示器永不显示）
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
+                binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
+        observeError(viewModel.getErrorEvent());
     }
 
     private void renderNetwork(KnowledgeGraphVO graph) {
         if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()) {
             binding.webView.loadDataWithBaseURL(null,
-                    "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>暂无学科网络数据</p></body></html>",
+                    "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>" + getString(R.string.no_subject_network) + "</p></body></html>",
                     "text/html", "UTF-8", null);
             return;
         }
@@ -122,7 +126,7 @@ public class SubjectNetworkFragment extends Fragment {
             binding.webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
         } catch (Exception e) {
             binding.webView.loadDataWithBaseURL(null,
-                    "<html><body style='color:red'>渲染失败: " + e.getMessage() + "</body></html>",
+                    "<html><body style='color:red'>" + getString(R.string.render_failed_format, e.getMessage()) + "</body></html>",
                     "text/html", "UTF-8", null);
         }
     }

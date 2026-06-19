@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 
 import com.google.android.material.slider.Slider;
 import com.library.android.R;
@@ -69,6 +70,7 @@ public class KnowledgeGraphFragment extends Fragment {
 
         setupWebView();
         setupSlider();
+        setupChipGroup();
         observeViewModel();
         viewModel.loadBookGraph(bookId, currentDepth);
     }
@@ -96,16 +98,33 @@ public class KnowledgeGraphFragment extends Fragment {
         });
     }
 
+    /** WP1.1：设置 KG 子页面 ChipGroup 导航（文献溯源 / 学科网络 / 实体搜索）. */
+    private void setupChipGroup() {
+        binding.chipLiteratureTrace.setOnClickListener(v -> {
+            Bundle args = new Bundle();
+            args.putLong("bookId", bookId);
+            Navigation.findNavController(requireView())
+                    .navigate(R.id.action_knowledgeGraphFragment_to_literatureTraceFragment, args);
+        });
+        binding.chipSubjectNetwork.setOnClickListener(v ->
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_knowledgeGraphFragment_to_subjectNetworkFragment));
+        binding.chipEntitySearch.setOnClickListener(v ->
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_knowledgeGraphFragment_to_entitySearchFragment));
+    }
+
     private void observeViewModel() {
         viewModel.getBookGraph().observe(getViewLifecycleOwner(), this::renderGraph);
 
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
+                binding.textLoading.setVisibility(state == com.library.android.ui.common.LoadingState.LOADING ? View.VISIBLE : View.GONE));
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null) {
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            if (throwable != null) {
+                String errorMsg = throwable.getMessage() != null ? throwable.getMessage() : getString(R.string.error_unknown);
                 binding.webView.loadDataWithBaseURL(null,
-                        "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>" + msg + "</p></body></html>",
+                        "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>" + errorMsg + "</p></body></html>",
                         "text/html", "UTF-8", null);
             }
         });
@@ -186,13 +205,13 @@ public class KnowledgeGraphFragment extends Fragment {
     private String getRelationLabel(String relation) {
         if (relation == null) return "";
         switch (relation) {
-            case "AUTHORED_BY": return "作者";
-            case "HAS_KEYWORD": return "关键词";
-            case "BELONGS_TO": return "属于";
-            case "RELATED_TO": return "关联";
-            case "PUBLISHED_IN": return "出版";
-            case "CO_CITED": return "共引";
-            case "CITES": return "引用";
+            case "AUTHORED_BY": return getString(R.string.kg_relation_authored_by);
+            case "HAS_KEYWORD": return getString(R.string.kg_relation_has_keyword);
+            case "BELONGS_TO": return getString(R.string.kg_relation_belongs_to);
+            case "RELATED_TO": return getString(R.string.kg_relation_related_to);
+            case "PUBLISHED_IN": return getString(R.string.kg_relation_published_in);
+            case "CO_CITED": return getString(R.string.kg_relation_co_cited);
+            case "CITES": return getString(R.string.kg_relation_cites);
             default: return relation;
         }
     }

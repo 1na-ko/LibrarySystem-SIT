@@ -24,7 +24,7 @@
                 android:id="@+id/textLoading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="— 加载中 —"
+                android:text="@string/loading_text"
                 android:textColor="@color/text_placeholder"
                 android:textSize="15sp" />
 
@@ -57,7 +57,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="暂无分类数据"
+                android:text="@string/no_category_data"
                 android:textSize="15sp"
                 android:textColor="@color/text_tertiary" />
 

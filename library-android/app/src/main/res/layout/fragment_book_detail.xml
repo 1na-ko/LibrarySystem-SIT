@@ -134,7 +134,7 @@
                 style="@style/Widget.Library.Button.Primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="借阅此书"
+                android:text="@string/borrow_this_book"
                 android:layout_marginTop="16dp" />
 
             <!-- 预约按钮 -->
@@ -143,8 +143,17 @@
                 style="@style/Widget.Library.Button.Outlined"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="预约此书"
+                android:text="@string/reserve_this_book"
                 android:visibility="gone"
+                android:layout_marginTop="8dp" />
+
+            <!-- 知识图谱入口按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnKnowledgeGraph"
+                style="@style/Widget.Library.Button.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/view_knowledge_graph"
                 android:layout_marginTop="8dp" />
 
             <!-- 图书简介区块标题 -->
@@ -152,7 +161,7 @@
                 style="@style/TextAppearance.Library.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="图书简介"
+                android:text="@string/section_description"
                 android:layout_marginTop="24dp" />
 
             <!-- 图书简介内容 -->
@@ -169,7 +178,7 @@
                 style="@style/TextAppearance.Library.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="关键词"
+                android:text="@string/section_keywords"
                 android:layout_marginTop="20dp" />
 
             <!-- 关键词标签组 -->
@@ -185,7 +194,7 @@
                 style="@style/TextAppearance.Library.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="相关推荐"
+                android:text="@string/section_related_books"
                 android:layout_marginTop="20dp" />
 
             <!-- 相关推荐列表 -->

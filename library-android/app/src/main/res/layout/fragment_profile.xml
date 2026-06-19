@@ -124,7 +124,7 @@
                         style="@style/TextAppearance.Library.Caption"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="当前借阅"
+                        android:text="@string/profile_current_borrows"
                         android:gravity="center" />
 
                 </LinearLayout>
@@ -161,7 +161,7 @@
                         style="@style/TextAppearance.Library.Caption"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="累计借阅"
+                        android:text="@string/profile_total_borrows"
                         android:gravity="center" />
 
                 </LinearLayout>
@@ -197,7 +197,7 @@
                         style="@style/TextAppearance.Library.Caption"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="超期"
+                        android:text="@string/overdue_label"
                         android:gravity="center" />
 
                 </LinearLayout>
@@ -235,7 +235,7 @@
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_nav_borrow"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
                 <TextView
                     style="@style/TextAppearance.Library.Body"
@@ -243,13 +243,13 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="@dimen/space_md"
-                    android:text="借阅历史" />
+                    android:text="@string/borrow_history" />
 
                 <ImageView
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
             </LinearLayout>
 
@@ -277,7 +277,7 @@
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_nav_search"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
                 <TextView
                     style="@style/TextAppearance.Library.Body"
@@ -285,13 +285,13 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="@dimen/space_md"
-                    android:text="借阅统计" />
+                    android:text="@string/borrow_stats" />
 
                 <ImageView
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
             </LinearLayout>
 
@@ -301,49 +301,7 @@
                 android:background="@color/border_light"
                 android:layout_marginStart="56dp" />
 
-            <!-- Row 3: 推荐书目 -->
-            <LinearLayout
-                android:id="@+id/layoutRecommendations"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="@dimen/space_lg"
-                android:paddingEnd="@dimen/space_lg"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                android:background="@color/bg_card">
-
-                <ImageView
-                    android:layout_width="@dimen/icon_size_sm"
-                    android:layout_height="@dimen/icon_size_sm"
-                    android:src="@drawable/ic_book_placeholder"
-                    android:tint="@color/text_tertiary" />
-
-                <TextView
-                    style="@style/TextAppearance.Library.Body"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="@dimen/space_md"
-                    android:text="推荐书目" />
-
-                <ImageView
-                    android:layout_width="@dimen/icon_size_sm"
-                    android:layout_height="@dimen/icon_size_sm"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_tertiary" />
-
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/divider_thickness"
-                android:background="@color/border_light"
-                android:layout_marginStart="56dp" />
-
-            <!-- Row 4: 编辑资料 -->
+            <!-- Row 3: 编辑资料 -->
             <LinearLayout
                 android:id="@+id/layoutEditProfile"
                 android:layout_width="match_parent"
@@ -361,7 +319,7 @@
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_nav_profile"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
                 <TextView
                     style="@style/TextAppearance.Library.Body"
@@ -369,13 +327,13 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="@dimen/space_md"
-                    android:text="编辑资料" />
+                    android:text="@string/edit_profile" />
 
                 <ImageView
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
             </LinearLayout>
 
@@ -403,7 +361,7 @@
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_book_placeholder"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
                 <TextView
                     style="@style/TextAppearance.Library.Body"
@@ -411,16 +369,134 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="@dimen/space_md"
-                    android:text="我的预约" />
+                    android:text="@string/profile_my_reservations" />
 
                 <ImageView
                     android:layout_width="@dimen/icon_size_sm"
                     android:layout_height="@dimen/icon_size_sm"
                     android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_tertiary" />
+                    app:tint="@color/text_tertiary" />
 
             </LinearLayout>
 
+        </LinearLayout>
+
+        <!-- ================================================================
+             Admin / Acquisitor 入口（C.4 新增，登录用户角色满足时显示）
+             ================================================================ -->
+        <LinearLayout
+            android:id="@+id/layoutAdminSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:background="@color/bg_card">
+
+            <TextView
+                style="@style/TextAppearance.Library.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/space_md"
+                android:text="@string/profile_admin_tools"
+                android:textColor="@color/text_secondary" />
+
+            <LinearLayout
+                android:id="@+id/layoutDashboard"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/dashboard_title" />
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/text_tertiary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutAdminUsers"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/profile_user_mgmt" />
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/text_tertiary" />
+            </LinearLayout>
+
+            <!-- WP1.7：超期管理入口（管理员/Librarian 可见） -->
+            <LinearLayout
+                android:id="@+id/layoutOverdueMgmt"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/profile_overdue_mgmt" />
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/text_tertiary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutAcquisition"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                <TextView
+                    style="@style/TextAppearance.Library.Body"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/acquisition_title" />
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/text_tertiary" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ================================================================
@@ -433,7 +509,7 @@
             style="@style/Widget.Library.Button.Primary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="登录"
+            android:text="@string/profile_login_btn"
             android:layout_marginTop="@dimen/space_xl"
             android:visibility="gone" />
 
@@ -443,7 +519,7 @@
             style="@style/Widget.Library.Button.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="退出登录"
+            android:text="@string/logout"
             android:textColor="@color/text_tertiary"
             android:layout_marginTop="@dimen/space_md"
             android:visibility="gone" />

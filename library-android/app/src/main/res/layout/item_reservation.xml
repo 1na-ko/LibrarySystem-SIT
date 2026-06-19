@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -86,6 +87,22 @@
                 tools:text="过期: 2026-06-15" />
 
         </LinearLayout>
+
+        <!-- WP-8 P0：取消预约按钮（WAITING/NOTIFIED 状态可见）— 朱砂红描边 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/cancel_reservation"
+            android:textColor="@color/accent_cta"
+            android:clickable="true"
+            android:focusable="true"
+            app:strokeColor="@color/accent_cta"
+            app:strokeWidth="1dp"
+            app:rippleColor="@color/accent_cta"
+            android:visibility="gone" />
 
     </LinearLayout>
 

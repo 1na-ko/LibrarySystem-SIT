@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
-                android:text="计算机科学"
+                android:text="@string/default_subject"
                 android:textColor="@color/dark_text_primary"
                 android:textColorHint="@color/dark_text_secondary" />
 
@@ -59,7 +59,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="— 加载中 —"
+            android:text="@string/loading_text"
             android:textColor="@color/dark_text_placeholder"
             android:textSize="15sp"
             android:visibility="gone" />

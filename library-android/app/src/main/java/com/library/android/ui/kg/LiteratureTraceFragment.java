@@ -19,6 +19,8 @@ import com.library.android.databinding.FragmentLiteratureTraceBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.TraceGraph;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
@@ -37,7 +39,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class LiteratureTraceFragment extends Fragment {
+public class LiteratureTraceFragment extends BaseFragment {
 
     private FragmentLiteratureTraceBinding binding;
     private KnowledgeGraphViewModel viewModel;
@@ -113,8 +115,11 @@ public class LiteratureTraceFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getTraceGraph().observe(getViewLifecycleOwner(), this::renderTrace);
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        // WP-6 P0：原代码把 LiveData<LoadingState> 当 Boolean 用，Boolean.TRUE.equals(LoadingState.LOADING) 永远 false
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
+                binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
+        // WP-6：错误事件订阅（原版无 observeError，加载失败页面空白用户无感知）
+        observeError(viewModel.getErrorEvent());
     }
 
     private void renderTrace(TraceGraph trace) {

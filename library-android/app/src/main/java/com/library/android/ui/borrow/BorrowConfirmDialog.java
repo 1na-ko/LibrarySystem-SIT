@@ -15,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.DialogBorrowConfirmBinding;
 import com.library.android.model.BookSimpleVO;
+import com.library.android.ui.common.Debounce;
 import com.library.android.viewmodel.BorrowViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -38,7 +39,7 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
     public static BorrowConfirmDialog newInstance(BookSimpleVO book) {
         BorrowConfirmDialog dialog = new BorrowConfirmDialog();
         Bundle args = new Bundle();
-        args.putSerializable("book", book);
+        args.putParcelable("book", book);
         dialog.setArguments(args);
         return dialog;
     }
@@ -66,7 +67,7 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
         viewModel = new ViewModelProvider(requireActivity()).get(BorrowViewModel.class);
 
         if (getArguments() != null) {
-            book = (BookSimpleVO) getArguments().getSerializable("book");
+            book = getArguments().getParcelable("book");
         }
 
         displayBookInfo();
@@ -85,20 +86,33 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
     private void setupButtons() {
         binding.btnCancel.setOnClickListener(v -> dismiss());
 
+        // 防抖：快速双击不会发起两次借阅请求
         binding.btnConfirm.setOnClickListener(v -> {
-            if (book != null) {
-                viewModel.borrowBook(book.getId()).observe(getViewLifecycleOwner(), success -> {
-                    if (Boolean.TRUE.equals(success)) {
-                        Snackbar.make(binding.getRoot(),
-                                getString(R.string.borrow_success_format, book.getTitle()),
-                                Snackbar.LENGTH_SHORT).show();
-                        dismiss();
-                    } else {
-                        Snackbar.make(binding.getRoot(),
-                                R.string.borrow_failed, Snackbar.LENGTH_SHORT).show();
+            if (book == null || !Debounce.allow(v)) return;
+            v.setEnabled(false);  // 配合防抖：请求期间彻底禁用
+            viewModel.borrowBook(book.getId()).observe(getViewLifecycleOwner(), success -> {
+                if (binding == null) return;
+                v.setEnabled(true);
+                if (Boolean.TRUE.equals(success)) {
+                    // WP-14：先通知详情页（让详情页弹 Snackbar 因为 dialog 即将 dismiss），再 dismiss
+                    Bundle result = new Bundle();
+                    result.putBoolean("success", true);
+                    result.putString("title", book.getTitle());
+                    if (isAdded() && getParentFragment() != null) {
+                        getParentFragment().getChildFragmentManager()
+                                .setFragmentResult("borrow_result", result);
+                    } else if (isAdded()) {
+                        getParentFragmentManager().setFragmentResult("borrow_result", result);
                     }
-                });
-            }
+                    dismiss();
+                } else {
+                    // 后端返回的具体失败原因（如"您已借阅该书，不可重复借阅"）
+                    String msg = viewModel.getBorrowErrorMessage().getValue();
+                    Snackbar.make(binding.getRoot(),
+                            (msg != null && !msg.isEmpty()) ? msg : getString(R.string.borrow_failed),
+                            Snackbar.LENGTH_LONG).show();
+                }
+            });
         });
     }
 

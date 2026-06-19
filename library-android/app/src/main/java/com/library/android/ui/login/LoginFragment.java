@@ -62,22 +62,23 @@ public class LoginFragment extends Fragment {
                         .setLaunchSingleTop(true)
                         .build();
                 Navigation.findNavController(view)
-                        .navigate(R.id.searchFragment, null, navOptions);
+                        .navigate(R.id.homeFragment, null, navOptions);
             }
         });
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            Log.d(TAG, "错误消息: " + msg);
-            if (msg != null && !msg.isEmpty()) {
-                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
-                binding.etUsername.setError(msg);
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            Log.d(TAG, "错误消息: " + (throwable != null ? throwable.getMessage() : ""));
+            if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
+                Toast.makeText(requireContext(), throwable.getMessage(), Toast.LENGTH_LONG).show();
+                binding.etUsername.setError(throwable.getMessage());
             }
         });
 
-        viewModel.isLoading().observe(getViewLifecycleOwner(), loading -> {
-            Log.d(TAG, "加载状态: loading=" + loading);
-            binding.btnLogin.setEnabled(!loading);
-            binding.btnRegister.setEnabled(!loading);
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state -> {
+            Log.d(TAG, "加载状态: " + state);
+            boolean isLoading = state == com.library.android.ui.common.LoadingState.LOADING;
+            binding.btnLogin.setEnabled(!isLoading);
+            binding.btnRegister.setEnabled(!isLoading);
         });
 
         binding.btnLogin.setOnClickListener(v -> {
@@ -86,7 +87,8 @@ public class LoginFragment extends Fragment {
 
             String username = binding.etUsername.getText().toString().trim();
             String password = binding.etPassword.getText().toString().trim();
-            Log.d(TAG, "点击登录: username=" + username + ", password=" + (password.isEmpty() ? "空" : "已填写"));
+            // 移除 PII 日志：原代码会打印 username 与"已填写"至 logcat（OWASP 违规）
+            Log.d(TAG, "点击登录");
             // ViewModel 已通过 Hilt 注入 TokenManager，无需传 Context
             viewModel.login(username, password);
         });
