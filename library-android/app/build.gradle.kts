@@ -21,11 +21,13 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 后端 API 基地址（优先从 local.properties 读取，不入 git；否则使用模拟器默认值）
+        // 后端 API 基地址（优先从 local.properties 读取，不入 git；否则使用生产环境默认值）
+        // 默认值：生产服务器（http://101.132.24.73:8080/api/v1/）
+        // 本地开发：在 local.properties 中设置 api.base.url=http://10.0.2.2:8080/api/v1/ 覆盖（emulator 映射本机）
         val localProps = Properties()
         val localFile = rootProject.file("local.properties")
         if (localFile.exists()) localProps.load(localFile.inputStream())
-        val baseUrl = localProps.getProperty("api.base.url", "http://10.0.2.2:8080/api/v1/")
+        val baseUrl = localProps.getProperty("api.base.url", "http://101.132.24.73:8080/api/v1/")
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
         // Mock 模式（默认 false 连真实后端；设为 true 使用本地模拟数据）
         val mockEnabled = localProps.getProperty("mock.enabled", "false")
@@ -86,11 +88,6 @@ dependencies {
 
     // ---- 图片加载: Glide ----
     implementation("com.github.bumptech.glide:glide:4.16.0")
-
-    // ---- 本地存储: Room ----
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-rxjava3:2.6.1")
-    annotationProcessor("androidx.room:room-compiler:2.6.1")
 
     // ---- 依赖注入: Hilt ----
     implementation("com.google.dagger:hilt-android:2.50")
