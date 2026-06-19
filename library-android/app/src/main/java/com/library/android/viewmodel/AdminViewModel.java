@@ -2,7 +2,6 @@ package com.library.android.viewmodel;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.*;
 import com.library.android.repository.AdminRepository;
@@ -15,7 +14,6 @@ import javax.inject.Inject;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
@@ -25,20 +23,17 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  * @since 1.0.0
  */
 @HiltViewModel
-public class AdminViewModel extends ViewModel {
+public class AdminViewModel extends BaseViewModel {
 
     private final AdminRepository repository;
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     // 用户管理
     private final MutableLiveData<LoadingState> userLoadingState = new MutableLiveData<>(LoadingState.LOADING);
     private final MutableLiveData<List<UserManageVO>> userList = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> statusUpdateResult = new MutableLiveData<>();
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
-
     // 图书编目
-    private final MutableLiveData<BookVO> createdBook = new MutableLiveData<>();
-    private final MutableLiveData<BookVO> updatedBook = new MutableLiveData<>();
+    private final MutableLiveData<com.library.android.model.BookDetailVO> createdBook = new MutableLiveData<>();
+    private final MutableLiveData<com.library.android.model.BookDetailVO> updatedBook = new MutableLiveData<>();
     private final MutableLiveData<Boolean> deleteResult = new MutableLiveData<>();
 
     private int userPage = 1;
@@ -57,8 +52,6 @@ public class AdminViewModel extends ViewModel {
     public LiveData<LoadingState> getUserLoadingState() { return userLoadingState; }
     public LiveData<List<UserManageVO>> getUserList() { return userList; }
     public LiveData<Boolean> getStatusUpdateResult() { return statusUpdateResult; }
-    public LiveData<String> getErrorMessage() { return errorMessage; }
-
     public void loadUsers(String role, String status, String keyword) {
         userRoleFilter = role;
         userStatusFilter = status;
@@ -77,11 +70,11 @@ public class AdminViewModel extends ViewModel {
                         userLoadingState.setValue(records == null || records.isEmpty()
                                 ? LoadingState.EMPTY : LoadingState.CONTENT);
                     } else {
-                        errorMessage.setValue(result != null ? result.getMessage() : "加载失败");
+                        postError(new RuntimeException(result != null ? result.getMessage() : "加载失败"));
                         userLoadingState.setValue(LoadingState.ERROR);
                     }
                 }, throwable -> {
-                    errorMessage.setValue(throwable.getMessage());
+                    postError(new RuntimeException(throwable.getMessage()));
                     userLoadingState.setValue(LoadingState.ERROR);
                 }));
     }
@@ -116,8 +109,8 @@ public class AdminViewModel extends ViewModel {
     }
 
     // ---- 图书编目 ----
-    public LiveData<BookVO> getCreatedBook() { return createdBook; }
-    public LiveData<BookVO> getUpdatedBook() { return updatedBook; }
+    public LiveData<com.library.android.model.BookDetailVO> getCreatedBook() { return createdBook; }
+    public LiveData<com.library.android.model.BookDetailVO> getUpdatedBook() { return updatedBook; }
     public LiveData<Boolean> getDeleteResult() { return deleteResult; }
 
     public void createBook(BookCreateRequest request) {
@@ -128,9 +121,9 @@ public class AdminViewModel extends ViewModel {
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         createdBook.setValue(result.getData());
                     } else {
-                        errorMessage.setValue(result != null ? result.getMessage() : "创建失败");
+                        postError(new RuntimeException(result != null ? result.getMessage() : "创建失败"));
                     }
-                }, throwable -> errorMessage.setValue(throwable.getMessage())));
+                }, throwable -> postError(new RuntimeException(throwable.getMessage()))));
     }
 
     public void updateBook(long bookId, BookUpdateRequest request) {
@@ -141,9 +134,9 @@ public class AdminViewModel extends ViewModel {
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         updatedBook.setValue(result.getData());
                     } else {
-                        errorMessage.setValue(result != null ? result.getMessage() : "更新失败");
+                        postError(new RuntimeException(result != null ? result.getMessage() : "更新失败"));
                     }
-                }, throwable -> errorMessage.setValue(throwable.getMessage())));
+                }, throwable -> postError(new RuntimeException(throwable.getMessage()))));
     }
 
     public void deleteBook(long bookId) {
@@ -154,9 +147,5 @@ public class AdminViewModel extends ViewModel {
                         throwable -> deleteResult.setValue(false)));
     }
 
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        disposables.clear();
-    }
+
 }

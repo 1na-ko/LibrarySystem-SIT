@@ -4,12 +4,11 @@ import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.BookDetailVO;
 import com.library.android.model.BookRecommendVO;
-import com.library.android.model.Result;
 import com.library.android.repository.BookRepository;
+import com.library.android.ui.common.LoadingState;
 
 import java.util.List;
 
@@ -17,17 +16,13 @@ import javax.inject.Inject;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
- * 图书详情页 ViewModel.
- *
- * @author LibrarySystem Team
- * @since 1.0.0
+ * 图书详情页 ViewModel（深度迁移：完全使用 BaseViewModel 的 errorEvent/loadingState）.
  */
 @HiltViewModel
-public class BookDetailViewModel extends ViewModel {
+public class BookDetailViewModel extends BaseViewModel {
 
     private static final String TAG = "BookDetailViewModel";
 
@@ -35,10 +30,6 @@ public class BookDetailViewModel extends ViewModel {
 
     private final MutableLiveData<BookDetailVO> bookDetail = new MutableLiveData<>();
     private final MutableLiveData<List<BookRecommendVO>> relatedBooks = new MutableLiveData<>();
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     @Inject
     public BookDetailViewModel(BookRepository bookRepository) {
@@ -47,28 +38,27 @@ public class BookDetailViewModel extends ViewModel {
 
     public LiveData<BookDetailVO> getBookDetail() { return bookDetail; }
     public LiveData<List<BookRecommendVO>> getRelatedBooks() { return relatedBooks; }
-    public LiveData<String> getErrorMessage() { return errorMessage; }
-    public LiveData<Boolean> isLoading() { return loading; }
 
     public void loadBookDetail(long bookId) {
-        loading.setValue(true);
+        setLoading(LoadingState.LOADING);
         disposables.add(
             bookRepository.getBookDetail(bookId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
                         if (result.isSuccess() && result.getData() != null) {
                             bookDetail.setValue(result.getData());
+                            setLoading(LoadingState.CONTENT);
                         } else {
-                            errorMessage.setValue(result.getMessage());
+                            setLoading(LoadingState.ERROR);
+                            postError(new RuntimeException(result.getMessage()));
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(LoadingState.ERROR);
                         Log.e(TAG, "加载图书详情失败", throwable);
-                        errorMessage.setValue("加载失败：" + throwable.getMessage());
+                        postError(throwable);
                     }
                 )
         );
@@ -86,11 +76,5 @@ public class BookDetailViewModel extends ViewModel {
                     throwable -> Log.e(TAG, "加载相关推荐失败", throwable)
                 )
         );
-    }
-
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        disposables.clear();
     }
 }

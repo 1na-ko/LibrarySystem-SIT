@@ -2,33 +2,29 @@ package com.library.android.viewmodel;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.BorrowRecordVO;
 import com.library.android.repository.BorrowRepository;
+import com.library.android.ui.common.LoadingState;
 
 import javax.inject.Inject;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
- * 借阅详情 ViewModel（人员 B 主导）.
+ * 借阅详情 ViewModel（WP2.5：迁移至 BaseViewModel，保留旧 getter 兼容 Fragment）.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @HiltViewModel
-public class BorrowDetailViewModel extends ViewModel {
+public class BorrowDetailViewModel extends BaseViewModel {
 
     private final BorrowRepository repository;
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     private final MutableLiveData<BorrowRecordVO> borrowDetail = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(true);
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private final MutableLiveData<Boolean> returnSuccess = new MutableLiveData<>();
     private final MutableLiveData<String> renewResult = new MutableLiveData<>();
 
@@ -38,27 +34,29 @@ public class BorrowDetailViewModel extends ViewModel {
     }
 
     public LiveData<BorrowRecordVO> getBorrowDetail() { return borrowDetail; }
-    public LiveData<Boolean> getLoading() { return loading; }
-    public LiveData<String> getErrorMessage() { return errorMessage; }
     public LiveData<Boolean> getReturnSuccess() { return returnSuccess; }
     public LiveData<String> getRenewResult() { return renewResult; }
 
     /** 加载借阅详情. */
     public void loadDetail(long borrowId) {
-        loading.setValue(true);
+        setLoading(com.library.android.ui.common.LoadingState.LOADING);
+        setLoading(LoadingState.LOADING);
         disposables.add(repository.getBorrowDetail(borrowId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    loading.setValue(false);
+                    setLoading(com.library.android.ui.common.LoadingState.CONTENT);
+                    setLoading(LoadingState.CONTENT);
                     if (result != null && result.isSuccess() && result.getData() != null) {
                         borrowDetail.setValue(result.getData());
                     } else {
-                        errorMessage.setValue(result != null ? result.getMessage() : "加载失败");
+                        String msg = result != null ? result.getMessage() : "加载失败";
+                        postError(new RuntimeException(msg));
                     }
                 }, throwable -> {
-                    loading.setValue(false);
-                    errorMessage.setValue(throwable.getMessage());
+                    setLoading(com.library.android.ui.common.LoadingState.CONTENT);
+                    setLoading(LoadingState.ERROR);
+                    postError(throwable);
                 }));
     }
 
@@ -83,11 +81,5 @@ public class BorrowDetailViewModel extends ViewModel {
                         renewResult.setValue(null);
                     }
                 }, throwable -> renewResult.setValue(null)));
-    }
-
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        disposables.clear();
     }
 }
