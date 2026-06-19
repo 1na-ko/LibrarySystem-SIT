@@ -2,6 +2,7 @@ package com.library.android.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -34,23 +35,24 @@ public class NegotiationSuggestion {
     public List<String> getKeyTerms() { return keyTerms; }
     public List<String> getRiskWarnings() { return riskWarnings; }
 
+    /** WP2.6：金额字段统一使用 BigDecimal 保证金融精度. */
     public static class PriceRange {
         @SerializedName("floorPrice")
-        private double floorPrice;
+        private BigDecimal floorPrice;
 
         @SerializedName("ceilingPrice")
-        private double ceilingPrice;
+        private BigDecimal ceilingPrice;
 
         @SerializedName("medianPrice")
-        private double medianPrice;
+        private BigDecimal medianPrice;
 
         @SerializedName("suggestedOffer")
-        private double suggestedOffer;
+        private BigDecimal suggestedOffer;
 
-        public double getFloorPrice() { return floorPrice; }
-        public double getCeilingPrice() { return ceilingPrice; }
-        public double getMedianPrice() { return medianPrice; }
-        public double getSuggestedOffer() { return suggestedOffer; }
+        public BigDecimal getFloorPrice() { return floorPrice; }
+        public BigDecimal getCeilingPrice() { return ceilingPrice; }
+        public BigDecimal getMedianPrice() { return medianPrice; }
+        public BigDecimal getSuggestedOffer() { return suggestedOffer; }
     }
 
     public static class Strategy {

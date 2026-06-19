@@ -25,12 +25,17 @@ public class PurchasePredictionVO {
     @SerializedName("features")
     private Features features;
 
+    /** WP-0/4：数据不足等降级场景的友好提示（非空时前端展示，不再是"服务不可用"误导）. */
+    @SerializedName("message")
+    private String message;
+
     public long getSubjectId() { return subjectId; }
     public String getSubjectName() { return subjectName; }
     public String getMonth() { return month; }
     public int getPredictedDemand() { return predictedDemand; }
     public double getConfidence() { return confidence; }
     public Features getFeatures() { return features; }
+    public String getMessage() { return message; }
 
     public static class Features {
         @SerializedName("historyTrend")

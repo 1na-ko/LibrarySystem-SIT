@@ -62,8 +62,9 @@ public interface LibraryApi {
             @Query("pageSize") int pageSize
     );
 
+    /** WP-4 契约对齐：返回类型由 Map&lt;String,String&gt; 改为 SuggestVO（含 text + type 字段）. */
     @GET("books/suggest")
-    Call<Result<List<Map<String, String>>>> suggest(@Query("prefix") String prefix, @Query("limit") int limit);
+    Call<Result<List<SuggestVO>>> suggest(@Query("prefix") String prefix, @Query("limit") int limit);
 
     /** 后端实际返回 BookSimpleVO. */
     @GET("books/hot")
@@ -157,6 +158,15 @@ public interface LibraryApi {
     @GET("users/me/recommendations")
     Call<Result<List<BookRecommendVO>>> getRecommendations(@Query("limit") int limit);
 
+    /**
+     * SSE 流式推荐（C.1 流式增强）：书目秒回 + LLM 导语逐 token.
+     * <p>produces text/event-stream，事件序列：books / reason(多次) / done.
+     * 用 @Streaming 避免 Retrofit 一次性读入 body，支持逐帧读取.
+     */
+    @Streaming
+    @GET("users/me/recommendations/stream")
+    Call<okhttp3.ResponseBody> streamRecommendations(@Query("limit") int limit);
+
     // ======================== 知识图谱模块（人员 B 主导） ========================
 
     /** 后端路径 /kg/book/{bookId}（无 /graph 后缀）. */
@@ -180,6 +190,21 @@ public interface LibraryApi {
             @Query("type") String type
     );
 
+    /** 关键路径查询 — 两本图书之间的最短引用/关键词路径（C.3 新增）. */
+    @GET("kg/book/{bookId}/keypath")
+    Call<Result<TraceGraph>> getKeyPath(
+            @Path("bookId") long bookId,
+            @Query("targetBookId") long targetBookId
+    );
+
+    /** 单本图书图谱重建（管理员，kg:admin 权限，C.3 新增）. */
+    @POST("admin/kg/rebuild/{bookId}")
+    Call<Result<Void>> rebuildKgForBook(@Path("bookId") long bookId);
+
+    /** 全量图谱重建（管理员，kg:admin 权限，返回处理图书数量，C.3 新增）. */
+    @POST("admin/kg/rebuild-all")
+    Call<Result<Integer>> rebuildKgAll();
+
     // ======================== 系统管理模块（人员 B 主导） ========================
 
     /** 后端分页参数名为 page / size（非 pageNum / pageSize）. */
@@ -195,14 +220,19 @@ public interface LibraryApi {
     @PUT("admin/users/{id}/status")
     Call<Result<Void>> updateUserStatus(@Path("id") long userId, @Body UserStatusUpdateRequest request);
 
+    /** WP-4 契约对齐：后端 AdminBookController 返回 BookDetailVO（含 keywords/relatedBooks 完整字段）. */
     @POST("admin/books")
-    Call<Result<BookVO>> createBook(@Body BookCreateRequest request);
+    Call<Result<BookDetailVO>> createBook(@Body BookCreateRequest request);
 
     @PUT("admin/books/{id}")
-    Call<Result<BookVO>> updateBook(@Path("id") long bookId, @Body BookUpdateRequest request);
+    Call<Result<BookDetailVO>> updateBook(@Path("id") long bookId, @Body BookUpdateRequest request);
 
     @DELETE("admin/books/{id}")
     Call<Result<Void>> deleteBook(@Path("id") long bookId);
+
+    /** 流通统计 Dashboard（C.2 新增，需 LIBRARIAN/ADMIN 角色）. */
+    @GET("admin/stats/dashboard")
+    Call<Result<DashboardVO>> getDashboard();
 
     // ======================== 智能采编模块（人员 B·可选） ========================
 
@@ -215,19 +245,36 @@ public interface LibraryApi {
     @GET("acquisition/gap-analysis")
     Call<Result<GapAnalysisResult>> analyzeGap(@Query("subjectId") long subjectId);
 
-    /** 后端使用 @RequestParam（Query 参数），非 RequestBody. */
+    /** WP5：供应商列表（下拉选择用）. */
+    @GET("acquisition/suppliers")
+    Call<Result<List<SupplierVO>>> listSuppliers();
+
+    /** WP5：电子资源列表（下拉选择用）. */
+    @GET("acquisition/resources")
+    Call<Result<List<ElectronicResourceVO>>> listResources();
+
+    /**
+     * 创建谈判会话 — 后端使用 @RequestParam（Query 参数）.
+     *
+     * <p>D.1 修复：原签名包含 negotiatorId 是 OpenAPI 描述与代码不符的产物，
+     * 后端 AcquisitionController 实际从 SecurityUtils.getCurrentUserId() 取，
+     * 客户端发送也会被忽略。移除该参数避免误导.
+     *
+     * <p>返回 {@link NegotiationVO}（会话元信息），单独通过
+     * {@link #getNegotiationSuggestion} 获取 LLM 建议结果.
+     */
     @POST("acquisition/negotiation")
-    Call<Result<NegotiationSuggestion>> createNegotiation(
+    Call<Result<NegotiationVO>> createNegotiation(
             @Query("resourceId") long resourceId,
-            @Query("supplierId") long supplierId,
-            @Query("negotiatorId") long negotiatorId
+            @Query("supplierId") long supplierId
     );
 
     @GET("acquisition/negotiation/{id}/suggestion")
     Call<Result<NegotiationSuggestion>> getNegotiationSuggestion(@Path("id") long negotiationId);
 
-    // ======================== 系统 ========================
+    /** WP6：谈判建议 SSE 流式（priceRange JSON 秒回 + text 多次逐 token + done）. */
+    @Streaming
+    @GET("acquisition/negotiation/{id}/suggestion/stream")
+    Call<okhttp3.ResponseBody> streamNegotiationSuggestion(@Path("id") long negotiationId);
 
-    @GET("health")
-    Call<Map<String, Object>> healthCheck();
 }

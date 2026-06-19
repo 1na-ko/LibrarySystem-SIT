@@ -52,8 +52,9 @@ public class BookDetailVO {
     @SerializedName("keywords")
     private List<String> keywords;
 
+    /** WP-4 契约对齐：后端 BookDetailVO.relatedBooks 实际类型为 List&lt;BookSimpleVO&gt;. */
     @SerializedName("relatedBooks")
-    private List<BookVO> relatedBooks;
+    private List<BookSimpleVO> relatedBooks;
 
     @SerializedName("reservationCount")
     private int reservationCount;
@@ -72,6 +73,6 @@ public class BookDetailVO {
     public int getTotalCopies() { return totalCopies; }
     public int getBorrowCount() { return borrowCount; }
     public List<String> getKeywords() { return keywords; }
-    public List<BookVO> getRelatedBooks() { return relatedBooks; }
+    public List<BookSimpleVO> getRelatedBooks() { return relatedBooks; }
     public int getReservationCount() { return reservationCount; }
 }

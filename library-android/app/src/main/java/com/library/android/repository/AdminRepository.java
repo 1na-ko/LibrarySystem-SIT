@@ -1,12 +1,12 @@
 package com.library.android.repository;
 
 import com.library.android.model.*;
+import com.library.android.network.ApiCallExecutor;
 import com.library.android.network.LibraryApi;
-
 import io.reactivex.rxjava3.core.Single;
 
 /**
- * 系统管理 Repository（人员 B 主导）.
+ * 系统管理 Repository.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -23,30 +23,48 @@ public class AdminRepository {
     public Single<Result<PageResult<UserManageVO>>> listUsers(String role, String status, String keyword,
                                                                int page, int size) {
         return Single.fromCallable(() ->
-                api.listUsers(role, status, keyword, page, size).execute().body());
+                ApiCallExecutor.execute(api.listUsers(role, status, keyword, page, size)));
     }
 
     /** 变更用户状态. */
     public Single<Result<Void>> updateUserStatus(long userId, String status) {
         return Single.fromCallable(() ->
-                api.updateUserStatus(userId, new UserStatusUpdateRequest(status)).execute().body());
+                ApiCallExecutor.execute(api.updateUserStatus(userId, new UserStatusUpdateRequest(status))));
     }
 
-    /** 新增图书（编目）. */
-    public Single<Result<BookVO>> createBook(BookCreateRequest request) {
+    /** 新增图书（编目）— WP-4：后端返回 BookDetailVO（含完整字段）. */
+    public Single<Result<com.library.android.model.BookDetailVO>> createBook(BookCreateRequest request) {
         return Single.fromCallable(() ->
-                api.createBook(request).execute().body());
+                ApiCallExecutor.execute(api.createBook(request)));
     }
 
-    /** 修改图书信息. */
-    public Single<Result<BookVO>> updateBook(long bookId, BookUpdateRequest request) {
+    /** 修改图书信息 — WP-4：后端返回 BookDetailVO. */
+    public Single<Result<com.library.android.model.BookDetailVO>> updateBook(long bookId, BookUpdateRequest request) {
         return Single.fromCallable(() ->
-                api.updateBook(bookId, request).execute().body());
+                ApiCallExecutor.execute(api.updateBook(bookId, request)));
     }
 
     /** 删除图书. */
     public Single<Result<Void>> deleteBook(long bookId) {
         return Single.fromCallable(() ->
-                api.deleteBook(bookId).execute().body());
+                ApiCallExecutor.execute(api.deleteBook(bookId)));
+    }
+
+    /** 流通统计 Dashboard（C.2 新增）. */
+    public Single<Result<DashboardVO>> getDashboard() {
+        return Single.fromCallable(() ->
+                ApiCallExecutor.execute(api.getDashboard()));
+    }
+
+    /** 单本图书图谱重建（C.3 新增，kg:admin 权限）. */
+    public Single<Result<Void>> rebuildKgForBook(long bookId) {
+        return Single.fromCallable(() ->
+                ApiCallExecutor.execute(api.rebuildKgForBook(bookId)));
+    }
+
+    /** 全量图谱重建（C.3 新增，kg:admin 权限，返回处理图书数）. */
+    public Single<Result<Integer>> rebuildKgAll() {
+        return Single.fromCallable(() ->
+                ApiCallExecutor.execute(api.rebuildKgAll()));
     }
 }
