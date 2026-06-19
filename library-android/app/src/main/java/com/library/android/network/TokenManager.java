@@ -26,6 +26,7 @@ public class TokenManager {
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_USERNAME = "username";
     private static final String KEY_REAL_NAME = "real_name";
+    private static final String KEY_USER_ID = "user_id";
 
     private static volatile TokenManager instance;
     private final SharedPreferences prefs;
@@ -100,10 +101,30 @@ public class TokenManager {
         return prefs.getString(KEY_USER_ROLE, null);
     }
 
-    /** 是否为管理员角色（ADMIN / LIBRARIAN）. */
+    public void saveUserId(long userId) {
+        prefs.edit().putLong(KEY_USER_ID, userId).apply();
+    }
+
+    /** 获取用户 ID，未登录或未保存时返回 -1L. */
+    public long getUserId() {
+        return prefs.getLong(KEY_USER_ID, -1L);
+    }
+
+    /** 是否为系统管理员（仅 ADMIN）. */
     public boolean isAdmin() {
+        return "ADMIN".equals(getUserRole());
+    }
+
+    /** 是否具备图书馆员及以上权限（LIBRARIAN / ADMIN）. */
+    public boolean isLibrarianOrAbove() {
         String role = getUserRole();
         return "ADMIN".equals(role) || "LIBRARIAN".equals(role);
+    }
+
+    /** 是否具备采编员权限（ACQUISITOR / LIBRARIAN / ADMIN）. */
+    public boolean isAcquisitorOrAbove() {
+        String role = getUserRole();
+        return "ADMIN".equals(role) || "LIBRARIAN".equals(role) || "ACQUISITOR".equals(role);
     }
 
     public boolean isLoggedIn() {

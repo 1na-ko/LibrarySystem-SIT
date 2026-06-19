@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  网络安全配置（A.6 加固）— 仅生产 IP 与本地开发地址允许 cleartext，其它域名强制 HTTPS.
+
+  历史问题：AndroidManifest 全局 usesCleartextTraffic="true" 在 release 构建中也允许任意 HTTP，
+  违反 OWASP MASVS NETWORK-1。本配置精确限定 cleartext 范围:
+   - 生产环境：101.132.24.73（与后端 docker-compose 部署一致）
+   - 模拟器开发：10.0.2.2（emulator 本机映射）
+   - 本地真机调试：localhost / 127.0.0.1
+  其余域名走 system 默认（强制 HTTPS）.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- 生产服务器 -->
+        <domain includeSubdomains="false">101.132.24.73</domain>
+        <!-- 模拟器宿主机映射 -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- 本地真机调试 -->
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

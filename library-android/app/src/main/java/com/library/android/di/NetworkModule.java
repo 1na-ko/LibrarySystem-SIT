@@ -4,9 +4,9 @@ import android.content.Context;
 
 import com.google.gson.GsonBuilder;
 import com.library.android.BuildConfig;
-import com.library.android.network.AuthApiService;
 import com.library.android.network.AuthInterceptor;
 import com.library.android.network.LibraryApi;
+import com.library.android.network.SessionManager;
 import com.library.android.network.TokenAuthenticator;
 import com.library.android.network.MockInterceptor;
 import com.library.android.network.Utf8FixTypeAdapterFactory;
@@ -38,14 +38,23 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
-    private static final int TIMEOUT_SECONDS = 15;
+    /**
+     * 全局超时秒数.
+     *
+     * <p>调大到 30s：推荐端点 /users/me/recommendations 含 LLM 生成推荐理由，
+     * 真机网络（移动数据/WiFi 到阿里云）RTT 较高，6-15s 的 LLM 耗时在真机上易超 15s
+     * 触发 SocketTimeoutException 致推荐页空白（课设验证实测）.
+     * KG 端点虽不含 LLM，但 Neo4j 多跳查询在冷启动时也可能偏慢，统一放宽.
+     */
+    private static final int TIMEOUT_SECONDS = 30;
     /** 打破 TokenAuthenticator ↔ Retrofit 循环依赖的持有者. */
     private static volatile LibraryApi sLibraryApi;
 
     @Provides
     @Singleton
-    static TokenAuthenticator provideTokenAuthenticator(@ApplicationContext Context context) {
-        return new TokenAuthenticator(context, () -> sLibraryApi);
+    static TokenAuthenticator provideTokenAuthenticator(@ApplicationContext Context context,
+                                                        SessionManager sessionManager) {
+        return new TokenAuthenticator(context, () -> sLibraryApi, sessionManager);
     }
 
     @Provides
@@ -53,8 +62,11 @@ public class NetworkModule {
     static OkHttpClient provideOkHttpClient(@ApplicationContext Context context,
                                             TokenAuthenticator tokenAuthenticator) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        // 注：BODY level 会一次性读取整个响应 body（在 @Streaming 之前的 OkHttp 层），
+        // 对 SSE 流式响应（text/event-stream）会缓冲整个流导致阻塞/异常。
+        // 改用 BASIC（请求/响应行 + 耗时，不读 body），保证 SSE 流式不被破坏，同时保留基本调试信息.
         logging.setLevel(BuildConfig.DEBUG
-                ? HttpLoggingInterceptor.Level.BODY
+                ? HttpLoggingInterceptor.Level.BASIC
                 : HttpLoggingInterceptor.Level.NONE);
 
         MockInterceptor mockInterceptor = new MockInterceptor();
@@ -83,12 +95,6 @@ public class NetworkModule {
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
                 .build();
-    }
-
-    @Provides
-    @Singleton
-    static AuthApiService provideAuthApiService(Retrofit retrofit) {
-        return retrofit.create(AuthApiService.class);
     }
 
     @Provides
