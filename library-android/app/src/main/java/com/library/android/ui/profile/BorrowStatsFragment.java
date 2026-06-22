@@ -26,6 +26,7 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowStatsBinding;
 import com.library.android.model.BorrowStatsVO;
 import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ChartThemeHelper;
 import com.library.android.viewmodel.ProfileViewModel;
 
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ public class BorrowStatsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("借阅统计");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_borrow_stats));
 
         viewModel.getBorrowStats().observe(getViewLifecycleOwner(), stats -> {
             if (stats != null) {
@@ -78,9 +79,14 @@ public class BorrowStatsFragment extends Fragment {
         binding.tvOverdueCount.setText(String.valueOf(stats.getTotalOverdue()));
         binding.tvTotalFines.setText(String.format("¥%.1f", stats.getTotalFines()));
 
+        // A.5 关键修复：每次回调先清空容器再添加新图表，避免重复 addView 导致视图泄漏与重叠
+        binding.layoutPieChart.removeAllViews();
+        binding.layoutLineChart.removeAllViews();
+
         // 分类分布饼图
         if (stats.getCategoryDistribution() != null && !stats.getCategoryDistribution().isEmpty()) {
             PieChart pieChart = new PieChart(requireContext());
+            ChartThemeHelper.applyPieChartTheme(pieChart);
             binding.layoutPieChart.addView(pieChart);
 
             List<PieEntry> pieEntries = new ArrayList<>();
@@ -103,6 +109,7 @@ public class BorrowStatsFragment extends Fragment {
             PieDataSet dataSet = new PieDataSet(pieEntries, "分类分布");
             dataSet.setColors(colors);
             dataSet.setValueTextSize(12f);
+            dataSet.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
 
             PieData data = new PieData(dataSet);
             pieChart.setData(data);
@@ -116,6 +123,7 @@ public class BorrowStatsFragment extends Fragment {
         // 月度趋势折线图
         if (stats.getMonthlyTrend() != null && !stats.getMonthlyTrend().isEmpty()) {
             LineChart lineChart = new LineChart(requireContext());
+            ChartThemeHelper.applyLineChartTheme(lineChart);
             binding.layoutLineChart.addView(lineChart);
 
             List<Entry> lineEntries = new ArrayList<>();
@@ -133,6 +141,7 @@ public class BorrowStatsFragment extends Fragment {
             lineDataSet.setCircleColor(ContextCompat.getColor(requireContext(), R.color.chart_color_1));
             lineDataSet.setCircleRadius(3f);
             lineDataSet.setValueTextSize(10f);
+            lineDataSet.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
 
             LineData lineData = new LineData(lineDataSet);
             lineChart.setData(lineData);

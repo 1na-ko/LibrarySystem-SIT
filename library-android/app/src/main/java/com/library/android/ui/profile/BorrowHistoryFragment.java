@@ -7,8 +7,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -16,30 +16,37 @@ import com.google.android.material.chip.Chip;
 import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowHistoryBinding;
 import com.library.android.databinding.ItemHistoryBinding;
-import com.library.android.ui.main.MainActivity;
 import com.library.android.model.BorrowRecordVO;
+import com.library.android.model.PageResult;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.NavArgKeys;
+import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.common.SafeStrings;
+import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.ProfileViewModel;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * 借阅历史 Fragment — 按年份筛选.
  *
+ * <p>WP-8：补充分页（上拉加载）+ 列表项可点击跳详情 + observeError + 资源化.
+ *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class BorrowHistoryFragment extends Fragment {
+public class BorrowHistoryFragment extends BaseFragment {
 
     private FragmentBorrowHistoryBinding binding;
     private ProfileViewModel viewModel;
     private BorrowHistoryAdapter adapter;
     private Integer selectedYear;
+    private PagingScrollListener scrollListener;
 
     @Nullable
     @Override
@@ -54,14 +61,28 @@ public class BorrowHistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("借阅历史");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_borrow_history));
 
         adapter = new BorrowHistoryAdapter();
-        binding.rvHistory.setLayoutManager(new LinearLayoutManager(requireContext()));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
+        binding.rvHistory.setLayoutManager(layoutManager);
         binding.rvHistory.setAdapter(adapter);
+
+        // WP-8：上拉加载更多
+        scrollListener = new PagingScrollListener(layoutManager) {
+            @Override
+            protected void loadMore() {
+                PageResult<BorrowRecordVO> page = viewModel.getCurrentHistoryPage();
+                if (page != null && page.hasNextPage()) {
+                    viewModel.loadBorrowHistoryMore(selectedYear, page.getPageNum() + 1);
+                }
+            }
+        };
+        binding.rvHistory.addOnScrollListener(scrollListener);
 
         setupYearFilter();
         setupObservers();
+        observeError(viewModel.getErrorEvent());
 
         viewModel.loadBorrowHistory(null, 1);
     }
@@ -71,7 +92,7 @@ public class BorrowHistoryFragment extends Fragment {
 
         // "全部"选项
         Chip allChip = new Chip(requireContext());
-        allChip.setText("全部");
+        allChip.setText(R.string.tab_all);
         allChip.setCheckable(true);
         allChip.setChecked(true);
         allChip.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -100,6 +121,7 @@ public class BorrowHistoryFragment extends Fragment {
 
     private void setupObservers() {
         viewModel.getBorrowHistory().observe(getViewLifecycleOwner(), page -> {
+            if (binding == null) return;
             if (page != null && page.getRecords() != null && !page.getRecords().isEmpty()) {
                 adapter.submitList(page.getRecords());
                 binding.layoutEmpty.setVisibility(View.GONE);
@@ -113,6 +135,9 @@ public class BorrowHistoryFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (binding != null && scrollListener != null) {
+            binding.rvHistory.removeOnScrollListener(scrollListener);
+        }
         binding = null;
     }
 
@@ -129,7 +154,9 @@ public class BorrowHistoryFragment extends Fragment {
 
                 @Override
                 public boolean areContentsTheSame(@NonNull BorrowRecordVO oldItem, @NonNull BorrowRecordVO newItem) {
-                    return oldItem.getStatus().equals(newItem.getStatus());
+                    String oldStatus = oldItem.getStatus() != null ? oldItem.getStatus() : "";
+                    String newStatus = newItem.getStatus() != null ? newItem.getStatus() : "";
+                    return java.util.Objects.equals(oldStatus, newStatus);
                 }
             });
         }
@@ -142,32 +169,51 @@ public class BorrowHistoryFragment extends Fragment {
         @Override
         protected void bind(ItemHistoryBinding binding, BorrowRecordVO item, int position) {
             if (item.getBook() != null) {
-                binding.tvBookTitle.setText(item.getBook().getTitle());
+                binding.tvBookTitle.setText(SafeStrings.defaultIfEmpty(item.getBook().getTitle()));
             }
-            binding.tvDate.setText(item.getBorrowDate() != null
-                    ? item.getBorrowDate().substring(0, Math.min(7, item.getBorrowDate().length())) : "");
-            binding.tvDuration.setText("借阅: " + item.getBorrowDate() + " — " + item.getDueDate());
+            binding.tvDate.setText(SafeStrings.safeMonth(item.getBorrowDate()));
+            binding.tvDuration.setText(binding.getRoot().getContext().getString(R.string.borrow_duration_format,
+                    SafeStrings.defaultIfEmpty(item.getBorrowDate(), "—"),
+                    SafeStrings.defaultIfEmpty(item.getDueDate(), "—")));
 
             String statusText;
             int statusColorRes;
-            switch (item.getStatus()) {
+            String status = item.getStatus() != null ? item.getStatus() : "";
+            switch (status) {
                 case "BORROWED":
                 case "RENEWED":
-                    statusText = item.isOverdue() ? "已超期" : "借阅中";
+                    statusText = item.isOverdue()
+                            ? binding.getRoot().getContext().getString(R.string.borrow_overdue_status)
+                            : binding.getRoot().getContext().getString(R.string.borrow_active_status);
                     statusColorRes = item.isOverdue() ? R.color.chip_overdue : R.color.chip_borrowed;
                     break;
                 case "RETURNED":
-                    statusText = "已归还";
+                    statusText = binding.getRoot().getContext().getString(R.string.borrow_returned_status);
                     statusColorRes = R.color.chip_returned;
                     break;
+                case "OVERDUE":
+                    statusText = binding.getRoot().getContext().getString(R.string.borrow_overdue_status);
+                    statusColorRes = R.color.chip_overdue;
+                    break;
+                case "LOST":
+                    statusText = binding.getRoot().getContext().getString(R.string.borrow_lost_status);
+                    statusColorRes = R.color.chip_overdue;
+                    break;
                 default:
-                    statusText = item.getStatus();
+                    statusText = status;
                     statusColorRes = R.color.chip_borrowed;
             }
             binding.tvStatus.setText(statusText);
             binding.tvStatus.setBackgroundColor(
                     androidx.core.content.ContextCompat.getColor(
                             binding.getRoot().getContext(), statusColorRes));
+
+            // WP-8：列表项可点击跳借阅详情（带 borrowId）
+            binding.getRoot().setOnClickListener(v -> {
+                Bundle args = new Bundle();
+                args.putLong(NavArgKeys.BORROW_ID, item.getId());
+                Navigation.findNavController(v).navigate(R.id.borrowDetailFragment, args);
+            });
         }
     }
 }

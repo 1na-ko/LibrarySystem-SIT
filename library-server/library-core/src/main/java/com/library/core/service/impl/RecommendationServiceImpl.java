@@ -95,6 +95,43 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public List<BookRecommendVO> recommend(Long userId, int limit) {
+        return doRecommend(userId, limit, true);
+    }
+
+    @Override
+    public List<BookRecommendVO> recommendBooksQuick(Long userId, int limit) {
+        return doRecommend(userId, limit, false);
+    }
+
+    @Override
+    public String buildReasonPrompt(Long userId, List<BookRecommendVO> recommendations) {
+        if (recommendations == null || recommendations.isEmpty()) {
+            return null;
+        }
+        List<BorrowRecord> allRecords = borrowRecordMapper.selectAllActiveForCF();
+        List<Long> borrowedBookIds = allRecords.stream()
+                .filter(r -> r.getUserId().equals(userId))
+                .map(BorrowRecord::getBookId)
+                .distinct()
+                .limit(10)
+                .collect(Collectors.toList());
+        if (borrowedBookIds.isEmpty()) {
+            return null;
+        }
+        List<Book> borrowedBooks = bookMapper.selectBatchIds(borrowedBookIds);
+        List<String> borrowedTitles = borrowedBooks.stream()
+                .map(Book::getTitle)
+                .collect(Collectors.toList());
+        List<String> recTitles = recommendations.stream()
+                .map(vo -> "《" + vo.getBook().getTitle() + "》")
+                .collect(Collectors.toList());
+        return String.format(
+                "你是高校图书馆推荐助手。用户已借阅：%s。系统为用户推荐了以下图书：%s。"
+                        + "请用一段话（50-100字）向用户解释为什么推荐这些书，语气亲切自然，直接输出解释内容，不要带引号或前缀。",
+                String.join("、", borrowedTitles), String.join("、", recTitles));
+    }
+
+    private List<BookRecommendVO> doRecommend(Long userId, int limit, boolean withLlm) {
         int actualLimit = Math.max(1, Math.min(limit, properties.getMaxLimit()));
         long timeout = properties.getRecallTimeoutSeconds();
 
@@ -172,8 +209,10 @@ public class RecommendationServiceImpl implements RecommendationService {
         Map<Long, Double> scoreMap = topN.stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        // 6. 生成推荐理由（复用顶层加载的 borrowedBookIds）
-        List<String> reasons = generateReasons(userId, borrowedBookIds, topBooks, scoreMap, categoryNameMap);
+        // 6. 生成推荐理由：withLlm=true 走 LLM（含降级），false 直接模板（流式端点快速返回书目用）
+        List<String> reasons = withLlm
+                ? generateReasons(userId, borrowedBookIds, topBooks, scoreMap, categoryNameMap)
+                : templateReasons(topBooks.size());
 
         // 7. 组装 VO
         List<BookRecommendVO> result = new ArrayList<>();

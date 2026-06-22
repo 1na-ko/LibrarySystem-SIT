@@ -39,11 +39,15 @@ public class AdminUserListFragment extends Fragment {
     private AdminViewModel viewModel;
     private UserAdapter adapter;
     private PagingScrollListener scrollListener;
+    /** WP-10：组合筛选状态（搜索 + 角色可叠加）. */
+    private String currentRole = null;
+    private String currentKeyword = null;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentAdminUserListBinding.inflate(themedInflater, container, false);
@@ -55,7 +59,7 @@ public class AdminUserListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(AdminViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("用户管理");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_admin_users));
 
         setupRecyclerView();
         setupSearch();
@@ -83,7 +87,10 @@ public class AdminUserListFragment extends Fragment {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 String keyword = binding.editSearch.getText() != null
                         ? binding.editSearch.getText().toString().trim() : null;
-                viewModel.loadUsers(null, null, keyword);
+                if (keyword != null && keyword.isEmpty()) keyword = null;
+                // WP-10：组合筛选 — 搜索时保留当前 role，不再清空角色筛选
+                viewModel.loadUsers(currentRole, null, keyword);
+                currentKeyword = keyword;
                 return true;
             }
             return false;
@@ -101,7 +108,9 @@ public class AdminUserListFragment extends Fragment {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.filter_users)
                 .setItems(roleLabels, (dialog, which) -> {
-                    viewModel.loadUsers(roleValues[which], null, null);
+                    // WP-10：组合筛选 — 选角色时保留当前 keyword，不再清空搜索词
+                    viewModel.loadUsers(roleValues[which], null, currentKeyword);
+                    currentRole = roleValues[which];
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
@@ -129,9 +138,9 @@ public class AdminUserListFragment extends Fragment {
             }
         });
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                Snackbar.make(binding.getRoot(), msg, Snackbar.LENGTH_SHORT).show();
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
+                Snackbar.make(binding.getRoot(), throwable.getMessage(), Snackbar.LENGTH_SHORT).show();
             }
         });
     }
@@ -224,7 +233,7 @@ public class AdminUserListFragment extends Fragment {
             }
             @Override
             public boolean areContentsTheSame(@NonNull UserManageVO o, @NonNull UserManageVO n) {
-                return o.getStatus().equals(n.getStatus());
+                return java.util.Objects.equals(o.getStatus(), n.getStatus());
             }
         }
     }

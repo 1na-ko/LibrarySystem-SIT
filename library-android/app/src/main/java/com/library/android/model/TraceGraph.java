@@ -6,16 +6,18 @@ import java.util.List;
 
 /**
  * 文献溯源轨迹图.
+ *
+ * <p>WP-4 契约对齐：sourceBook 类型与后端 TraceGraphVO 一致（BookSimpleVO）.
  */
 public class TraceGraph {
 
     @SerializedName("sourceBook")
-    private BookVO sourceBook;
+    private BookSimpleVO sourceBook;
 
     @SerializedName("paths")
     private List<Path> paths;
 
-    public BookVO getSourceBook() { return sourceBook; }
+    public BookSimpleVO getSourceBook() { return sourceBook; }
     public List<Path> getPaths() { return paths; }
 
     public static class Path {

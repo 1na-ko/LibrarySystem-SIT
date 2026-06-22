@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WP-14：独立搜索 Activity — 真正的无 tabs 独立页面。
+  只包含 Fragment 容器，二级页面 toolbar 由各 Fragment 的 page_toolbar 提供。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/search_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary">
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/search_nav_host"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:navGraph="@navigation/search_nav_graph"
+        app:defaultNavHost="true" />
+
+</FrameLayout>

@@ -32,21 +32,18 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <LinearLayout
+        <TextView
             android:id="@+id/layoutEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="暂无借阅记录"
-                android:textSize="15sp"
-                android:textColor="@color/text_tertiary" />
-
-        </LinearLayout>
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_borrow_records"
+            android:textSize="@dimen/text_size_body_large"
+            android:textColor="@color/text_tertiary" />
 
     </FrameLayout>
 

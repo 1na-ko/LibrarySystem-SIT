@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WP-14：深色模式全量颜色覆盖。DayNight 主题下系统暗色时自动生效。
+  关键：Material 3 组件（CardView/TabLayout/Chip/Button）默认使用
+  colorSurface/colorOnSurface 等主题属性，指向 m3_surface/m3_on_surface。
+  若不在此覆盖 m3_* → 所有 Material 组件底色始终浅色 #FDFCF8。
+-->
+<resources>
+    <!-- ── Material 3 主题属性映射（最核心——卡片/标签栏/按钮底色）── -->
+    <color name="m3_surface">@color/m3_dark_surface</color>
+    <color name="m3_on_surface">@color/m3_dark_on_surface</color>
+    <color name="m3_surface_variant">@color/m3_dark_surface_variant</color>
+    <color name="m3_on_surface_variant">@color/m3_dark_on_surface_variant</color>
+    <color name="m3_outline">@color/m3_dark_outline</color>
+    <color name="m3_primary">@color/m3_dark_primary</color>
+    <color name="m3_on_primary">@color/m3_dark_on_primary</color>
+    <color name="m3_secondary">@color/m3_dark_secondary</color>
+    <color name="m3_on_secondary">@color/m3_dark_on_secondary</color>
+    <color name="m3_tertiary">@color/m3_dark_tertiary</color>
+    <color name="m3_error">@color/m3_dark_error</color>
+    <color name="m3_on_error">@color/m3_dark_on_error</color>
+
+    <!-- ── 背景 ── -->
+    <color name="bg_primary">@color/dark_bg_primary</color>
+    <color name="bg_card">@color/dark_bg_card</color>
+    <color name="bg_input">@color/dark_bg_input</color>
+    <color name="bg_overview">@color/dark_bg_overview</color>
+
+    <!-- ── 文字 ── -->
+    <color name="text_primary">@color/dark_text_primary</color>
+    <color name="text_secondary">@color/dark_text_secondary</color>
+    <color name="text_tertiary">@color/dark_text_tertiary</color>
+    <color name="text_placeholder">@color/dark_text_placeholder</color>
+
+    <!-- ── 边框 ── -->
+    <color name="border_light">@color/dark_border_light</color>
+
+    <!-- ── 功能色 ── -->
+    <color name="accent_cta">@color/m3_dark_primary</color>
+
+    <!-- ── Chip / 标签 ── -->
+    <color name="chip_borrowed">@color/dark_chip_bg</color>
+    <color name="chip_returned">@color/dark_chip_bg</color>
+    <color name="chip_overdue">@color/dark_chip_overdue</color>
+    <color name="chip_active">@color/dark_chip_bg</color>
+    <color name="accent_checkedout">#3A3A3C</color>
+
+    <!-- ── 图表配色 ── -->
+    <color name="chart_color_1">@color/dark_chart_color_1</color>
+    <color name="chart_color_2">@color/dark_chart_color_2</color>
+    <color name="chart_color_3">@color/dark_chart_color_3</color>
+    <color name="chart_color_4">@color/dark_chart_color_4</color>
+    <color name="chart_color_5">@color/dark_chart_color_5</color>
+    <color name="chart_color_6">@color/dark_chart_color_6</color>
+
+    <!-- ── 登录页 ── -->
+    <color name="login_bg_rice_paper">@color/dark_bg_primary</color>
+    <color name="login_card_surface">@color/dark_bg_card</color>
+    <color name="login_subtitle_text">#A0A0A0</color>
+    <color name="white">@color/dark_text_primary</color>
+</resources>

@@ -2,6 +2,6 @@
 <!-- 状态标签背景 — 圆角矩形，颜色由应用层通过 setBackgroundTintList 动态设置 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="4dp" />
+    <corners android:radius="@dimen/space_xs" />
     <solid android:color="@color/chip_active" />
 </shape>

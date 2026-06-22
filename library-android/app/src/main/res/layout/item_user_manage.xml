@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="@dimen/space_xs"
     style="@style/Widget.Material3.CardView.Filled">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="@dimen/space_md">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,8 +31,8 @@
                 android:id="@+id/textStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="2dp"
+                android:paddingHorizontal="@dimen/space_sm"
+                android:paddingVertical="@dimen/space_xxs"
                 android:textAppearance="?attr/textAppearanceLabelSmall"
                 android:background="@drawable/bg_status_chip"
                 tools:text="正常" />
@@ -43,7 +43,7 @@
             android:id="@+id/textUsername"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="@dimen/space_xxs"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="2024001001" />
@@ -51,7 +51,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:orientation="horizontal">
 
             <TextView
@@ -66,7 +66,7 @@
                 android:id="@+id/textBorrows"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
+                android:layout_marginEnd="@dimen/space_md"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 tools:text="借阅: 3" />
 

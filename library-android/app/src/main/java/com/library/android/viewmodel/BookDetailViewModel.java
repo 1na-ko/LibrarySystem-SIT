@@ -4,12 +4,14 @@ import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.BookDetailVO;
 import com.library.android.model.BookRecommendVO;
-import com.library.android.model.Result;
+import com.library.android.model.ReservationVO;
 import com.library.android.repository.BookRepository;
+import com.library.android.repository.ReservationRepository;
+import com.library.android.ui.common.LoadingState;
+import com.library.android.ui.common.SingleLiveEvent;
 
 import java.util.List;
 
@@ -17,58 +19,61 @@ import javax.inject.Inject;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 图书详情页 ViewModel.
  *
- * @author LibrarySystem Team
- * @since 1.0.0
+ * <p>P1-01：将原 BookDetailFragment 直接注入的 ReservationRepository 调用下沉至此，
+ * UI 层只观察 reserveResult LiveData 并做相应反馈.
  */
 @HiltViewModel
-public class BookDetailViewModel extends ViewModel {
+public class BookDetailViewModel extends BaseViewModel {
 
     private static final String TAG = "BookDetailViewModel";
 
     private final BookRepository bookRepository;
+    private final ReservationRepository reservationRepository;
 
     private final MutableLiveData<BookDetailVO> bookDetail = new MutableLiveData<>();
     private final MutableLiveData<List<BookRecommendVO>> relatedBooks = new MutableLiveData<>();
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-
-    private final CompositeDisposable disposables = new CompositeDisposable();
+    /** 预约成功事件（含排队位置）— SingleLiveEvent 防 Fragment 重建重复弹 Snackbar. */
+    private final SingleLiveEvent<ReservationVO> reserveSuccess = new SingleLiveEvent<>();
+    /** 预约请求是否进行中（UI 用于禁用按钮防抖）. */
+    private final MutableLiveData<Boolean> reserving = new MutableLiveData<>(false);
 
     @Inject
-    public BookDetailViewModel(BookRepository bookRepository) {
+    public BookDetailViewModel(BookRepository bookRepository,
+                               ReservationRepository reservationRepository) {
         this.bookRepository = bookRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     public LiveData<BookDetailVO> getBookDetail() { return bookDetail; }
     public LiveData<List<BookRecommendVO>> getRelatedBooks() { return relatedBooks; }
-    public LiveData<String> getErrorMessage() { return errorMessage; }
-    public LiveData<Boolean> isLoading() { return loading; }
+    public LiveData<ReservationVO> getReserveSuccess() { return reserveSuccess; }
+    public LiveData<Boolean> isReserving() { return reserving; }
 
     public void loadBookDetail(long bookId) {
-        loading.setValue(true);
+        setLoading(LoadingState.LOADING);
         disposables.add(
             bookRepository.getBookDetail(bookId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
                         if (result.isSuccess() && result.getData() != null) {
                             bookDetail.setValue(result.getData());
+                            setLoading(LoadingState.CONTENT);
                         } else {
-                            errorMessage.setValue(result.getMessage());
+                            setLoading(LoadingState.ERROR);
+                            postError(new RuntimeException(result.getMessage()));
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(LoadingState.ERROR);
                         Log.e(TAG, "加载图书详情失败", throwable);
-                        errorMessage.setValue("加载失败：" + throwable.getMessage());
+                        postError(throwable);
                     }
                 )
         );
@@ -88,9 +93,37 @@ public class BookDetailViewModel extends ViewModel {
         );
     }
 
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        disposables.clear();
+    /**
+     * P1-01：预约图书 — 取代原 BookDetailFragment 内 reservationRepository.reserveBook 直接订阅.
+     *
+     * <p>UI 通过 {@link #isReserving()} 控制按钮禁用，通过 {@link #getReserveSuccess()}
+     * 接收成功事件，通过 {@link #getErrorEvent()} 接收失败/业务异常.
+     */
+    public void reserveBook(long bookId) {
+        if (Boolean.TRUE.equals(reserving.getValue())) return;  // 防抖
+        reserving.setValue(true);
+        disposables.add(
+            reservationRepository.reserveBook(bookId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    result -> {
+                        reserving.setValue(false);
+                        if (result.isSuccess() && result.getData() != null) {
+                            reserveSuccess.setValue(result.getData());
+                            // 预约成功后刷新详情（更新预约人数）
+                            loadBookDetail(bookId);
+                        } else {
+                            postError(new RuntimeException(
+                                    result.getMessage() != null ? result.getMessage() : "预约失败"));
+                        }
+                    },
+                    throwable -> {
+                        reserving.setValue(false);
+                        Log.e(TAG, "预约失败", throwable);
+                        postError(throwable);
+                    }
+                )
+        );
     }
 }

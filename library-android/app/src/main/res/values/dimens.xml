@@ -54,4 +54,30 @@
     <dimen name="icon_size_md">24dp</dimen>
     <dimen name="icon_size_lg">32dp</dimen>
 
+    <!-- ── Chip ── -->
+    <dimen name="chip_stroke_width">1dp</dimen>
+
+    <!-- ── 空态/错误态插图 ── -->
+    <dimen name="empty_state_illustration_size">96dp</dimen>
+
+    <!-- ── 列表项 ── -->
+    <dimen name="list_item_height">56dp</dimen>
+
+    <!-- ── 卡片 ── -->
+    <dimen name="card_elevation">2dp</dimen>
+
+    <!-- ── 字号 Token（替代 layout 中硬编码 sp）── -->
+    <dimen name="text_size_xs">10sp</dimen>
+    <dimen name="text_size_sm">11sp</dimen>
+    <dimen name="text_size_md">12sp</dimen>
+    <dimen name="text_size_body_small">13sp</dimen>
+    <dimen name="text_size_body">14sp</dimen>
+    <dimen name="text_size_body_large">15sp</dimen>
+    <dimen name="text_size_title">16sp</dimen>
+    <dimen name="text_size_title_large">18sp</dimen>
+    <dimen name="text_size_headline_small">20sp</dimen>
+    <dimen name="text_size_headline">22sp</dimen>
+    <dimen name="text_size_display">24sp</dimen>
+    <dimen name="text_size_login_title">28sp</dimen>
+
 </resources>

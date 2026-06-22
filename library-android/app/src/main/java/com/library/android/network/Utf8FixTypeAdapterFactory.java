@@ -1,5 +1,7 @@
 package com.library.android.network;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
@@ -23,6 +25,8 @@ import java.nio.charset.StandardCharsets;
  * @since 1.0.0
  */
 public class Utf8FixTypeAdapterFactory implements TypeAdapterFactory {
+
+    private static final String TAG = "Utf8Fix";
 
     @Override
     @SuppressWarnings("unchecked")
@@ -104,14 +108,18 @@ public class Utf8FixTypeAdapterFactory implements TypeAdapterFactory {
                 byte[] raw = input.getBytes(getWindows1252());
                 String fixed = new String(raw, StandardCharsets.UTF_8);
                 if (hasCjkOrShorter(fixed, input)) return fixed;
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Log.w(TAG, "Windows-1252 decode failed, trying fallback", e);
+            }
 
             // 回退：ISO-8859-1
             try {
                 byte[] raw = input.getBytes(StandardCharsets.ISO_8859_1);
                 String fixed = new String(raw, StandardCharsets.UTF_8);
                 if (hasCjkOrShorter(fixed, input)) return fixed;
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Log.w(TAG, "ISO-8859-1 fallback decode failed", e);
+            }
 
             return input;
         }

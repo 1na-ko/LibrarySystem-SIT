@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WP-11：查重结果卡片项（书名/作者/ISBN + 匹配策略标签 + 相似度进度条） -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_sm"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="@dimen/stroke_thickness"
+    app:strokeColor="@color/border_light"
+    app:cardBackgroundColor="@color/bg_card">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_body_large"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tvAuthor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_size_body_small" />
+
+        <TextView
+            android:id="@+id/tvIsbn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            android:textColor="@color/text_tertiary"
+            android:textSize="@dimen/text_size_md" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipStrategy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_size_sm"
+                app:chipMinHeight="@dimen/icon_size_md" />
+
+            <ProgressBar
+                android:id="@+id/progressScore"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/space_sm"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/space_sm"
+                android:max="100"
+                android:progress="0" />
+
+            <TextView
+                android:id="@+id/tvScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                android:textColor="@color/accent_cta"
+                android:textSize="@dimen/text_size_md"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

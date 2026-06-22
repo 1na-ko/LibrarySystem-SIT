@@ -7,8 +7,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.library.android.ui.common.BaseFragment;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +23,7 @@ import com.library.android.databinding.ItemReservationBinding;
 import com.library.android.model.ReservationVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.common.SafeStrings;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.ReservationViewModel;
 
@@ -36,7 +38,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class ReservationListFragment extends Fragment {
+public class ReservationListFragment extends BaseFragment {
 
     private FragmentReservationListBinding binding;
     private ReservationViewModel viewModel;
@@ -60,7 +62,9 @@ public class ReservationListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ReservationViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("我的预约");
+        observeError(viewModel.getErrorEvent());
+
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_reservations));
 
         setupTabs();
         setupRecyclerView();
@@ -150,6 +154,8 @@ public class ReservationListFragment extends Fragment {
             if (Boolean.TRUE.equals(success)) {
                 Snackbar.make(binding.getRoot(), R.string.cancel_success, Snackbar.LENGTH_SHORT).show();
                 loadData(binding.tabLayout.getSelectedTabPosition());
+            } else {
+                Snackbar.make(binding.getRoot(), R.string.cancel_failed, Snackbar.LENGTH_LONG).show();
             }
         });
     }
@@ -180,11 +186,11 @@ public class ReservationListFragment extends Fragment {
         @Override
         protected void bind(ItemReservationBinding b, ReservationVO item, int position) {
             if (item.getBook() != null) {
-                b.tvBookTitle.setText(item.getBook().getTitle());
-                b.tvAuthor.setText(item.getBook().getAuthor());
+                b.tvBookTitle.setText(SafeStrings.defaultIfEmpty(item.getBook().getTitle()));
+                b.tvAuthor.setText(SafeStrings.defaultIfEmpty(item.getBook().getAuthor()));
             }
-            b.tvReserveTime.setText(item.getReserveTime() != null
-                    ? item.getReserveTime().substring(0, Math.min(10, item.getReserveTime().length())) : "");
+            // A.5 修复：substring 改为 SafeStrings.safeDate，避免 reserveTime=null 时 NPE
+            b.tvReserveTime.setText(SafeStrings.safeDate(item.getReserveTime()));
             b.tvStatus.setText(getStatusText(item.getStatus()));
 
             if (item.getQueuePosition() > 0) {
@@ -192,6 +198,23 @@ public class ReservationListFragment extends Fragment {
                 b.tvQueuePosition.setVisibility(View.VISIBLE);
             } else {
                 b.tvQueuePosition.setVisibility(View.GONE);
+            }
+
+            // WP3：可取消状态显示取消按钮 + 确认弹窗 + 防抖
+            if (item.canCancel()) {
+                b.btnCancel.setVisibility(View.VISIBLE);
+                b.btnCancel.setOnClickListener(v -> {
+                    if (!com.library.android.ui.common.Debounce.allow(v)) return;
+                    new MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(R.string.confirm_cancel_reservation)
+                            .setMessage(item.getBook() != null ? item.getBook().getTitle() : "")
+                            .setPositiveButton(R.string.confirm, (d, w) -> viewModel.cancelReservation(item.getId()))
+                            .setNegativeButton(R.string.cancel, null)
+                            .show();
+                });
+            } else {
+                b.btnCancel.setVisibility(View.GONE);
+                b.btnCancel.setOnClickListener(null);
             }
         }
 
@@ -215,7 +238,7 @@ public class ReservationListFragment extends Fragment {
             }
             @Override
             public boolean areContentsTheSame(@NonNull ReservationVO o, @NonNull ReservationVO n) {
-                return o.getStatus().equals(n.getStatus())
+                return java.util.Objects.equals(o.getStatus(), n.getStatus())
                         && o.getQueuePosition() == n.getQueuePosition();
             }
         }

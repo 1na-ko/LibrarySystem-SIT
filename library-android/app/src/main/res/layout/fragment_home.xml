@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/space_xl">
+
+        <!-- ============ 顶部推荐区（AI 导语流式 + 查看全部） ============ -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardAiReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/space_md"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardCornerRadius="@dimen/space_md"
+            app:strokeWidth="@dimen/stroke_thickness"
+            app:strokeColor="@color/border_light">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_lg">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_ai_assistant"
+                        android:contentDescription="@string/recommend_ai_title"
+                        app:tint="@color/accent_cta" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="@dimen/space_sm"
+                        android:text="@string/recommend_ai_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/text_size_body_large"
+                        android:textStyle="bold" />
+
+                    <ProgressBar
+                        android:id="@+id/reasonLoading"
+                        style="?android:attr/progressBarStyleSmall"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvAiReason"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/recommend_ai_initial"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_size_body"
+                    android:lineSpacingExtra="@dimen/space_xs" />
+
+                <!-- 推荐书目前 3 本（横向） -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvHomeRecommendations"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:overScrollMode="never"
+                    android:nestedScrollingEnabled="false" />
+
+                <!-- 查看全部推荐 -->
+                <TextView
+                    android:id="@+id/tvAllRecommendations"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:paddingTop="@dimen/space_sm"
+                    android:paddingBottom="@dimen/space_xs"
+                    android:text="@string/home_view_all_recommend"
+                    android:textColor="@color/accent_cta"
+                    android:textSize="@dimen/text_size_body_small"
+                    android:gravity="end"
+                    android:background="?attr/selectableItemBackground" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ============ 热门图书区 ============ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginHorizontal="@dimen/space_md"
+            android:layout_marginTop="@dimen/space_xs">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/home_section_hot"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_size_title"
+                    android:textStyle="bold" />
+
+                <!-- WP1.2：查看全部热门图书 ▸ -->
+                <TextView
+                    android:id="@+id/tvAllHotBooks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_view_all_hot"
+                    android:textColor="@color/accent_cta"
+                    android:textSize="@dimen/text_size_body_small"
+                    android:background="?attr/selectableItemBackground" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHotBooks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
+
+        <!-- ============ 分类导航区（WP-3：横向卡片 + 浏览全部分类入口） ============ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginHorizontal="@dimen/space_md"
+            android:layout_marginTop="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/home_section_category"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_size_title"
+                    android:textStyle="bold" />
+
+                <!-- WP-3：浏览全部分类入口 → CategoryTreeFragment -->
+                <TextView
+                    android:id="@+id/tvAllCategories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_view_all_category"
+                    android:textColor="@color/accent_cta"
+                    android:textSize="@dimen/text_size_body_small"
+                    android:padding="@dimen/space_xs"
+                    android:background="?attr/selectableItemBackground" />
+            </LinearLayout>
+
+            <!-- WP-3：横向滚动分类卡片（原纵向纯文本列表） -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:clipToPadding="false"
+                android:paddingStart="@dimen/space_xxs"
+                android:paddingEnd="@dimen/space_md"
+                android:overScrollMode="never" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

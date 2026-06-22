@@ -1,9 +1,11 @@
 package com.library.android.ui.kg;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -19,8 +21,12 @@ import com.library.android.databinding.FragmentLiteratureTraceBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.TraceGraph;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.LoadingState;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.theme.ThemeManager;
+import com.library.android.ui.theme.WebViewThemeHelper;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
 import org.json.JSONArray;
@@ -37,7 +43,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class LiteratureTraceFragment extends Fragment {
+public class LiteratureTraceFragment extends BaseFragment {
 
     private FragmentLiteratureTraceBinding binding;
     private KnowledgeGraphViewModel viewModel;
@@ -49,6 +55,7 @@ public class LiteratureTraceFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentLiteratureTraceBinding.inflate(themedInflater, container, false);
@@ -60,10 +67,10 @@ public class LiteratureTraceFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("文献溯源");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg_trace));
 
         if (getArguments() != null) {
-            bookId = getArguments().getLong("bookId", 0);
+            bookId = getArguments().getLong(NavArgKeys.BOOK_ID, 0);
         }
 
         setupWebView();
@@ -72,12 +79,31 @@ public class LiteratureTraceFragment extends Fragment {
         loadTrace();
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         WebSettings settings = binding.webView.getSettings();
+        // JS 为 ECharts 有向图必需，不可禁用
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        // 安全加固：禁用文件/内容访问、混合内容、地理定位
         settings.setAllowFileAccess(false);
-        binding.webView.setWebViewClient(new WebViewClient());
+        settings.setAllowContentAccess(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setGeolocationEnabled(false);
+
+        // P1-09：WebView 背景与当前主题一致，避免加载前/空态时白底闪烁
+        WebViewThemeHelper.applyBackgroundColor(binding.webView, requireContext());
+
+        binding.webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String scheme = request.getUrl().getScheme();
+                if ("about".equals(scheme) || "https".equals(scheme)) {
+                    return false;
+                }
+                return true;
+            }
+        });
     }
 
     private void setupControls() {
@@ -113,14 +139,17 @@ public class LiteratureTraceFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getTraceGraph().observe(getViewLifecycleOwner(), this::renderTrace);
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        // WP-6 P0：原代码把 LiveData<LoadingState> 当 Boolean 用，Boolean.TRUE.equals(LoadingState.LOADING) 永远 false
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
+                binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
+        // WP-6：错误事件订阅（原版无 observeError，加载失败页面空白用户无感知）
+        observeError(viewModel.getErrorEvent());
     }
 
     private void renderTrace(TraceGraph trace) {
         if (trace == null || trace.getPaths() == null || trace.getPaths().isEmpty()) {
             binding.webView.loadDataWithBaseURL(null,
-                    "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>" + getString(R.string.no_trace_data) + "</p></body></html>",
+                    WebViewThemeHelper.buildEmptyHtml(requireContext(), getString(R.string.no_trace_data)),
                     "text/html", "UTF-8", null);
             return;
         }
@@ -160,26 +189,27 @@ public class LiteratureTraceFragment extends Fragment {
             binding.webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
         } catch (Exception e) {
             binding.webView.loadDataWithBaseURL(null,
-                    "<html><body style='color:red'>" + getString(R.string.render_failed_format, e.getMessage()) + "</body></html>",
+                    WebViewThemeHelper.buildEmptyHtml(requireContext(), getString(R.string.render_failed_format, e.getMessage())),
                     "text/html", "UTF-8", null);
         }
     }
 
     private String buildTraceHtml(String nodesJson, String edgesJson, String sourceTitle) {
-        return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>"
-                + "<script src='https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'></script>"
-                + "<style>body,html,#chart{margin:0;padding:0;width:100%;height:100%;overflow:hidden}</style>"
-                + "</head><body><div id='chart'></div><script>"
-                + "var chart=echarts.init(document.getElementById('chart'));"
-                + "var option={title:{text:'文献溯源: " + sourceTitle + "',textStyle:{fontSize:12},left:'center',top:4},"
+        String colors = WebViewThemeHelper.colorsToJson(WebViewThemeHelper.getChartColors(requireContext()));
+        String start = WebViewThemeHelper.buildChartPageStart(requireContext(), colors);
+        String option = "var option={"
+                + "backgroundColor:'transparent',"
+                + "textStyle:{color:__themeTextColor},"
+                + "title:{text:'文献溯源: " + sourceTitle + "',textStyle:{fontSize:12,color:__themeTextColor},left:'center',top:4},"
                 + "tooltip:{},"
+                + "color:__themeColors,"
                 + "series:[{type:'graph',layout:'force',force:{repulsion:200,edgeLength:[80,250]},"
                 + "roam:true,draggable:true,"
                 + "data:" + nodesJson + ",edges:" + edgesJson + ","
                 + "edgeSymbol:['circle','arrow'],edgeSymbolSize:[6,10],"
-                + "label:{show:true,fontSize:9}}]};"
-                + "chart.setOption(option);"
-                + "</script></body></html>";
+                + "label:{show:true,fontSize:9,color:__themeTextColor}}]};"
+                + "chart.setOption(option);";
+        return start + option + WebViewThemeHelper.buildChartPageEnd();
     }
 
     private int getCategoryIndex(String type) {
@@ -193,9 +223,28 @@ public class LiteratureTraceFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (binding != null && binding.webView != null) {
+            binding.webView.onResume();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        if (binding != null && binding.webView != null) {
+            binding.webView.onPause();
+        }
+        super.onPause();
+    }
+
+    @Override
     public void onDestroyView() {
+        if (binding != null && binding.webView != null) {
+            binding.webView.clearCache(true);
+            binding.webView.destroy();
+        }
         super.onDestroyView();
-        binding.webView.destroy();
         binding = null;
     }
 }

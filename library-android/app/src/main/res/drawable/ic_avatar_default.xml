@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 默认头像：用户轮廓，使用白色在品牌色背景上显示 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,6m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M4,20c0,-4.418 3.582,-7 8,-7s8,2.582 8,7v1H4v-1Z" />
+</vector>

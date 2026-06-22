@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WP-14：首页横向分类卡片（compact card，宽 100dp，适合横向滚动） -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="120dp"
+    android:layout_height="72dp"
+    android:layout_marginEnd="10dp"
+    android:layout_marginBottom="@dimen/space_xxs"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="@dimen/stroke_thickness"
+    app:strokeColor="@color/border_light"
+    app:cardBackgroundColor="@color/bg_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="@dimen/space_sm">
+
+        <TextView
+            android:id="@+id/tvCategoryName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_body"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tvBookCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textColor="@color/text_tertiary"
+            android:textSize="@dimen/text_size_sm"
+            android:gravity="center" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

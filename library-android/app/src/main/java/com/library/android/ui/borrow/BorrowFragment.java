@@ -6,10 +6,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -20,7 +23,9 @@ import com.library.android.databinding.FragmentBorrowBinding;
 import com.library.android.databinding.ItemBorrowRecordBinding;
 import com.library.android.model.BorrowRecordVO;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.scanner.ScanBarcodeActivity;
 import com.library.android.viewmodel.BorrowViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -100,16 +105,25 @@ public class BorrowFragment extends Fragment {
         });
     }
 
+    // WP-14：扫码结果回调 → 启动独立 SearchActivity 按 ISBN 查书
+    private final ActivityResultLauncher<Intent> scanLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    String isbn = result.getData().getStringExtra(NavArgKeys.ISBN);
+                    if (isbn != null && !isbn.isEmpty()) {
+                        Intent intent = new Intent(requireContext(),
+                                com.library.android.ui.search.SearchActivity.class);
+                        intent.putExtra(NavArgKeys.ISBN, isbn);
+                        startActivity(intent);
+                    }
+                }
+            });
+
     private void setupFab() {
         binding.fabScanBorrow.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(requireContext(),
-                        Class.forName("com.library.android.ui.scanner.ScanBarcodeActivity"));
-                intent.putExtra("source", "borrow");
-                startActivity(intent);
-            } catch (ClassNotFoundException e) {
-                Snackbar.make(binding.getRoot(), R.string.scanner_unavailable, Snackbar.LENGTH_SHORT).show();
-            }
+            Intent intent = new Intent(requireContext(), ScanBarcodeActivity.class);
+            intent.putExtra(NavArgKeys.SOURCE, "borrow");
+            scanLauncher.launch(intent);
         });
     }
 
@@ -131,9 +145,9 @@ public class BorrowFragment extends Fragment {
             scrollListener.setHasMore(list != null && !list.isEmpty());
         });
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                Snackbar.make(binding.getRoot(), msg, Snackbar.LENGTH_SHORT).show();
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
+                Snackbar.make(binding.getRoot(), throwable.getMessage() != null ? throwable.getMessage() : "", Snackbar.LENGTH_SHORT).show();
             }
         });
     }
@@ -169,16 +183,17 @@ public class BorrowFragment extends Fragment {
             b.textDueDate.setText(getString(R.string.due_date_format, item.getDueDate()));
             b.textStatus.setText(getStatusText(item.getStatus()));
 
-            if (item.getFineAmount() != null && item.getFineAmount() > 0) {
+            if (item.getFineAmount() != null
+                    && item.getFineAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
                 b.textFine.setVisibility(View.VISIBLE);
-                b.textFine.setText(getString(R.string.fine_format, item.getFineAmount()));
+                b.textFine.setText(getString(R.string.fine_format, item.getFineAmountDouble()));
             } else {
                 b.textFine.setVisibility(View.GONE);
             }
 
             b.getRoot().setOnClickListener(v -> {
                 Bundle args = new Bundle();
-                args.putLong("borrowId", item.getId());
+                args.putLong(NavArgKeys.BORROW_ID, item.getId());
                 Navigation.findNavController(v).navigate(
                         R.id.action_borrowFragment_to_borrowDetailFragment, args);
             });
@@ -202,8 +217,8 @@ public class BorrowFragment extends Fragment {
             }
             @Override
             public boolean areContentsTheSame(@NonNull BorrowRecordVO old, @NonNull BorrowRecordVO n) {
-                return old.getStatus().equals(n.getStatus())
-                        && old.getDueDate().equals(n.getDueDate());
+                return java.util.Objects.equals(old.getStatus(), n.getStatus())
+                        && java.util.Objects.equals(old.getDueDate(), n.getDueDate());
             }
         }
     }

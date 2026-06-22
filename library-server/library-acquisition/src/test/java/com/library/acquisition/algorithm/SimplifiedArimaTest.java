@@ -67,4 +67,58 @@ class SimplifiedArimaTest {
             assertThat(forecast).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("forecastLenient (WP-0 降级)")
+    class ForecastLenient {
+
+        @Test
+        @DisplayName("数据不足时应返回历史均值常数序列而非抛异常")
+        void shouldReturnAverageWhenDataInsufficient() {
+            double[] history = {10, 20, 30}; // 平均 20
+            double[] forecast = arima.forecastLenient(history, 3);
+            assertThat(forecast).hasSize(3);
+            for (double v : forecast) {
+                assertThat(v).isCloseTo(20.0, offset(0.01));
+            }
+        }
+
+        @Test
+        @DisplayName("空历史应返回全零序列")
+        void shouldReturnZerosWhenHistoryEmpty() {
+            double[] forecast = arima.forecastLenient(new double[0], 3);
+            assertThat(forecast).hasSize(3);
+            for (double v : forecast) {
+                assertThat(v).isEqualTo(0.0);
+            }
+        }
+
+        @Test
+        @DisplayName("null 历史应返回全零序列")
+        void shouldReturnZerosWhenHistoryNull() {
+            double[] forecast = arima.forecastLenient(null, 2);
+            assertThat(forecast).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("数据充分时应走正常 ARIMA 路径")
+        void shouldUseArimaWhenDataSufficient() {
+            double[] history = {10, 12, 11, 13, 14, 15, 13, 16, 17, 15, 18, 19};
+            double[] forecast = arima.forecastLenient(history, 2);
+            assertThat(forecast).hasSize(2);
+            for (double v : forecast) {
+                assertThat(v).isGreaterThanOrEqualTo(0);
+            }
+        }
+
+        @Test
+        @DisplayName("hasSufficientData 应正确判断")
+        void shouldDetectSufficientData() {
+            assertThat(arima.hasSufficientData(null)).isFalse();
+            assertThat(arima.hasSufficientData(new double[0])).isFalse();
+            assertThat(arima.hasSufficientData(new double[]{1, 2, 3})).isFalse();
+            assertThat(arima.hasSufficientData(new double[]{1, 2, 3, 4, 5, 6})).isTrue();
+            assertThat(arima.hasSufficientData(new double[]{1, 2, 3, 4, 5, 6, 7, 8})).isTrue();
+        }
+    }
 }

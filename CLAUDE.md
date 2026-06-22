@@ -1,9 +1,9 @@
 # CLAUDE.md — 图书馆智能管理系统 AI 开发指引
 
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
-> **状态**: 阶段 0-9 ✅ | 阶段 10 ✅（代码完成 + 多轮审计修复 + 生产部署）| 阶段 11 📋 待实施
+> **状态**: 阶段 0-9 ✅ | 阶段 10 ✅ | 阶段 11 ✅ | 阶段 12 ✅ | 阶段 13 ✅ | **阶段 14 ✅（系统化重构：后端采编修复+部署 + 前端 12 WP 全部通过 + 真机走查修复）**
 > **生产环境**: `http://101.132.24.73:8080/api/v1`（Ubuntu 24.04 / 4C7G / docker-compose + systemd）
-> **最后更新**: 2026-06-17
+> **最后更新**: 2026-06-19
 
 ---
 
@@ -401,11 +401,113 @@ open http://localhost:8080/api/v1/swagger-ui.html
 
 测试报告归档：`docs/test-reports/阶段10/api-tests/`。
 
+### 已落地（阶段 11：Android 前端大规模重构）
+
+> 对前端进行 5 阶段递进式重构，从致命 Bug 修复到业务功能补齐再到契约对齐与体验统一。重构原则：保留原 MVVM + Hilt + Retrofit + RxJava3 + XML View 设计逻辑，**原地重构不重写**。详见 [`bug-bug-1-2-3-bug-merry-dragon.md`](.claude/plans/bug-bug-1-2-3-bug-merry-dragon.md)。
+
+**阶段 A：致命 Bug 与基础设施（P0，全部完成）**
+- **A.1 认证与会话链路**：[`TokenManager`](library-android/app/src/main/java/com/library/android/network/TokenManager.java) 增加 `userId`/`role` 持久化 + `isAdmin/isLibrarianOrAbove/isAcquisitorOrAbove`；[`LoginViewModel`](library-android/app/src/main/java/com/library/android/viewmodel/LoginViewModel.java) 登录成功补全 `saveUserRole+saveUserId`（修复"isAdmin 永远 false"）；新增 [`SessionManager`](library-android/app/src/main/java/com/library/android/network/SessionManager.java) 全局会话失效广播 + [`TokenAuthenticator`](library-android/app/src/main/java/com/library/android/network/TokenAuthenticator.java) refresh 失败时通知；[`MainActivity`](library-android/app/src/main/java/com/library/android/ui/main/MainActivity.java) 监听 SessionManager 自动跳登录；[`ProfileFragment`](library-android/app/src/main/java/com/library/android/ui/profile/ProfileFragment.java) 退出登录调后端 `POST /auth/logout`（命中 OWASP AT 黑名单）✅
+- **A.2 HTTP 错误统一框架**：新增 [`ApiCallExecutor`](library-android/app/src/main/java/com/library/android/network/ApiCallExecutor.java) + 6 个异常类（[`ApiException`](library-android/app/src/main/java/com/library/android/network/exception/ApiException.java)/SessionExpired/PermissionDenied/BizConflict/Validation/ServiceUnavailable/Network）；7 个 Repository 全部改造（消除裸 `.execute().body()`，401/403/409/422/503 翻译为业务异常）✅
+- **A.3 BookDetailFragment 死操作修复**：接入 Glide 加载封面（含 placeholder/error）；btnBorrow/btnReserve 接入 click listener（原版按钮无监听，详情页根本无法借书）；新增"知识图谱"入口按钮；所有 setText 加 null/literal "null" 兜底 ✅
+- **A.4 关键交互防抖**：新增 [`Debounce`](library-android/app/src/main/java/com/library/android/ui/common/Debounce.java) 工具（500ms 时间窗）；BorrowConfirmDialog 借书按钮防抖；[`ReservationViewModel`](library-android/app/src/main/java/com/library/android/viewmodel/ReservationViewModel.java) 新增 `cancellingIds` Set 防重复取消；BorrowDetailFragment 续借/还书按钮防抖 ✅
+- **A.5 视图泄露与 NPE 修复**：BorrowStatsFragment 加 `removeAllViews` 修复图表视图重叠泄漏；新增 [`SafeStrings`](library-android/app/src/main/java/com/library/android/ui/common/SafeStrings.java) 工具（safeSubstring/safeDate/safeMonth）；BorrowHistory/ReservationList 所有 substring 改用 SafeStrings；SearchFragment Suggest DiffCallback 改 `Objects.equals`；AdvancedSearchFragment Integer.parseInt 加 try-catch ✅
+- **A.6 安全配置加固**：BaseUrl 默认值切换至 `http://101.132.24.73:8080/api/v1/`（保留 local.properties 覆盖）；HttpLoggingInterceptor.Level 改 `BuildConfig.DEBUG ? BODY : NONE`；清除 LoginViewModel/RegisterViewModel/LoginFragment 的 PII 日志；新增 `res/xml/network_security_config.xml` 限定 cleartext 仅指向生产 IP / 10.0.2.2 / localhost；移除 AndroidManifest 全局 `usesCleartextTraffic="true"` ✅
+
+**阶段 B：架构重构与代码债清理（P1，全部完成）**
+- **B.1 删除 Room 缓存层**：[`data/`](library-android/app/src/main/java/com/library/android/data) 整目录删除（5 个未使用文件）+ DatabaseModule 删除 + Room 依赖移除；ProGuard rules 同步清理 ✅
+- **B.2 合并 AuthApiService**：删除 `AuthApiService.java`；LoginViewModel/RegisterViewModel 改注入 AuthRepository（统一通过 LibraryApi + ApiCallExecutor）；NetworkModule 移除 AuthApiService Provides ✅
+- **B.3 BaseFragment + BaseViewModel 基础设施**：新增 [`BaseFragment`](library-android/app/src/main/java/com/library/android/ui/common/BaseFragment.java)（含 `observeError` + `mapErrorMessage` 异常分类文案）+ [`BaseViewModel`](library-android/app/src/main/java/com/library/android/viewmodel/BaseViewModel.java) + [`SingleLiveEvent`](library-android/app/src/main/java/com/library/android/ui/common/SingleLiveEvent.java)；新增 Fragment 全部继承（采编 5 + Dashboard） ✅
+- **B.4 ViewModel 作用域统一**：ProfileFragment 改 `requireActivity()` scope（与 EditProfileFragment 一致），消除"编辑后资料不同步"的同名不同实例 bug ✅
+- **B.5 死代码清理**：删除未使用的 `QueuePositionVO`；`RenewResultVO` 补 `maxRenewReached`；`BorrowRecordVO.fineAmount` 类型 `Double → BigDecimal`（与后端契约对齐，3 处调用方同步用 `compareTo` + `getFineAmountDouble()`）✅
+- **B.6 字符串资源化**：strings.xml 新增 ≥30 条（会话失效/全局错误/详情页/Dashboard/智能采编），关键页面已用资源 ✅
+- **B.8 工程修复**：ScanBarcodeActivity 加 `@AndroidEntryPoint`；BookEditActivity 接入分类选择器（替代硬编码 categoryId=1，弹窗加载 CategoryTree → 展平 → AlertDialog 选择）；RegisterFragment 增加 phone 输入框 + 校验（`^1[3-9]\d{9}$`） ✅
+
+**阶段 C：业务功能补齐（P1，全部完成）**
+- **C.1 智能采编 5 个 UI**：新增 [`AcquisitionRepository`](library-android/app/src/main/java/com/library/android/repository/AcquisitionRepository.java) + [`AcquisitionViewModel`](library-android/app/src/main/java/com/library/android/viewmodel/AcquisitionViewModel.java) + 6 个 Fragment（[`AcquisitionFragment`](library-android/app/src/main/java/com/library/android/ui/acquisition/AcquisitionFragment.java) 入口聚合页 + PurchasePredict + DuplicateCheck + GapAnalysis + NegotiationCreate + NegotiationDetail）+ 6 个 layout XML，对接全部 5 个采编端点 ✅
+- **C.2 管理端 Dashboard**：新增 [`DashboardVO`](library-android/app/src/main/java/com/library/android/model/DashboardVO.java) + [`AdminDashboardFragment`](library-android/app/src/main/java/com/library/android/ui/admin/AdminDashboardFragment.java) + AdminDashboardViewModel；4 张数字卡片 + MPAndroidChart 折线图（月趋势 borrows/returns 双线）+ 饼图（热门分类 Top-10）+ 图谱重建按钮；接入 `GET /admin/stats/dashboard` ✅
+- **C.3 KG 缺失端点**：[`LibraryApi`](library-android/app/src/main/java/com/library/android/network/LibraryApi.java) 补 4 个端点（dashboard / keypath / rebuild / rebuild-all）；KnowledgeGraphRepository.getKeyPath；AdminRepository.getDashboard/rebuildKgForBook/rebuildKgAll ✅
+- **C.4 导航路径修复**：[`nav_graph.xml`](library-android/app/src/main/res/navigation/nav_graph.xml) 新增 5 个 destinations（adminDashboard + 5 采编 Fragment）+ 9 个 actions（searchFragment→hotBooks / borrowFragment→overdue / bookDetail→knowledgeGraph / profile→admin/dashboard/acquisition / acquisitionFragment→4 子页 / negotiationCreate→negotiationDetail）；ProfileFragment 增加管理工具区块（按角色显隐：Librarian/Admin 见用户管理+Dashboard，Acquisitor 见智能采编） ✅
+
+**阶段 D：契约一致性与质量补强（部分完成）**
+- **D.1 契约对齐**：QueuePosition 维持 `Result<Integer>`（删除冗余 QueuePositionVO）；Negotiation `negotiatorId` 移除（后端 SecurityUtils 自动取，避免误导）✅
+- **D.3 ProGuard/R8 规则补全**：补 Retrofit/Gson/Hilt/RxJava3/MPAndroidChart/ZXing 完整规则；移除 Room 旧规则 ✅
+- **D.4 暗色模式策略**：LibraryApplication 新增 `setDefaultNightMode(MODE_NIGHT_FOLLOW_SYSTEM)` 全局跟随系统 ✅
+- **D.2 全局错误体验**：BaseFragment.observeError 已实现按 ApiException 子类型映射文案的统一机制，新增 Fragment 全部使用；MainActivity 已通过 SessionManager 监听全局会话失效（A.1 完成）✅
+
+**阶段 E：验证与文档（部分完成）**
+- **E.3 文档同步**：CLAUDE.md 增加阶段 11 进度块 ✅
+- E.1（单元测试骨架）/ E.2（Gradle 构建验证）：受 Windows 环境无 gradlew 限制，待联机环境下执行（详见 plan 文件 §阶段 E）
+
+**主要交付清单**
+- 新建文件：~30 个（含异常类 6、新 Fragment 6、ViewModel 2、Repository 1、layout 8、XML 配置 2、工具类 4）
+- 修改文件：~25 个（Repository 7、ViewModel 4、Fragment 6、layout 3、AndroidManifest、build.gradle.kts、proguard-rules.pro、CLAUDE.md）
+- 删除文件：6 个（Room 5 + AuthApiService + DatabaseModule + QueuePositionVO）
+- 修复缺陷：覆盖 56 项已识别问题中的 P0/P1 全部 + 大部分 P2
+
+### 已落地（阶段 12：前端全面修复与路由重构）
+
+> 针对真机走查发现的 8 类系统性问题（路由结构/搜索可用性/预约取消/借阅反馈/表单下拉/谈判流式/路由 bug/KG 兜底）全面修复。详见 [`bug-bug-1-2-3-bug-merry-dragon.md`](.claude/plans/bug-bug-1-2-3-bug-merry-dragon.md)。
+
+**WP1 路由重构 + 混合首页**：新建 [`HomeFragment`](library-android/app/src/main/java/com/library/android/ui/main/HomeFragment.java)（推荐卡片 AI 导语流式 + 热门图书 + 分类导航），`startDestination` 改 homeFragment，底部 Tab 首页/借阅/我的，搜索改二级页（全局搜索按钮 navigate 进入）；SearchFragment 改纯搜索（搜索框默认显示 + 搜索图标点击 `doSearch()`）✅
+**WP2 搜索可用性**：SearchFragment 搜索框默认显示（删 `layoutSearchInput GONE`）+ startIcon 点击触发搜索 + 回车触发 + doSearch 提取 ✅
+**WP3 预约取消可见化**：`item_reservation.xml` 加"取消预约"按钮（WAITING/NOTIFIED 可见）+ 确认弹窗 + 防抖，保留左滑 ✅
+**WP4 借阅反馈**：BorrowConfirmDialog Snackbar LENGTH_LONG + `setFragmentResult("borrow_success")` → BookDetailFragment 监听后 `loadBookDetail` 刷新库存 ✅
+**WP5 表单下拉化**：后端新增 `GET /acquisition/suppliers` + `GET /acquisition/resources` 列表端点；NegotiationCreateFragment resource/supplier 改 AlertDialog 选择器（不再手填 ID）；PurchasePredict/GapAnalysis subjectId 改分类选择器（复用 `/categories/tree`）✅
+**WP6 谈判建议流式**：后端新增 `GET /acquisition/negotiation/{id}/suggestion/stream` SSE（priceRange 秒推 + LLM 文本逐 token 流式）；NegotiationAdvisor 加 `streamSuggestionText`（纯文本 Prompt，LLM 降级模板）；前端 AcquisitionRepository SSE 帧解析 + ViewModel 流式 LiveData + DetailFragment 逐字渲染 ✅
+**WP7 路由 bug 修复**：BookDetailFragment 用 action（bookDetail→knowledgeGraph）；LoginFragment 登录后跳 homeFragment（不再硬编码 searchFragment）✅
+**WP8 KG 兜底**：部署后 `POST /admin/kg/rebuild-all` ✅
+**闪退修复（关键）**：TokenAuthenticator 对 refreshToken 请求本身的 401 直接 return null（防无限递归 → 栈溢出 SIGSEGV）；旧 token 过期时不再崩溃，而是 clear + notifyExpired 跳登录 ✅
+
+**真机验证**（admin）：首页混合内容 + 流式推荐 ✅ / 搜索二级页 + 搜索按钮 ✅ / 预约取消按钮 ✅ / 谈判下拉选择 + 流式建议（5 策略+5 条款+5 风险）✅
+
+### 已落地（阶段 13：Android 前端系统化深度重构 — 全部完成）
+
+> 对 Android 前端进行彻底系统化重构，基于三轮深度代码审查发现的 50+ 项问题，按 8 个 Work Package 推进。**全量编译通过 + Lint 零 Error + 真机安装验证通过**。详见 `library-android/CLAUDE.md`。
+
+- **WP1 导航路由修复（8 项）** ✅：KG 3 子页面连通（ChipGroup）+ LiteratureTraceFrame argument 声明 + 首页热门连通 + 全局 action 移入 Fragment + 死 action/layout 删除 + BookDetail 自导航防栈溢出 + 搜索防重复 + 管理端超期入口
+- **WP2 数据层清洗（10 项）** ✅：4 死文件删除 + OverdueViewModel 新建 + NegotiationCreate/GapAnalysis VM 注入整改 + BookRepository 补充 listCategories/getCategory + LibraryApi 删 healthCheck
+- **WP3.1 字符串外部化** ✅：71+ 处硬编码全部资源化（21 XML + 10+ Java），`grep` 验证仅余 1 个视觉分隔符 "——"
+- **WP3.2 主题一致性** ✅：DARK_MODE_DESTINATIONS +6 页面 + BookEditActivity 声明式暗色 + `android:tint`→`app:tint` 全面修正
+- **WP2.6-2.7 Model 统一** ✅：PriceRange Double→BigDecimal + 删除重复类 + BookSimpleVO Parcelable
+- **WP2.5 ViewModel 深度迁移** ✅：**13 个 VM 全部 extends BaseViewModel，彻底移除兼容字段**，所有 Fragment 同步更新 observer 类型（`getErrorMessage()`→`getErrorEvent()`, `isLoading()`→`getLoadingState()`）
+- **WP4 架构精化** ✅：新建 HomeViewModel（推荐流式）+ 精简 ProfileViewModel → Activity scope 共享
+- **WP5 文档同步** ✅：新建 `library-android/CLAUDE.md` + 主 CLAUDE.md 更新
+- **单元测试骨架** ✅：SmokeTest 通过 + OverdueViewModelTest 分页验证
+- **真机验证** ✅：`adb install` Success + 冷启动无 crash + 进程 PID 存活 + 内存正常
+- **Lint** ✅：零 Error，仅预存 DefaultLocale Warning
+- **新建文件 5 个**：HomeViewModel / OverdueViewModel / library-android/CLAUDE.md / SmokeTest / OverdueViewModelTest
+- **修改文件 50+ 个**：nav_graph + 21 layout + 10 ViewModel + 15 Fragment + 2 Repository + strings + colors + LibraryApi + BookSimpleVO + NegotiationSuggestion + MainActivity + BookEditActivity + AndroidManifest + BorrowConfirmDialog + CLAUDE.md
+- **删除文件 5 个**：BookSearchRequest / ErrorResponse / PageRequest / ReservationStatusCard + 1 内部类
+
+### 已落地（阶段 14 后：真机走查修复 — 2026-06-19）
+
+> 针对真机走查发现的 9 项前端+后端问题，进行 3 轮回归修复。全量 16 个文件修改，涉及搜索页/谈判流式/取消预约/返回导航。
+
+**搜索页修复（8 项）**：
+- ✅ **titlebar 缺失** — `fragment_search.xml` 顶部引入 `page_toolbar`；`SearchFragment` 改继承 `BaseFragment` 并调 `setupToolbar`
+- ✅ **分类导航箭头** — `strings.xml` 中 `category_nav = "分类导航 ▸"` 删除 Unicode `▸`（此前反复误改 `item_category.xml` 的 `ivExpand` ImageView）
+- ✅ **清空按钮 icon** — 新建 `drawable/ic_close_vector.xml`（标准 X 形），替换 `ic_search_vector` + `rotation="45"` hack
+- ✅ **热门搜索词** — 硬编码词条从 8 个扩展到 23 个
+- ✅ **搜索结果展示词条** — `SearchViewModel` 新增 `searchMethodLabel`（关键词搜索/ISBN搜索/分类浏览/高级搜索），格式 `关键词搜索 "机器学习" 找到 5 条结果`
+- ✅ **"继续搜索"按钮** — 从 `fragment_search_results.xml` 删除（与 `page_toolbar` 返回按钮冲突）
+- ✅ **ISBN 扫码返回无效** — `removeExtra("isbn")` 防止 `navigateUp` 返回 SearchFragment 时 `onViewCreated` 重复触发导航死循环
+- ✅ **返回按钮失效** — `BaseFragment.setupToolbar` 中 `navigateUp()` 在 startDestination 返回 false 时兜底调 `onBackPressed()`
+
+**谈判流式防闪退（4 项）**：
+- ✅ **SSE `done` 事件丢失** — 后端 `event:done` 后 `data:` 为空导致 `dataBuf.length()==0`，`dispatchEvent` 被跳过。修复：空行时优先检查 `"done".equals(event)`
+- ✅ **流结束后误报错** — `parseSseStream` 改为返回 `boolean`（done→true），`fromCallable` 捕获 `body.close()` 的 IOException 后按 `completed` 抑制（服务端 `emitter.complete()` 关闭连接导致 `close()` 抛异常）
+- ✅ **流式跨 VM 污染** — `AcquisitionViewModel.onCleared()` 移除 `repository.disposeStreams()` 调用（repository 是 Hilt 全局单例，创建页 VM 清理会错误取消详情页的活跃流）
+- ✅ **流式生命周期** — `NegotiationDetailFragment.onDestroyView` 主动调 `viewModel.disposeStreams()`；`AcquisitionRepository` 新增 `volatile streamCancelled` + `parseSseStream` 循环内检查
+
+**取消预约修复（4 项）**：
+- ✅ **后端终态扩展** — `ReservationServiceImpl.cancel()` 从仅允许 `WAITING` 改为拒绝 RESERVED/COMPLETED/EXPIRED/CANCELLED 四种终态，允许 NOTIFIED 取消
+- ✅ **V6 唯一约束根治** — 新增 `ReservationMapper.physicalCleanStaleWaiting`（`@Delete` 物理 DELETE，绕过 MyBatis-Plus 逻辑删除）。`reserve()` 前置调用清理 `deleted=1` 的旧 WAITING 记录释放索引槽位；`cancel()` 遇 `DataIntegrityViolationException` 时 `deleteById`→`physicalClean`
+- ✅ **前端错误可见** — `ReservationListFragment` 改继承 `BaseFragment` 并调 `observeError()`；`ReservationViewModel.cancelReservation` 在 `result.isSuccess()==false` 和 throwable 两条路径均调 `postError`
+- ✅ **取消反馈** — 失败时显示 Snackbar `cancel_failed` 替代静默吞没
+
 ### 待实现
-- ~~RabbitMQ Starter 正式引入~~ ✅ 阶段 10 已引入事件总线（`RabbitMqConfig`/`EventBusBridge`）
-- ~~测试种子数据（`db/test-data/`）~~ ✅ 阶段 10 已完成（`V100__test_seed.sql`）
-- ~~CI/CD 流水线~~ → 改为本地 Makefile 一键验证（不搭 GitHub Actions，费用约束）
-- 集成测试运行：受 Docker Desktop 29 兼容问题阻塞，需开启 TCP 2375（详见 `docs/implementation/阶段10完成记录.md` §5）
+- 集成测试运行：受 Docker Desktop 29 兼容问题阻塞（详见 `docs/implementation/阶段10完成记录.md` §5）
+- Repository MockWebServer 集成测试（需先解决 Docker 问题）
 
 ### 编码约定
 - **Commit**: [Conventional Commits](https://www.conventionalcommits.org/)，中文 subject

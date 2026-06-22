@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/searchFragment"
-        android:icon="@drawable/ic_nav_search"
-        android:title="@string/nav_search" />
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_nav_home"
+        android:title="@string/nav_home" />
     <item
         android:id="@+id/borrowFragment"
         android:icon="@drawable/ic_nav_borrow"

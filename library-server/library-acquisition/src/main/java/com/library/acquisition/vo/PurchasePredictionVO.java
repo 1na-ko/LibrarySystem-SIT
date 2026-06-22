@@ -16,6 +16,8 @@ public class PurchasePredictionVO {
     private int predictedDemand;
     private double confidence;
     private FeatureMap features;
+    /** WP-0：数据不足等降级场景的友好提示（非空时前端展示）. */
+    private String message;
 
     @Data
     @Builder

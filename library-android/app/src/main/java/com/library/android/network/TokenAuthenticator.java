@@ -30,15 +30,26 @@ public class TokenAuthenticator implements Authenticator {
 
     private final TokenManager tokenManager;
     private final LibraryApiProvider apiProvider;
+    private final SessionManager sessionManager;
 
-    public TokenAuthenticator(Context context, LibraryApiProvider apiProvider) {
+    public TokenAuthenticator(Context context, LibraryApiProvider apiProvider, SessionManager sessionManager) {
         this.tokenManager = TokenManager.getInstance(context);
         this.apiProvider = apiProvider;
+        this.sessionManager = sessionManager;
     }
 
     @Nullable
     @Override
     public Request authenticate(@Nullable Route route, @NonNull Response response) {
+        // WP 修复：refreshToken 请求本身返回 401 时直接放弃（避免无限递归 → 栈溢出 SIGSEGV）
+        // 之前 refreshToken 过期 → 401 → Authenticator 再次 refreshToken → 401 → ... 无限递归
+        String path = response.request().url().encodedPath();
+        if (path != null && path.contains("/auth/refresh")) {
+            tokenManager.clear();
+            sessionManager.notifyExpired();
+            return null;
+        }
+
         String refreshToken = tokenManager.getRefreshToken();
         if (refreshToken == null) {
             return null;
@@ -82,11 +93,13 @@ public class TokenAuthenticator implements Authenticator {
                     }
                 }
             } catch (IOException e) {
-                // 网络异常，放弃刷新
+                // 网络异常，放弃刷新（refresh token 仍可能可用，不立即标记会话失效）
+                return null;
             }
 
-            // 刷新失败，清除 Token
+            // 刷新失败（业务级失败：refresh token 过期/吊销/被替换）→ 清除本地凭据并广播会话失效
             tokenManager.clear();
+            sessionManager.notifyExpired();
             return null;
         }
     }

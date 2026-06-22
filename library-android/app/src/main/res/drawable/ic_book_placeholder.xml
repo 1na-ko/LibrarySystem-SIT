@@ -1,41 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 图书封面占位图标 — 使用 Material Icons 书图标风格 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="80dp"
+    android:width="@dimen/book_item_min_height"
     android:height="120dp"
     android:viewportWidth="80"
     android:viewportHeight="120">
 
     <!-- 书本封面 -->
     <path
-        android:fillColor="#E0E0E0"
+        android:fillColor="@color/placeholder_primary"
         android:pathData="M8,4 L72,4 C73.1,4 74,4.9 74,6 L74,114 C74,115.1 73.1,116 72,116 L8,116 C6.9,116 6,115.1 6,114 L6,6 C6,4.9 6.9,4 8,4 Z" />
 
     <!-- 书脊 -->
     <path
-        android:fillColor="#BDBDBD"
+        android:fillColor="@color/placeholder_secondary"
         android:pathData="M6,6 L14,6 L14,114 L6,114 C6,114 6,6 6,6 Z" />
 
     <!-- 图标 -->
     <path
-        android:fillColor="#9E9E9E"
+        android:fillColor="@color/placeholder_tertiary"
         android:pathData="M30,45 L50,45 M30,55 L50,55 M30,65 L42,65"
         android:strokeWidth="2"
-        android:strokeColor="#9E9E9E" />
+        android:strokeColor="@color/placeholder_tertiary" />
 
     <!-- 书本打开图标 -->
     <path
-        android:fillColor="#9E9E9E"
+        android:fillColor="@color/placeholder_tertiary"
         android:pathData="M35,30 L40,26 L45,30 L40,34 Z"
         android:strokeWidth="1"
-        android:strokeColor="#9E9E9E" />
+        android:strokeColor="@color/placeholder_tertiary" />
 
     <path
-        android:fillColor="#BDBDBD"
+        android:fillColor="@color/placeholder_secondary"
         android:pathData="M35,30 L40,34 L40,45 L33,41 Z" />
 
     <path
-        android:fillColor="#BDBDBD"
+        android:fillColor="@color/placeholder_secondary"
         android:pathData="M45,30 L40,34 L40,45 L47,41 Z" />
 
 </vector>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WP-14：独立搜索 Activity 导航图 — 完全独立于主 Activity 的 nav_graph。
+  startDestination = SearchFragment，提交搜索后 navigate 到 SearchResultsFragment。
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/search_nav_graph"
+    app:startDestination="@id/searchFragment">
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.library.android.ui.search.SearchFragment"
+        android:label="@string/page_title_search">
+        <action
+            android:id="@+id/action_searchFragment_to_searchResultsFragment"
+            app:destination="@id/searchResultsFragment" />
+        <action
+            android:id="@+id/action_searchFragment_to_bookDetailFragment"
+            app:destination="@id/bookDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/searchResultsFragment"
+        android:name="com.library.android.ui.search.SearchResultsFragment"
+        android:label="@string/search_results_title">
+        <action
+            android:id="@+id/action_searchResultsFragment_to_bookDetailFragment"
+            app:destination="@id/bookDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bookDetailFragment"
+        android:name="com.library.android.ui.search.BookDetailFragment"
+        android:label="@string/page_title_book_detail">
+        <argument
+            android:name="bookId"
+            app:argType="long" />
+    </fragment>
+
+</navigation>

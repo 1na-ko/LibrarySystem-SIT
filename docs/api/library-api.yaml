@@ -736,6 +736,45 @@ components:
             type: string
           description: 风险提示
 
+    # ---- 采编下拉 ----
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1001
+        name:
+          type: string
+          example: "测试供应商A"
+        contact:
+          type: string
+          nullable: true
+          example: "张经理"
+        reliabilityScore:
+          type: number
+          format: double
+          nullable: true
+          example: 0.85
+
+    ElectronicResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1001
+        name:
+          type: string
+          example: "IEEE Xplore"
+        category:
+          type: string
+          nullable: true
+          example: "电子期刊"
+        publisher:
+          type: string
+          nullable: true
+
     # ---- 分类 ----
     CategoryVO:
       type: object
@@ -2513,6 +2552,86 @@ paths:
                     properties:
                       data:
                         $ref: "#/components/schemas/NegotiationSuggestion"
+
+  /api/v1/acquisition/negotiation/{id}/suggestion/stream:
+    get:
+      tags: [智能采编]
+      summary: 流式谈判建议（SSE）
+      description: |
+        通过 Server-Sent Events 流式推送谈判建议。
+        事件序列：priceRange（秒推 JSON，价格区间）→ text（多次，AI 逐 token）→ done（流结束）。
+      operationId: streamNegotiationSuggestion
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 谈判记录 ID
+      responses:
+        "200":
+          description: SSE 事件流（text/event-stream）
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  SSE 事件格式：
+                  - event:priceRange data:{floorPrice,ceilingPrice,medianPrice,suggestedOffer}
+                  - event:text data:文本片段（多次）
+                  - event:done data:
+
+  /api/v1/acquisition/suppliers:
+    get:
+      tags: [智能采编]
+      summary: 供应商列表
+      description: 获取所有供应商简要列表，用于谈判创建时的下拉选择
+      operationId: listSuppliers
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 供应商列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Supplier"
+
+  /api/v1/acquisition/resources:
+    get:
+      tags: [智能采编]
+      summary: 电子资源列表
+      description: 获取所有电子资源简要列表，用于谈判创建时的下拉选择
+      operationId: listResources
+      x-implemented: true
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 电子资源列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ElectronicResource"
 
   # ======================== 系统管理模块 ========================
   /api/v1/admin/stats/dashboard:

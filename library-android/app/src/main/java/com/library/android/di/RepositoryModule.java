@@ -1,7 +1,7 @@
 package com.library.android.di;
 
-import com.library.android.data.AppDatabase;
 import com.library.android.network.LibraryApi;
+import com.library.android.repository.AcquisitionRepository;
 import com.library.android.repository.AdminRepository;
 import com.library.android.repository.AuthRepository;
 import com.library.android.repository.BookRepository;
@@ -67,5 +67,11 @@ public class RepositoryModule {
     @Singleton
     public UserRepository provideUserRepository(LibraryApi api) {
         return new UserRepository(api);
+    }
+
+    @Provides
+    @Singleton
+    public AcquisitionRepository provideAcquisitionRepository(LibraryApi api) {
+        return new AcquisitionRepository(api);
     }
 }

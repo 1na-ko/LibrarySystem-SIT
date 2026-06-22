@@ -27,12 +27,17 @@ public class GapAnalysisResult {
     @SerializedName("gapBooks")
     private List<GapBook> gapBooks;
 
+    /** WP-0/4：无核心书目数据等友好提示（非空时前端展示，区分"暂无缺口"与"暂无数据"）. */
+    @SerializedName("message")
+    private String message;
+
     public long getSubjectId() { return subjectId; }
     public String getSubjectName() { return subjectName; }
     public int getTotalCoreBooks() { return totalCoreBooks; }
     public int getOwnedBooks() { return ownedBooks; }
     public double getCoverage() { return coverage; }
     public List<GapBook> getGapBooks() { return gapBooks; }
+    public String getMessage() { return message; }
 
     public static class GapBook {
         @SerializedName("isbn")

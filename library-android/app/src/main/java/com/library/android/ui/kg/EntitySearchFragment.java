@@ -17,6 +17,8 @@ import com.library.android.databinding.FragmentEntitySearchBinding;
 import com.library.android.databinding.ItemEntitySearchBinding;
 import com.library.android.model.EntitySearchResult;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.theme.ThemeManager;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
@@ -32,7 +34,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class EntitySearchFragment extends Fragment {
+public class EntitySearchFragment extends BaseFragment {
 
     private FragmentEntitySearchBinding binding;
     private KnowledgeGraphViewModel viewModel;
@@ -42,6 +44,7 @@ public class EntitySearchFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentEntitySearchBinding.inflate(themedInflater, container, false);
@@ -53,7 +56,7 @@ public class EntitySearchFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("实体搜索");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg_entity));
 
         setupRecyclerView();
         setupSearch();
@@ -96,11 +99,21 @@ public class EntitySearchFragment extends Fragment {
     }
 
     private void observeViewModel() {
-        viewModel.getEntityResults().observe(getViewLifecycleOwner(), results ->
-                adapter.submitListSync(results));
+        viewModel.getEntityResults().observe(getViewLifecycleOwner(), results -> {
+            adapter.submitListSync(results);
+            // WP-6：空结果友好提示（原版仅列表空白，用户无感知）
+            boolean empty = results == null || results.isEmpty();
+            if (binding != null) {
+                binding.layoutEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+            }
+        });
 
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        // WP-6 P0：Loading 类型修复（原 Boolean.TRUE.equals(LoadingState) 永远 false）
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
+                binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
+
+        // WP-6：错误事件订阅
+        observeError(viewModel.getErrorEvent());
     }
 
     @Override
@@ -146,7 +159,7 @@ public class EntitySearchFragment extends Fragment {
             }
             @Override
             public boolean areContentsTheSame(@NonNull EntitySearchResult o, @NonNull EntitySearchResult n) {
-                return o.getEntityName().equals(n.getEntityName());
+                return java.util.Objects.equals(o.getEntityName(), n.getEntityName());
             }
         }
     }

@@ -7,22 +7,23 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
 
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.library.android.databinding.FragmentAdvancedSearchBinding;
-import com.library.android.ui.main.MainActivity;
-
-import dagger.hilt.android.AndroidEntryPoint;
 
 /**
- * 高级搜索 Fragment.
+ * 高级搜索 BottomSheet（WP-14：由独立页面改为半屏弹窗，节省栈深度 + 体验更轻量）.
+ *
+ * <p>SearchFragment 通过 {@code AdvancedSearchFragment.show(getChildFragmentManager(), tag)}
+ * 唤出；提交时通过 {@code setFragmentResult} 回传参数给 SearchFragment.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
-@AndroidEntryPoint
-public class AdvancedSearchFragment extends Fragment {
+public class AdvancedSearchFragment extends BottomSheetDialogFragment {
+
+    public static final String TAG = "AdvancedSearchBottomSheet";
+    public static final String RESULT_KEY = "advanced_search_result";
 
     private FragmentAdvancedSearchBinding binding;
 
@@ -38,29 +39,31 @@ public class AdvancedSearchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("高级搜索");
-
         binding.btnSearch.setOnClickListener(v -> {
-            String title = binding.etTitle.getText().toString().trim();
-            String author = binding.etAuthor.getText().toString().trim();
-            String isbn = binding.etIsbn.getText().toString().trim();
-            String publisherText = binding.etPublisher.getText().toString().trim();
-            String yearFrom = binding.etYearFrom.getText().toString().trim();
-            String yearTo = binding.etYearTo.getText().toString().trim();
-            boolean onlyAvailable = binding.switchOnlyAvailable.isChecked();
-
             Bundle args = new Bundle();
-            args.putString("title", title);
-            args.putString("author", author);
-            args.putString("isbn", isbn);
-            args.putString("publisher", publisherText);
-            if (!yearFrom.isEmpty()) args.putInt("pubYearFrom", Integer.parseInt(yearFrom));
-            if (!yearTo.isEmpty()) args.putInt("pubYearTo", Integer.parseInt(yearTo));
-            args.putBoolean("onlyAvailable", onlyAvailable);
+            args.putString("title", trim(binding.etTitle));
+            args.putString("author", trim(binding.etAuthor));
+            args.putString("isbn", trim(binding.etIsbn));
+            args.putString("publisher", trim(binding.etPublisher));
+            Integer yrFrom = parseIntOrNull(trim(binding.etYearFrom));
+            Integer yrTo = parseIntOrNull(trim(binding.etYearTo));
+            if (yrFrom != null) args.putInt("pubYearFrom", yrFrom);
+            if (yrTo != null) args.putInt("pubYearTo", yrTo);
+            args.putBoolean("onlyAvailable", binding.switchOnlyAvailable.isChecked());
 
-            Navigation.findNavController(requireView())
-                    .navigate(com.library.android.R.id.action_advancedSearchFragment_to_searchFragment, args);
+            getParentFragmentManager().setFragmentResult(RESULT_KEY, args);
+            dismiss();
         });
+    }
+
+    private String trim(android.widget.EditText et) {
+        return et.getText() != null ? et.getText().toString().trim() : "";
+    }
+
+    @Nullable
+    private static Integer parseIntOrNull(String s) {
+        if (s == null || s.isEmpty()) return null;
+        try { return Integer.parseInt(s); } catch (NumberFormatException ignore) { return null; }
     }
 
     @Override

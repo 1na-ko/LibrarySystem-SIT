@@ -1,10 +1,12 @@
 package com.library.android.ui.kg;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -13,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 
 import com.google.android.material.slider.Slider;
 import com.library.android.R;
@@ -20,8 +23,10 @@ import com.library.android.databinding.FragmentKnowledgeGraphBinding;
 import com.library.android.model.GraphEdge;
 import com.library.android.model.GraphNode;
 import com.library.android.model.KnowledgeGraphVO;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.theme.ThemeManager;
+import com.library.android.ui.theme.WebViewThemeHelper;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
 import org.json.JSONArray;
@@ -50,6 +55,7 @@ public class KnowledgeGraphFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentKnowledgeGraphBinding.inflate(themedInflater, container, false);
@@ -61,27 +67,48 @@ public class KnowledgeGraphFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("知识图谱");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg));
 
         if (getArguments() != null) {
-            bookId = getArguments().getLong("bookId", 0);
+            bookId = getArguments().getLong(NavArgKeys.BOOK_ID, 0);
         }
 
         setupWebView();
         setupSlider();
+        setupChipGroup();
         observeViewModel();
         viewModel.loadBookGraph(bookId, currentDepth);
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         WebSettings settings = binding.webView.getSettings();
+        // JS 为 ECharts 力导向图必需，不可禁用
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        // 安全加固：禁用文件/内容访问、混合内容、地理定位
         settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setGeolocationEnabled(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
 
-        binding.webView.setWebViewClient(new WebViewClient());
+        // P1-09：WebView 背景与当前主题一致，避免加载前/空态时白底闪烁
+        WebViewThemeHelper.applyBackgroundColor(binding.webView, requireContext());
+
+        binding.webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                // 仅允许 about:blank（loadDataWithBaseURL 基 URL）与 HTTPS 资源加载；
+                // 拒绝 file: / content: / http: 等不安全 scheme
+                String scheme = request.getUrl().getScheme();
+                if ("about".equals(scheme) || "https".equals(scheme)) {
+                    return false; // WebView 自行处理
+                }
+                return true; // 阻止加载
+            }
+        });
         binding.webView.setWebChromeClient(new WebChromeClient());
     }
 
@@ -96,16 +123,33 @@ public class KnowledgeGraphFragment extends Fragment {
         });
     }
 
+    /** WP1.1：设置 KG 子页面 ChipGroup 导航（文献溯源 / 学科网络 / 实体搜索）. */
+    private void setupChipGroup() {
+        binding.chipLiteratureTrace.setOnClickListener(v -> {
+            Bundle args = new Bundle();
+            args.putLong(NavArgKeys.BOOK_ID, bookId);
+            Navigation.findNavController(requireView())
+                    .navigate(R.id.action_knowledgeGraphFragment_to_literatureTraceFragment, args);
+        });
+        binding.chipSubjectNetwork.setOnClickListener(v ->
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_knowledgeGraphFragment_to_subjectNetworkFragment));
+        binding.chipEntitySearch.setOnClickListener(v ->
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_knowledgeGraphFragment_to_entitySearchFragment));
+    }
+
     private void observeViewModel() {
         viewModel.getBookGraph().observe(getViewLifecycleOwner(), this::renderGraph);
 
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.textLoading.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
+                binding.textLoading.setVisibility(state == com.library.android.ui.common.LoadingState.LOADING ? View.VISIBLE : View.GONE));
 
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null) {
+        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
+            if (throwable != null) {
+                String errorMsg = throwable.getMessage() != null ? throwable.getMessage() : getString(R.string.error_unknown);
                 binding.webView.loadDataWithBaseURL(null,
-                        "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>" + msg + "</p></body></html>",
+                        WebViewThemeHelper.buildEmptyHtml(requireContext(), errorMsg),
                         "text/html", "UTF-8", null);
             }
         });
@@ -115,7 +159,7 @@ public class KnowledgeGraphFragment extends Fragment {
     private void renderGraph(KnowledgeGraphVO graph) {
         if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()) {
             binding.webView.loadDataWithBaseURL(null,
-                    "<html><body style='display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#999'><p>" + getString(R.string.no_graph_data) + "</p></body></html>",
+                    WebViewThemeHelper.buildEmptyHtml(requireContext(), getString(R.string.no_graph_data)),
                     "text/html", "UTF-8", null);
             return;
         }
@@ -147,29 +191,29 @@ public class KnowledgeGraphFragment extends Fragment {
             binding.webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
         } catch (Exception e) {
             binding.webView.loadDataWithBaseURL(null,
-                    "<html><body style='color:red'>" + getString(R.string.render_failed_format, e.getMessage()) + "</body></html>",
+                    WebViewThemeHelper.buildEmptyHtml(requireContext(), getString(R.string.render_failed_format, e.getMessage())),
                     "text/html", "UTF-8", null);
         }
     }
 
     /** 构建 ECharts 力导向图 HTML 页面. */
     private String buildEChartsHtml(String nodesJson, String edgesJson) {
-        return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no'>"
-                + "<script src='https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'></script>"
-                + "<style>body,html,#chart{margin:0;padding:0;width:100%;height:100%;overflow:hidden}</style>"
-                + "</head><body><div id='chart'></div><script>"
-                + "var chart=echarts.init(document.getElementById('chart'));"
-                + "var option={tooltip:{formatter:function(p){return p.dataType==='edge'?p.data.label||p.data.value:p.name}},"
-                + "legend:{data:['图书','作者','关键词','学科','出版物'],orient:'vertical',left:4,top:4,textStyle:{fontSize:10}},"
+        String colors = WebViewThemeHelper.colorsToJson(WebViewThemeHelper.getChartColors(requireContext()));
+        String start = WebViewThemeHelper.buildChartPageStart(requireContext(), colors);
+        String option = "var option={"
+                + "backgroundColor:'transparent',"
+                + "textStyle:{color:__themeTextColor},"
+                + "tooltip:{formatter:function(p){return p.dataType==='edge'?p.data.label||p.data.value:p.name}},"
+                + "legend:{data:['图书','作者','关键词','学科','出版物'],orient:'vertical',left:4,top:4,textStyle:{fontSize:10,color:__themeTextColor}},"
+                + "color:__themeColors,"
                 + "series:[{type:'graph',layout:'force',force:{repulsion:300,edgeLength:[100,300]},"
                 + "roam:true,draggable:true,focusNodeAdjacency:true,"
-                + "categories:[{name:'图书',itemStyle:{color:'#5470c6'}},{name:'作者',itemStyle:{color:'#91cc75'}},"
-                + "{name:'关键词',itemStyle:{color:'#fac858'}},{name:'学科',itemStyle:{color:'#ee6666'}},{name:'出版物',itemStyle:{color:'#73c0de'}}],"
+                + "categories:[{name:'图书'},{name:'作者'},{name:'关键词'},{name:'学科'},{name:'出版物'}],"
                 + "data:" + nodesJson + ",edges:" + edgesJson + ","
-                + "edgeSymbol:['none','none'],edgeLabel:{fontSize:10},"
-                + "label:{show:true,fontSize:10,formatter:function(p){return p.name.length>8?p.name.substring(0,7)+'…':p.name}}}]};"
-                + "chart.setOption(option);window.addEventListener('resize',function(){chart.resize()});"
-                + "</script></body></html>";
+                + "edgeSymbol:['none','none'],edgeLabel:{fontSize:10,color:__themeTextColor},"
+                + "label:{show:true,fontSize:10,color:__themeTextColor,formatter:function(p){return p.name.length>8?p.name.substring(0,7)+'…':p.name}}}]};"
+                + "chart.setOption(option);";
+        return start + option + WebViewThemeHelper.buildChartPageEnd();
     }
 
     private int getCategoryIndex(String type) {
@@ -186,21 +230,41 @@ public class KnowledgeGraphFragment extends Fragment {
     private String getRelationLabel(String relation) {
         if (relation == null) return "";
         switch (relation) {
-            case "AUTHORED_BY": return "作者";
-            case "HAS_KEYWORD": return "关键词";
-            case "BELONGS_TO": return "属于";
-            case "RELATED_TO": return "关联";
-            case "PUBLISHED_IN": return "出版";
-            case "CO_CITED": return "共引";
-            case "CITES": return "引用";
+            case "AUTHORED_BY": return getString(R.string.kg_relation_authored_by);
+            case "HAS_KEYWORD": return getString(R.string.kg_relation_has_keyword);
+            case "BELONGS_TO": return getString(R.string.kg_relation_belongs_to);
+            case "RELATED_TO": return getString(R.string.kg_relation_related_to);
+            case "PUBLISHED_IN": return getString(R.string.kg_relation_published_in);
+            case "CO_CITED": return getString(R.string.kg_relation_co_cited);
+            case "CITES": return getString(R.string.kg_relation_cites);
             default: return relation;
         }
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (binding != null && binding.webView != null) {
+            binding.webView.onResume();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        if (binding != null && binding.webView != null) {
+            binding.webView.onPause();
+        }
+        super.onPause();
+    }
+
+    @Override
     public void onDestroyView() {
+        // 先清理缓存再销毁，防止内存泄漏
+        if (binding != null && binding.webView != null) {
+            binding.webView.clearCache(true);
+            binding.webView.destroy();
+        }
         super.onDestroyView();
-        binding.webView.destroy();
         binding = null;
     }
 }

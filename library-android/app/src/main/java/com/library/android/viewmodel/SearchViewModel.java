@@ -4,7 +4,6 @@ import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.library.android.model.BookSimpleVO;
 import com.library.android.model.CategoryVO;
@@ -19,7 +18,6 @@ import javax.inject.Inject;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
@@ -29,7 +27,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  * @since 1.0.0
  */
 @HiltViewModel
-public class SearchViewModel extends ViewModel {
+public class SearchViewModel extends BaseViewModel {
 
     private static final String TAG = "SearchViewModel";
     private static final int PAGE_SIZE = 20;
@@ -39,14 +37,13 @@ public class SearchViewModel extends ViewModel {
     private final MutableLiveData<List<BookSimpleVO>> searchResults = new MutableLiveData<>();
     private final MutableLiveData<List<BookSimpleVO>> hotBooks = new MutableLiveData<>();
     private final MutableLiveData<List<CategoryVO>> categories = new MutableLiveData<>();
-    private final MutableLiveData<List<Map<String, String>>> suggestions = new MutableLiveData<>();
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
+    /** WP-4 契约对齐：SuggestVO 含 text + type 字段，原 Map&lt;String,String&gt; 已废弃. */
+    private final MutableLiveData<List<com.library.android.model.SuggestVO>> suggestions = new MutableLiveData<>();
     private final MutableLiveData<Boolean> hasMore = new MutableLiveData<>(true);
     private final MutableLiveData<Integer> totalResults = new MutableLiveData<>(0);
     private final MutableLiveData<String> resultTitle = new MutableLiveData<>();
+    private final MutableLiveData<String> searchMethodLabel = new MutableLiveData<>();
 
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     private String currentKeyword;
     private Long currentCategoryId;
@@ -65,16 +62,15 @@ public class SearchViewModel extends ViewModel {
     public LiveData<List<BookSimpleVO>> getSearchResults() { return searchResults; }
     public LiveData<List<BookSimpleVO>> getHotBooks() { return hotBooks; }
     public LiveData<List<CategoryVO>> getCategories() { return categories; }
-    public LiveData<List<Map<String, String>>> getSuggestions() { return suggestions; }
-    public LiveData<String> getErrorMessage() { return errorMessage; }
-    public LiveData<Boolean> isLoading() { return loading; }
+    public LiveData<List<com.library.android.model.SuggestVO>> getSuggestions() { return suggestions; }
     public LiveData<Boolean> hasMore() { return hasMore; }
     public LiveData<Integer> getTotalResults() { return totalResults; }
     public LiveData<String> getResultTitle() { return resultTitle; }
+    public LiveData<String> getSearchMethodLabel() { return searchMethodLabel; }
 
     /** 加载首页数据（热门图书 + 分类导航）. */
     public void loadHomeData() {
-        loading.setValue(true);
+        setLoading(com.library.android.ui.common.LoadingState.LOADING);
         disposables.add(
             bookRepository.getHotBooks(null, 10)
                 .subscribeOn(Schedulers.io())
@@ -95,13 +91,13 @@ public class SearchViewModel extends ViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         if (result.isSuccess() && result.getData() != null) {
                             categories.setValue(result.getData());
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         Log.e(TAG, "加载分类失败", throwable);
                     }
                 )
@@ -115,29 +111,32 @@ public class SearchViewModel extends ViewModel {
         suggestions.setValue(null);
         currentPage = 1;
         resultTitle.setValue(categoryName);
+        searchMethodLabel.setValue("分类浏览");
         hasMore.setValue(true);
-        loading.setValue(true);
+        setLoading(com.library.android.ui.common.LoadingState.LOADING);
 
         disposables.add(
-            bookRepository.searchBooks(null, null, categoryId, null, currentPage, PAGE_SIZE)
+            // WP-14：按分类搜索改用 advancedSearch（/books/search 后端要求 keyword 必填）
+            bookRepository.advancedSearch(null, null, null, null, null, null,
+                    categoryId, null, currentPage, PAGE_SIZE)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         if (result.isSuccess() && result.getData() != null) {
                             PageResult<BookSimpleVO> page = result.getData();
                             searchResults.setValue(page.getList());
                             totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());
                         } else {
-                            errorMessage.setValue(result.getMessage());
+                            postError(new RuntimeException(result.getMessage()));
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         Log.e(TAG, "分类搜索失败", throwable);
-                        errorMessage.setValue("分类搜索失败：" + throwable.getMessage());
+                        postError(new RuntimeException("分类搜索失败：" + throwable.getMessage()));
                     }
                 )
         );
@@ -148,11 +147,12 @@ public class SearchViewModel extends ViewModel {
         currentKeyword = keyword;
         currentCategoryId = null;
         suggestions.setValue(null);
-        resultTitle.setValue(null);
+        resultTitle.setValue(keyword);  // 搜索结果页展示搜索词条
+        searchMethodLabel.setValue("关键词搜索");
         clearAdvancedParams();
         currentPage = 1;
         hasMore.setValue(true);
-        loading.setValue(true);
+        setLoading(com.library.android.ui.common.LoadingState.LOADING);
 
         disposables.add(
             bookRepository.searchBooks(keyword, null, null, null, currentPage, PAGE_SIZE)
@@ -160,20 +160,20 @@ public class SearchViewModel extends ViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         if (result.isSuccess() && result.getData() != null) {
                             PageResult<BookSimpleVO> page = result.getData();
                             searchResults.setValue(page.getList());
                             totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());
                         } else {
-                            errorMessage.setValue(result.getMessage());
+                            postError(new RuntimeException(result.getMessage()));
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         Log.e(TAG, "搜索失败", throwable);
-                        errorMessage.setValue("搜索失败：" + throwable.getMessage());
+                        postError(new RuntimeException("搜索失败：" + throwable.getMessage()));
                     }
                 )
         );
@@ -181,11 +181,11 @@ public class SearchViewModel extends ViewModel {
 
     /** 加载更多搜索结果（分页）. */
     public void loadMore() {
-        if (Boolean.FALSE.equals(hasMore.getValue()) || Boolean.TRUE.equals(loading.getValue())) {
+        if (Boolean.FALSE.equals(hasMore.getValue()) || getLoadingState().getValue() == com.library.android.ui.common.LoadingState.LOADING) {
             return;
         }
         currentPage++;
-        loading.setValue(true);
+        setLoading(com.library.android.ui.common.LoadingState.LOADING);
 
         io.reactivex.rxjava3.core.Single<Result<PageResult<BookSimpleVO>>> source;
         if (isAdvancedMode()) {
@@ -203,7 +203,7 @@ public class SearchViewModel extends ViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         if (result.isSuccess() && result.getData() != null) {
                             PageResult<BookSimpleVO> page = result.getData();
                             List<BookSimpleVO> currentList = searchResults.getValue();
@@ -214,11 +214,11 @@ public class SearchViewModel extends ViewModel {
                             hasMore.setValue(currentPage < page.getPages());
                         } else {
                             currentPage--;
-                            errorMessage.setValue(result.getMessage());
+                            postError(new RuntimeException(result.getMessage()));
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         currentPage--;
                         Log.e(TAG, "加载更多失败", throwable);
                     }
@@ -239,10 +239,19 @@ public class SearchViewModel extends ViewModel {
         this.advPubYearTo = pubYearTo;
         this.advOnlyAvailable = onlyAvailable;
         suggestions.setValue(null);
-        resultTitle.setValue("高级搜索结果");
+        // 按参数类型区分搜索方式标签 + resultTitle
+        if (isbn != null && !isbn.isEmpty()
+                && (title == null || title.isEmpty())
+                && (author == null || author.isEmpty())) {
+            searchMethodLabel.setValue("ISBN搜索");
+            resultTitle.setValue(isbn);  // ISBN 搜索时展示 ISBN 号
+        } else {
+            searchMethodLabel.setValue("高级搜索");
+            resultTitle.setValue("高级搜索结果");
+        }
         currentPage = 1;
         hasMore.setValue(true);
-        loading.setValue(true);
+        setLoading(com.library.android.ui.common.LoadingState.LOADING);
         disposables.add(
             bookRepository.advancedSearch(
                     advTitle, advAuthor, advIsbn, advPublisher,
@@ -252,20 +261,20 @@ public class SearchViewModel extends ViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     result -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         if (result.isSuccess() && result.getData() != null) {
                             PageResult<BookSimpleVO> page = result.getData();
                             searchResults.setValue(page.getList());
                             totalResults.setValue((int) page.getTotal());
                             hasMore.setValue(currentPage < page.getPages());
                         } else {
-                            errorMessage.setValue(result.getMessage());
+                            postError(new RuntimeException(result.getMessage()));
                         }
                     },
                     throwable -> {
-                        loading.setValue(false);
+                        setLoading(com.library.android.ui.common.LoadingState.CONTENT);
                         Log.e(TAG, "高级搜索失败", throwable);
-                        errorMessage.setValue("高级搜索失败：" + throwable.getMessage());
+                        postError(new RuntimeException("高级搜索失败：" + throwable.getMessage()));
                     }
                 )
         );
@@ -320,9 +329,5 @@ public class SearchViewModel extends ViewModel {
         );
     }
 
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        disposables.clear();
-    }
+
 }

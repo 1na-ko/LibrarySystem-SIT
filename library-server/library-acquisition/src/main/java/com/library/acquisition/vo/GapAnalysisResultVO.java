@@ -28,6 +28,8 @@ public class GapAnalysisResultVO {
     /** coverage = ownedBooks / totalCoreBooks */
     private double coverage;
     private List<GapBook> gapBooks;
+    /** WP-0：无核心书目数据等友好提示（非空时前端展示），区别于"暂无缺口". */
+    private String message;
 
     @Data
     @Builder

@@ -7,55 +7,68 @@
     android:layout_height="match_parent"
     android:background="@color/bg_primary">
 
-    <!-- ═══ 全局顶部栏：返回按钮（左）+ 标题（中）+ 搜索图标（右） ═══ -->
-    <LinearLayout
+    <!--
+      ═══ Activity 级全局 header（仅 Tab 根页面显示）═══
+      WP-1：标题真正屏幕居中——title 约束到父容器（不受按钮占位影响）；
+      二级页面隐藏整个 header，由页面 page_toolbar 接管.
+    -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutGlobalHeader"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="@dimen/space_sm"
-        android:paddingEnd="@dimen/space_lg"
+        android:layout_height="@dimen/button_min_height"
         android:background="@color/bg_card"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- 左侧返回按钮 -->
+        <!-- 左侧返回按钮（默认隐藏；MainActivity 不再用其控制可见，由二级页面 toolbar 接管） -->
         <ImageButton
             android:id="@+id/btnGlobalBack"
-            android:layout_width="40dp"
+            android:layout_width="@dimen/book_cover_width"
             android:layout_height="40dp"
+            android:layout_marginStart="@dimen/space_sm"
             android:src="@drawable/ic_back_vector"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="返回"
-            android:tint="@color/text_primary"
-            android:visibility="gone" />
+            android:contentDescription="@string/toolbar_back"
+            android:visibility="gone"
+            app:tint="@color/text_primary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-        <!-- 中间标题（居中） -->
+        <!-- 中间标题：约束到父容器居中（左右各留 56dp 余量防与按钮重叠） -->
         <TextView
             android:id="@+id/tvGlobalTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="图书馆"
+            android:layout_marginStart="@dimen/list_item_height"
+            android:layout_marginEnd="@dimen/list_item_height"
+            android:text="@string/home_title"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="@dimen/text_size_title_large"
             android:fontFamily="serif"
             android:maxLines="1"
             android:ellipsize="end"
-            android:gravity="center" />
+            android:gravity="center"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-        <!-- 右侧搜索图标 -->
+        <!-- 右侧搜索图标：仅首页显示，其他 Tab 根页（借阅/我的）隐藏（MainActivity 控制） -->
         <ImageButton
             android:id="@+id/btnGlobalSearch"
-            android:layout_width="40dp"
+            android:layout_width="@dimen/book_cover_width"
             android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/space_sm"
             android:src="@drawable/ic_search_vector"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="搜索"
-            android:tint="@color/text_primary" />
-    </LinearLayout>
+            android:contentDescription="@string/search"
+            app:tint="@color/text_primary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- ═══ 主内容区域: Fragment 容器 ═══ -->
     <androidx.fragment.app.FragmentContainerView
@@ -73,7 +86,7 @@
     <View
         android:id="@+id/divider_bottom_nav"
         android:layout_width="0dp"
-        android:layout_height="1dp"
+        android:layout_height="@dimen/stroke_thickness"
         android:background="@color/border_light"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintEnd_toEndOf="parent"
