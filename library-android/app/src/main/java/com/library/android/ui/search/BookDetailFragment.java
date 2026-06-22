@@ -72,7 +72,7 @@ public class BookDetailFragment extends BaseFragment {
         viewModel = new ViewModelProvider(this).get(BookDetailViewModel.class);
 
         if (requireActivity() instanceof com.library.android.ui.main.MainActivity) {
-            ((com.library.android.ui.main.MainActivity) requireActivity()).setGlobalTitle("图书详情");
+            ((com.library.android.ui.main.MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_book_detail));
         }
 
         bookId = getArguments() != null ? getArguments().getLong(NavArgKeys.BOOK_ID, 0) : 0;

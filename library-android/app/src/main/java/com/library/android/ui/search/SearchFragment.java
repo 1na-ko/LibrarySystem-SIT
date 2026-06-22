@@ -241,7 +241,7 @@ public class SearchFragment extends BaseFragment {
             chip.setText(tag);
             chip.setChipBackgroundColorResource(R.color.bg_card);
             chip.setChipStrokeColorResource(R.color.border_light);
-            chip.setChipStrokeWidth(1f);
+            chip.setChipStrokeWidth(getResources().getDimension(R.dimen.chip_stroke_width));
             chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
             chip.setChipCornerRadiusResource(R.dimen.radius_sm);
             chip.setCheckable(false);

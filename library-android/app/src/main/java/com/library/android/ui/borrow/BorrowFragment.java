@@ -193,7 +193,7 @@ public class BorrowFragment extends Fragment {
 
             b.getRoot().setOnClickListener(v -> {
                 Bundle args = new Bundle();
-                args.putLong("borrowId", item.getId());
+                args.putLong(NavArgKeys.BORROW_ID, item.getId());
                 Navigation.findNavController(v).navigate(
                         R.id.action_borrowFragment_to_borrowDetailFragment, args);
             });

@@ -62,7 +62,7 @@ public class SubjectNetworkFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("学科主题网络");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg_subject));
 
         setupWebView();
         observeViewModel();

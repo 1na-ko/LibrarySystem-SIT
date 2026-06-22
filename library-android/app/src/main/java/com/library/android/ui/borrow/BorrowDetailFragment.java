@@ -48,7 +48,7 @@ public class BorrowDetailFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(BorrowDetailViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("借阅详情");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_borrow_detail));
 
         if (getArguments() != null) {
             borrowId = getArguments().getLong(NavArgKeys.BORROW_ID, 0);

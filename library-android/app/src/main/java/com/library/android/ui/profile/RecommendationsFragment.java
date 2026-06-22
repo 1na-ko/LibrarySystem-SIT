@@ -20,6 +20,7 @@ import com.library.android.databinding.ItemRecommendationBinding;
 import com.library.android.model.BookRecommendVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.HomeViewModel;
 
@@ -66,7 +67,7 @@ public class RecommendationsFragment extends BaseFragment {
             long bookId = item.getBook() != null ? item.getBook().getId() : 0;
             if (bookId <= 0) return;
             Bundle args = new Bundle();
-            args.putLong("bookId", bookId);
+            args.putLong(NavArgKeys.BOOK_ID, bookId);
             androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.bookDetailFragment, args);
         });
         binding.rvRecommendations.setLayoutManager(new LinearLayoutManager(requireContext()));

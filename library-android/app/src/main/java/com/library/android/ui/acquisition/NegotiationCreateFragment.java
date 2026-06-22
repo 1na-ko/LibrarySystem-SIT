@@ -17,6 +17,7 @@ import com.library.android.model.ElectronicResourceVO;
 import com.library.android.model.SupplierVO;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.Debounce;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.AcquisitionViewModel;
 
@@ -92,7 +93,7 @@ public class NegotiationCreateFragment extends BaseFragment {
             if (neg == null || binding == null) return;
             binding.btnCreate.setEnabled(true);
             Bundle args = new Bundle();
-            args.putLong("negotiationId", neg.getId());
+            args.putLong(NavArgKeys.NEGOTIATION_ID, neg.getId());
             Navigation.findNavController(binding.getRoot())
                     .navigate(R.id.action_negotiationCreateFragment_to_negotiationDetailFragment, args);
         });

@@ -9,7 +9,6 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import com.library.android.BuildConfig;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -110,7 +109,7 @@ public class Utf8FixTypeAdapterFactory implements TypeAdapterFactory {
                 String fixed = new String(raw, StandardCharsets.UTF_8);
                 if (hasCjkOrShorter(fixed, input)) return fixed;
             } catch (Exception e) {
-                if (BuildConfig.DEBUG) Log.w(TAG, "Windows-1252 decode failed, trying fallback", e);
+                Log.w(TAG, "Windows-1252 decode failed, trying fallback", e);
             }
 
             // 回退：ISO-8859-1
@@ -119,7 +118,7 @@ public class Utf8FixTypeAdapterFactory implements TypeAdapterFactory {
                 String fixed = new String(raw, StandardCharsets.UTF_8);
                 if (hasCjkOrShorter(fixed, input)) return fixed;
             } catch (Exception e) {
-                if (BuildConfig.DEBUG) Log.w(TAG, "ISO-8859-1 fallback decode failed", e);
+                Log.w(TAG, "ISO-8859-1 fallback decode failed", e);
             }
 
             return input;

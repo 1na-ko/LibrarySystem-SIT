@@ -161,11 +161,11 @@ public class ProfileFragment extends Fragment {
         if (loggedIn && profile != null) {
             // 已登录 + 已加载数据
             binding.tvLoginStatus.setText(tm.getRealName() != null ? tm.getRealName() : tm.getUsername());
-            binding.tvUsername.setText("用户名: " + profile.getUsername());
+            binding.tvUsername.setText(getString(R.string.profile_username_format, profile.getUsername()));
             binding.tvUsername.setVisibility(View.VISIBLE);
-            binding.tvRealName.setText("姓名: " + (profile.getRealName() != null ? profile.getRealName() : ""));
+            binding.tvRealName.setText(getString(R.string.profile_realname_format, profile.getRealName() != null ? profile.getRealName() : ""));
             binding.tvRealName.setVisibility(View.VISIBLE);
-            binding.tvEmail.setText("邮箱: " + (profile.getEmail() != null ? profile.getEmail() : ""));
+            binding.tvEmail.setText(getString(R.string.profile_email_format, profile.getEmail() != null ? profile.getEmail() : ""));
             binding.tvEmail.setVisibility(View.VISIBLE);
 
             binding.layoutBorrowOverview.setVisibility(View.VISIBLE);
@@ -175,7 +175,7 @@ public class ProfileFragment extends Fragment {
         } else if (loggedIn) {
             // 已登录但数据未加载
             binding.tvLoginStatus.setText(tm.getRealName() != null ? tm.getRealName() : tm.getUsername());
-            binding.tvUsername.setText("用户名: " + tm.getUsername());
+            binding.tvUsername.setText(getString(R.string.profile_username_format, tm.getUsername()));
             binding.tvUsername.setVisibility(View.VISIBLE);
             binding.layoutBorrowOverview.setVisibility(View.GONE);
             binding.layoutFunctionEntries.setVisibility(View.VISIBLE);
@@ -183,7 +183,7 @@ public class ProfileFragment extends Fragment {
             binding.btnLogout.setVisibility(View.VISIBLE);
         } else {
             // 未登录
-            binding.tvLoginStatus.setText("未登录");
+            binding.tvLoginStatus.setText(getString(R.string.profile_not_logged_in));
             binding.tvUsername.setVisibility(View.GONE);
             binding.tvRealName.setVisibility(View.GONE);
             binding.tvEmail.setVisibility(View.GONE);

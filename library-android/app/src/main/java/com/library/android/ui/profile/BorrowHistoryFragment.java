@@ -20,6 +20,7 @@ import com.library.android.model.BorrowRecordVO;
 import com.library.android.model.PageResult;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.common.PagingScrollListener;
 import com.library.android.ui.common.SafeStrings;
 import com.library.android.ui.main.MainActivity;
@@ -210,7 +211,7 @@ public class BorrowHistoryFragment extends BaseFragment {
             // WP-8：列表项可点击跳借阅详情（带 borrowId）
             binding.getRoot().setOnClickListener(v -> {
                 Bundle args = new Bundle();
-                args.putLong("borrowId", item.getId());
+                args.putLong(NavArgKeys.BORROW_ID, item.getId());
                 Navigation.findNavController(v).navigate(R.id.borrowDetailFragment, args);
             });
         }

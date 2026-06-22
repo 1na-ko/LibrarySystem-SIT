@@ -59,7 +59,7 @@ public class BorrowStatsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("借阅统计");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_borrow_stats));
 
         viewModel.getBorrowStats().observe(getViewLifecycleOwner(), stats -> {
             if (stats != null) {

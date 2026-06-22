@@ -44,7 +44,7 @@
         <activity
             android:name=".ui.scanner.ScanBarcodeActivity"
             android:exported="false"
-            android:label="扫码"
+            android:label="@string/scan_barcode_title"
             android:theme="@style/Theme.LibrarySystem.Scan" />
 
         <!-- WP-14：独立搜索 Activity（无主 header/无 BottomNav） -->

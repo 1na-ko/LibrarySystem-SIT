@@ -67,7 +67,7 @@ public class KnowledgeGraphFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("知识图谱");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg));
 
         if (getArguments() != null) {
             bookId = getArguments().getLong(NavArgKeys.BOOK_ID, 0);

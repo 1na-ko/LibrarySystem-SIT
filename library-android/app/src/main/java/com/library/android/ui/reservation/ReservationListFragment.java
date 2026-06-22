@@ -64,7 +64,7 @@ public class ReservationListFragment extends BaseFragment {
 
         observeError(viewModel.getErrorEvent());
 
-        ((MainActivity) requireActivity()).setGlobalTitle("我的预约");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_reservations));
 
         setupTabs();
         setupRecyclerView();

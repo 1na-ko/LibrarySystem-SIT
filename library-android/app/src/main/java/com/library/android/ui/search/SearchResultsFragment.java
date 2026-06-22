@@ -21,6 +21,7 @@ import com.library.android.model.BookSimpleVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.LoadingState;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.common.PagingScrollListener;
 import com.library.android.viewmodel.SearchViewModel;
 
@@ -61,7 +62,7 @@ public class SearchResultsFragment extends BaseFragment {
 
         adapter = new SearchResultAdapter(book -> {
             Bundle args = new Bundle();
-            args.putLong("bookId", book.getId());
+            args.putLong(NavArgKeys.BOOK_ID, book.getId());
             Navigation.findNavController(view).navigate(R.id.bookDetailFragment, args);
         });
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());

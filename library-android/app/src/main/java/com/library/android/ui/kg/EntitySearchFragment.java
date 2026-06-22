@@ -56,7 +56,7 @@ public class EntitySearchFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("实体搜索");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg_entity));
 
         setupRecyclerView();
         setupSearch();

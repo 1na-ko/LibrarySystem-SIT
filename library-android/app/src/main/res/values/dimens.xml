@@ -54,6 +54,9 @@
     <dimen name="icon_size_md">24dp</dimen>
     <dimen name="icon_size_lg">32dp</dimen>
 
+    <!-- ── Chip ── -->
+    <dimen name="chip_stroke_width">1dp</dimen>
+
     <!-- ── 空态/错误态插图 ── -->
     <dimen name="empty_state_illustration_size">96dp</dimen>
 

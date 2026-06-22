@@ -17,6 +17,7 @@ import com.library.android.model.CategoryVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.LoadingState;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.CategoryTreeViewModel;
 
@@ -61,8 +62,8 @@ public class CategoryTreeFragment extends BaseFragment {
         // WP-7：点击分类 → 跳搜索页按 categoryId 搜书
         adapter = new CategoryTreeAdapter(category -> {
             Bundle args = new Bundle();
-            args.putLong("categoryId", category.getId());
-            args.putString("categoryName", category.getName() != null ? category.getName() : "");
+            args.putLong(NavArgKeys.CATEGORY_ID, category.getId());
+            args.putString(NavArgKeys.CATEGORY_NAME, category.getName() != null ? category.getName() : "");
             androidx.navigation.Navigation.findNavController(view).navigate(R.id.searchFragment, args);
         });
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));

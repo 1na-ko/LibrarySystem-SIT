@@ -59,7 +59,7 @@ public class AdminUserListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(AdminViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("用户管理");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_admin_users));
 
         setupRecyclerView();
         setupSearch();

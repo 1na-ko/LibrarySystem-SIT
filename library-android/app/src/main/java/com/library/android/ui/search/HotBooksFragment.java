@@ -20,6 +20,7 @@ import com.library.android.model.CategoryVO;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.LoadingState;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.HotBooksViewModel;
 
@@ -172,7 +173,7 @@ public class HotBooksFragment extends BaseFragment {
             binding.getRoot().setOnClickListener(v -> {
                 androidx.navigation.NavController nav = androidx.navigation.Navigation.findNavController(v);
                 Bundle args = new Bundle();
-                args.putLong("bookId", item.getId());
+                args.putLong(NavArgKeys.BOOK_ID, item.getId());
                 nav.navigate(R.id.bookDetailFragment, args);
             });
         }

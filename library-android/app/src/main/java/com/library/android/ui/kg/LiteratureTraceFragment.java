@@ -67,7 +67,7 @@ public class LiteratureTraceFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(KnowledgeGraphViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle("文献溯源");
+        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_kg_trace));
 
         if (getArguments() != null) {
             bookId = getArguments().getLong(NavArgKeys.BOOK_ID, 0);
