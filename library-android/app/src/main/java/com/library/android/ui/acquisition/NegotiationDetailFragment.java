@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.library.android.R;
 import com.library.android.databinding.FragmentNegotiationDetailBinding;
 import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.AcquisitionViewModel;
 
@@ -37,6 +38,7 @@ public class NegotiationDetailFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        com.library.android.ui.theme.ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = com.library.android.ui.theme.ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentNegotiationDetailBinding.inflate(themedInflater, container, false);
@@ -51,7 +53,7 @@ public class NegotiationDetailFragment extends BaseFragment {
         ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_negotiation_detail));
 
         if (getArguments() != null) {
-            negotiationId = getArguments().getLong("negotiationId", 0);
+            negotiationId = getArguments().getLong(NavArgKeys.NEGOTIATION_ID, 0);
         }
 
         observeError(viewModel.getErrorEvent());

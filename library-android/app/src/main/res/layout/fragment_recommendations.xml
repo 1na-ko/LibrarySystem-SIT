@@ -32,10 +32,10 @@
                     android:id="@+id/cardAiReason"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="12dp"
+                    android:layout_margin="@dimen/space_md"
                     app:cardElevation="0dp"
-                    app:cardCornerRadius="12dp"
-                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="@dimen/space_md"
+                    app:strokeWidth="@dimen/stroke_thickness"
                     app:strokeColor="@color/border_light"
                     app:cardBackgroundColor="@color/bg_card">
 
@@ -43,7 +43,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="@dimen/space_lg">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -55,16 +55,17 @@
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
                                 android:src="@drawable/ic_ai_assistant"
+                                android:contentDescription="@string/recommend_ai_title"
                                 app:tint="@color/accent_cta" />
 
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginStart="@dimen/space_sm"
                                 android:text="@string/recommend_ai_title"
                                 android:textColor="@color/text_primary"
-                                android:textSize="15sp"
+                                android:textSize="@dimen/text_size_body_large"
                                 android:textStyle="bold" />
 
                             <!-- 导语流式生成中的小 loading -->
@@ -81,11 +82,11 @@
                             android:id="@+id/tvAiReason"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="@dimen/space_sm"
                             android:text="@string/recommend_ai_initial"
                             android:textColor="@color/text_secondary"
-                            android:textSize="14sp"
-                            android:lineSpacingExtra="4dp" />
+                            android:textSize="@dimen/text_size_body"
+                            android:lineSpacingExtra="@dimen/space_xs" />
 
                     </LinearLayout>
 
@@ -98,25 +99,21 @@
                     android:layout_height="wrap_content"
                     android:nestedScrollingEnabled="false"
                     android:clipToPadding="false"
-                    android:paddingBottom="16dp" />
+                    android:paddingBottom="@dimen/space_lg" />
 
                 <!-- 书目空态 -->
-                <LinearLayout
+                <TextView
                     android:id="@+id/layoutEmpty"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="48dp"
+                    android:layout_marginTop="@dimen/space_xxxl"
                     android:gravity="center"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/recommend_empty"
-                        android:textSize="15sp"
-                        android:textColor="@color/text_tertiary" />
-
-                </LinearLayout>
+                    android:visibility="gone"
+                    android:drawablePadding="@dimen/space_md"
+                    app:drawableTopCompat="@drawable/ill_empty_state"
+                    android:text="@string/recommend_empty"
+                    android:textSize="@dimen/text_size_body_large"
+                    android:textColor="@color/text_tertiary" />
 
             </LinearLayout>
 
@@ -135,15 +132,15 @@
         android:visibility="gone">
 
         <ProgressBar
-            android:layout_width="40dp"
+            android:layout_width="@dimen/book_cover_width"
             android:layout_height="40dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/space_md"
             android:text="@string/recommend_books_loading"
-            android:textSize="13sp"
+            android:textSize="@dimen/text_size_body_small"
             android:textColor="@color/text_tertiary" />
 
     </LinearLayout>

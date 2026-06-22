@@ -1,5 +1,7 @@
 package com.library.android.viewmodel;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -33,6 +35,8 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  */
 @HiltViewModel
 public class AcquisitionViewModel extends BaseViewModel {
+
+    private static final String TAG = "AcquisitionVM";
 
     private final AcquisitionRepository repository;
     private final BookRepository bookRepository;
@@ -193,18 +197,24 @@ public class AcquisitionViewModel extends BaseViewModel {
                 new AcquisitionRepository.NegotiationStreamCallback() {
                     @Override
                     public void onPriceRange(NegotiationSuggestion.PriceRange range) {
-                        try { priceRange.postValue(range); } catch (Exception ignored) {}
+                        try { priceRange.postValue(range); } catch (Exception e) {
+                            Log.w(TAG, "postValue priceRange failed", e);
+                        }
                     }
                     @Override
                     public void onTextToken(String token) {
                         try {
                             textBuf.append(token);
                             suggestionText.postValue(textBuf.toString());
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            Log.w(TAG, "postValue suggestionText failed", e);
+                        }
                     }
                     @Override
                     public void onDone() {
-                        try { suggestionStreaming.postValue(false); } catch (Exception ignored) {}
+                        try { suggestionStreaming.postValue(false); } catch (Exception e) {
+                            Log.w(TAG, "postValue suggestionStreaming done failed", e);
+                        }
                     }
                     @Override
                     public void onError(Throwable e) {
@@ -212,7 +222,9 @@ public class AcquisitionViewModel extends BaseViewModel {
                             suggestionStreaming.postValue(false);
                             loadedSuggestionNegotiationId = 0L;
                             postError(e);
-                        } catch (Exception ignored) {}
+                        } catch (Exception ex) {
+                            Log.w(TAG, "postError/suggestionStreaming failed in onError", ex);
+                        }
                     }
                 });
     }

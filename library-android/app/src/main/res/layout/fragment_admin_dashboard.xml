@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_primary"
@@ -10,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/space_lg">
 
         <ProgressBar
             android:id="@+id/progress"
@@ -32,25 +33,25 @@
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
                 android:layout_rowWeight="1"
-                app:cardElevation="2dp">
+                app:cardElevation="@dimen/card_elevation">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="@dimen/space_md">
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/dashboard_today_borrows"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:textSize="@dimen/text_size_body_small" />
                     <TextView
                         android:id="@+id/tvTodayBorrows"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="-"
+                        tools:text="-"
                         android:textColor="@color/accent_cta"
-                        android:textSize="28sp"
+                        android:textSize="@dimen/text_size_login_title"
                         android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -60,25 +61,25 @@
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
                 android:layout_rowWeight="1"
-                app:cardElevation="2dp">
+                app:cardElevation="@dimen/card_elevation">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="@dimen/space_md">
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/dashboard_today_returns"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:textSize="@dimen/text_size_body_small" />
                     <TextView
                         android:id="@+id/tvTodayReturns"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="-"
+                        tools:text="-"
                         android:textColor="@color/accent_available"
-                        android:textSize="28sp"
+                        android:textSize="@dimen/text_size_login_title"
                         android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -88,25 +89,25 @@
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
                 android:layout_rowWeight="1"
-                app:cardElevation="2dp">
+                app:cardElevation="@dimen/card_elevation">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="@dimen/space_md">
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/dashboard_today_overdue"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:textSize="@dimen/text_size_body_small" />
                     <TextView
                         android:id="@+id/tvTodayOverdue"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="-"
+                        tools:text="-"
                         android:textColor="@color/chip_overdue"
-                        android:textSize="28sp"
+                        android:textSize="@dimen/text_size_login_title"
                         android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -116,25 +117,25 @@
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
                 android:layout_rowWeight="1"
-                app:cardElevation="2dp">
+                app:cardElevation="@dimen/card_elevation">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="@dimen/space_md">
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/dashboard_active_borrowers"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:textSize="@dimen/text_size_body_small" />
                     <TextView
                         android:id="@+id/tvActiveBorrowers"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="-"
+                        tools:text="-"
                         android:textColor="@color/text_primary"
-                        android:textSize="28sp"
+                        android:textSize="@dimen/text_size_login_title"
                         android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -148,14 +149,14 @@
             android:layout_marginTop="20dp"
             android:text="@string/dashboard_month_trend"
             android:textColor="@color/text_primary"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_size_title"
             android:textStyle="bold" />
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChartTrend"
             android:layout_width="match_parent"
             android:layout_height="240dp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="@dimen/space_sm" />
 
         <!-- 热门分类饼图 -->
         <TextView
@@ -164,14 +165,14 @@
             android:layout_marginTop="20dp"
             android:text="@string/dashboard_hot_categories"
             android:textColor="@color/text_primary"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_size_title"
             android:textStyle="bold" />
 
         <com.github.mikephil.charting.charts.PieChart
             android:id="@+id/pieChartCategories"
             android:layout_width="match_parent"
             android:layout_height="280dp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="@dimen/space_sm" />
 
         <!-- KG 维护按钮 -->
         <com.google.android.material.button.MaterialButton

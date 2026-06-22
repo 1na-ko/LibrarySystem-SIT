@@ -17,6 +17,7 @@ import com.journeyapps.barcodescanner.BarcodeResult;
 import com.journeyapps.barcodescanner.DecoratedBarcodeView;
 import com.library.android.R;
 import com.library.android.databinding.ActivityScanBarcodeBinding;
+import com.library.android.ui.common.NavArgKeys;
 
 /**
  * 条码扫描 Activity — 使用 ZXing 库扫描 ISBN 条码.
@@ -53,7 +54,7 @@ public class ScanBarcodeActivity extends AppCompatActivity {
         binding = ActivityScanBarcodeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        source = getIntent().getStringExtra("source");
+        source = getIntent() != null ? getIntent().getStringExtra(NavArgKeys.SOURCE) : "";
 
         binding.barcodeScanner.decodeContinuous(new BarcodeCallback() {
             @Override
@@ -76,8 +77,8 @@ public class ScanBarcodeActivity extends AppCompatActivity {
         binding.barcodeScanner.pause();
 
         Intent resultIntent = new Intent();
-        resultIntent.putExtra("isbn", isbn);
-        resultIntent.putExtra("source", source);
+        resultIntent.putExtra(NavArgKeys.ISBN, isbn);
+        resultIntent.putExtra(NavArgKeys.SOURCE, source);
         setResult(RESULT_OK, resultIntent);
 
         Toast.makeText(this, getString(R.string.scan_result_format, isbn), Toast.LENGTH_SHORT).show();

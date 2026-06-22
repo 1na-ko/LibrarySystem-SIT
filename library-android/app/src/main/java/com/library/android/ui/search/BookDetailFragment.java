@@ -2,14 +2,12 @@ package com.library.android.ui.search;
 
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
@@ -20,22 +18,16 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.FragmentBookDetailBinding;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.model.BookDetailVO;
 import com.library.android.model.BookRecommendVO;
 import com.library.android.model.BookSimpleVO;
-import com.library.android.model.Result;
-import com.library.android.network.exception.ApiException;
-import com.library.android.repository.ReservationRepository;
 import com.library.android.ui.borrow.BorrowConfirmDialog;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.BaseFragment;
 import com.library.android.viewmodel.BookDetailViewModel;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 图书详情 Fragment.
@@ -48,21 +40,19 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  *   <li>所有 setText 输入做 null/空字符兜底，避免 TextView 显示字面量 "null".</li>
  * </ul>
  *
+ * <p>P1-01：移除 {@code @Inject ReservationRepository}，预约动作通过
+ * {@link BookDetailViewModel#reserveBook(long)} 触发，UI 监听 reserveSuccess
+ * + reserving + errorEvent 三路 LiveData.
+ *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class BookDetailFragment extends Fragment {
-
-    private static final String TAG = "BookDetailFragment";
+public class BookDetailFragment extends BaseFragment {
 
     private FragmentBookDetailBinding binding;
     private BookDetailViewModel viewModel;
     private RecommendAdapter recommendAdapter;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
-    @Inject
-    ReservationRepository reservationRepository;
 
     private long bookId;
     @Nullable
@@ -81,15 +71,17 @@ public class BookDetailFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(BookDetailViewModel.class);
 
-        ((com.library.android.ui.main.MainActivity) requireActivity()).setGlobalTitle("图书详情");
+        if (requireActivity() instanceof com.library.android.ui.main.MainActivity) {
+            ((com.library.android.ui.main.MainActivity) requireActivity()).setGlobalTitle("图书详情");
+        }
 
-        bookId = getArguments() != null ? getArguments().getLong("bookId", 0) : 0;
+        bookId = getArguments() != null ? getArguments().getLong(NavArgKeys.BOOK_ID, 0) : 0;
 
         // 相关推荐（WP1.5：popUpTo 自身+inclusive 防深栈溢出）
         recommendAdapter = new RecommendAdapter(item -> {
             if (item.getBook() == null) return;
             Bundle args = new Bundle();
-            args.putLong("bookId", item.getBook().getId());
+            args.putLong(NavArgKeys.BOOK_ID, item.getBook().getId());
             androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
                     .setPopUpTo(R.id.bookDetailFragment, true)
                     .setLaunchSingleTop(true)
@@ -112,9 +104,9 @@ public class BookDetailFragment extends Fragment {
                     boolean success = result.getBoolean("success", false);
                     String title = result.getString("title", "");
                     if (success) {
-                        com.google.android.material.snackbar.Snackbar.make(requireView(),
+                        Snackbar.make(requireView(),
                                 getString(R.string.borrow_success_format, title),
-                                com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
+                                Snackbar.LENGTH_LONG).show();
                         if (bookId > 0) viewModel.loadBookDetail(bookId);
                     }
                 });
@@ -138,11 +130,23 @@ public class BookDetailFragment extends Fragment {
             }
         });
 
-        viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
-            if (throwable != null && binding != null && !TextUtils.isEmpty(throwable.getMessage())) {
-                Snackbar.make(binding.getRoot(), throwable.getMessage(), Snackbar.LENGTH_SHORT).show();
+        // P1-01：预约成功反馈（取代 BookDetailFragment 原 handleReserveResult）
+        viewModel.getReserveSuccess().observe(getViewLifecycleOwner(), reservation -> {
+            if (reservation == null || binding == null) return;
+            Snackbar.make(binding.getRoot(),
+                    getString(R.string.reserve_success_format, reservation.getQueuePosition()),
+                    Snackbar.LENGTH_LONG).show();
+        });
+
+        // P1-01：预约状态变更（按钮禁用防抖）
+        viewModel.isReserving().observe(getViewLifecycleOwner(), inFlight -> {
+            if (binding != null) {
+                binding.btnReserve.setEnabled(!Boolean.TRUE.equals(inFlight));
             }
         });
+
+        // 错误统一通过 BaseFragment.observeError 展示（按异常类型分类文案）
+        observeError(viewModel.getErrorEvent());
     }
 
     private void bindDetail(BookDetailVO detail) {
@@ -214,50 +218,14 @@ public class BookDetailFragment extends Fragment {
 
     private void onClickReserve(View v) {
         if (currentDetail == null) return;
-        v.setEnabled(false);  // 防抖：避免快速双击发起两次预约
-        disposables.add(reservationRepository.reserveBook(currentDetail.getId())
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        result -> handleReserveResult(v, result),
-                        throwable -> handleReserveError(v, throwable)
-                ));
-    }
-
-    private void handleReserveResult(View v, Result<com.library.android.model.ReservationVO> result) {
-        v.setEnabled(true);
-        if (binding == null) return;
-        if (result.isSuccess() && result.getData() != null) {
-            int pos = result.getData().getQueuePosition();
-            Snackbar.make(binding.getRoot(),
-                    getString(R.string.reserve_success_format, pos),
-                    Snackbar.LENGTH_LONG).show();
-            // 刷新详情，更新预约人数
-            viewModel.loadBookDetail(bookId);
-        } else {
-            Snackbar.make(binding.getRoot(),
-                    !TextUtils.isEmpty(result.getMessage())
-                            ? result.getMessage()
-                            : getString(R.string.reserve_failed),
-                    Snackbar.LENGTH_SHORT).show();
-        }
-    }
-
-    private void handleReserveError(View v, Throwable throwable) {
-        v.setEnabled(true);
-        if (binding == null) return;
-        Log.e(TAG, "预约失败", throwable);
-        String msg = (throwable instanceof ApiException
-                && !TextUtils.isEmpty(((ApiException) throwable).getServerMessage()))
-                ? ((ApiException) throwable).getServerMessage()
-                : getString(R.string.reserve_failed);
-        Snackbar.make(binding.getRoot(), msg, Snackbar.LENGTH_SHORT).show();
+        // P1-01：预约逻辑下沉到 ViewModel；按钮防抖通过 reserving LiveData 控制
+        viewModel.reserveBook(currentDetail.getId());
     }
 
     private void onClickKnowledgeGraph(View v) {
         if (currentDetail == null) return;
         Bundle args = new Bundle();
-        args.putLong("bookId", currentDetail.getId());
+        args.putLong(NavArgKeys.BOOK_ID, currentDetail.getId());
         Navigation.findNavController(v).navigate(R.id.action_bookDetailFragment_to_knowledgeGraphFragment, args);
     }
 
@@ -269,7 +237,6 @@ public class BookDetailFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 
@@ -310,6 +277,16 @@ public class BookDetailFragment extends Fragment {
             if (item.getBook() != null) {
                 binding.tvTitle.setText(item.getBook().getTitle() != null ? item.getBook().getTitle() : "");
                 binding.tvAuthor.setText(item.getBook().getAuthor() != null ? item.getBook().getAuthor() : "");
+                String coverUrl = item.getBook().getCoverUrl();
+                if (!TextUtils.isEmpty(coverUrl)) {
+                    Glide.with(binding.ivCover.getContext())
+                            .load(coverUrl)
+                            .placeholder(R.drawable.ic_book_placeholder)
+                            .error(R.drawable.ic_book_placeholder)
+                            .into(binding.ivCover);
+                } else {
+                    binding.ivCover.setImageResource(R.drawable.ic_book_placeholder);
+                }
             }
             binding.tvReason.setText(item.getReason() != null ? item.getReason() : "");
             binding.getRoot().setOnClickListener(v -> {

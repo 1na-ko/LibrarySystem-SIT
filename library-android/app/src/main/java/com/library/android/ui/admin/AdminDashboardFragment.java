@@ -23,26 +23,25 @@ import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.FragmentAdminDashboardBinding;
 import com.library.android.model.DashboardVO;
-import com.library.android.repository.AdminRepository;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.Debounce;
 import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ChartThemeHelper;
 import com.library.android.viewmodel.AdminDashboardViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 管理端流通统计 Dashboard Fragment（C.2 新增）.
  *
  * <p>展示 4 张数字卡片 + 月趋势折线图 + 热门分类饼图 + 图谱重建按钮.
+ *
+ * <p>P1-01：移除 {@code @Inject AdminRepository}，图谱重建动作下沉至
+ * {@link AdminDashboardViewModel#rebuildKnowledgeGraph()}，UI 三路观察
+ * rebuildResult / rebuildInProgress / errorEvent.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -52,16 +51,13 @@ public class AdminDashboardFragment extends BaseFragment {
 
     private FragmentAdminDashboardBinding binding;
     private AdminDashboardViewModel viewModel;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
-    @Inject
-    AdminRepository adminRepository;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        // WP-12：暗色模式 wrapContext（管理端属 DARK_MODE_DESTINATIONS）
+        // P1-07：管理端强制深色，先设置状态再 wrapContext，避免从返回栈恢复时使用浅色主题
+        com.library.android.ui.theme.ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = com.library.android.ui.theme.ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentAdminDashboardBinding.inflate(themedInflater, container, false);
@@ -82,12 +78,21 @@ public class AdminDashboardFragment extends BaseFragment {
                         state == com.library.android.ui.common.LoadingState.LOADING
                                 ? View.VISIBLE : View.GONE));
 
+        // P1-01：图谱重建状态观察（取代原 Fragment 内 disposables.add 内联订阅）
+        viewModel.isRebuildInProgress().observe(getViewLifecycleOwner(), this::renderRebuildState);
+        viewModel.getRebuildResult().observe(getViewLifecycleOwner(), processed -> {
+            if (processed == null || binding == null) return;
+            Snackbar.make(binding.getRoot(),
+                    getString(R.string.dashboard_rebuild_kg_done_format, processed),
+                    Snackbar.LENGTH_LONG).show();
+        });
+
         binding.btnRebuildKg.setOnClickListener(v -> {
             if (!Debounce.allow(v)) return;
             new MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.dashboard_rebuild_kg)
                     .setMessage(R.string.dashboard_rebuild_kg_confirm)
-                    .setPositiveButton(R.string.confirm, (d, w) -> rebuildKg(v))
+                    .setPositiveButton(R.string.confirm, (d, w) -> viewModel.rebuildKnowledgeGraph())
                     .setNegativeButton(R.string.cancel, null)
                     .show();
         });
@@ -105,6 +110,20 @@ public class AdminDashboardFragment extends BaseFragment {
 
         renderTrendChart(data.getMonthTrend());
         renderCategoryPie(data.getHotCategories());
+    }
+
+    /** P1-01：图谱重建按钮状态/文案/进度条统一切换. */
+    private void renderRebuildState(@Nullable Boolean inProgress) {
+        if (binding == null || inProgress == null) return;
+        binding.btnRebuildKg.setEnabled(!inProgress);
+        if (binding.btnRebuildKg instanceof com.google.android.material.button.MaterialButton) {
+            com.google.android.material.button.MaterialButton btn =
+                    (com.google.android.material.button.MaterialButton) binding.btnRebuildKg;
+            btn.setText(inProgress
+                    ? R.string.dashboard_rebuild_kg_running
+                    : R.string.dashboard_rebuild_kg);
+        }
+        binding.progress.setVisibility(inProgress ? View.VISIBLE : View.GONE);
     }
 
     private void renderTrendChart(List<DashboardVO.DailyTrend> trend) {
@@ -130,13 +149,16 @@ public class AdminDashboardFragment extends BaseFragment {
         borrowSet.setCircleColor(colorBorrow);
         borrowSet.setLineWidth(2f);
         borrowSet.setCircleRadius(3f);
+        borrowSet.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
 
         LineDataSet returnSet = new LineDataSet(returnEntries, getString(R.string.dashboard_today_returns));
         returnSet.setColor(colorReturn);
         returnSet.setCircleColor(colorReturn);
         returnSet.setLineWidth(2f);
         returnSet.setCircleRadius(3f);
+        returnSet.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
 
+        ChartThemeHelper.applyLineChartTheme(binding.lineChartTrend);
         binding.lineChartTrend.setData(new LineData(borrowSet, returnSet));
         binding.lineChartTrend.getDescription().setEnabled(false);
         XAxis xAxis = binding.lineChartTrend.getXAxis();
@@ -161,7 +183,6 @@ public class AdminDashboardFragment extends BaseFragment {
         };
         for (int i = 0; i < categories.size(); i++) {
             DashboardVO.CategoryHotStat cat = categories.get(i);
-            // WP-4 契约对齐：后端字段为 borrowCount（long），强转 float 用于饼图
             entries.add(new PieEntry((float) cat.getBorrowCount(),
                     cat.getCategoryName() != null ? cat.getCategoryName() : ""));
             colors.add(palette[i % palette.length]);
@@ -169,6 +190,8 @@ public class AdminDashboardFragment extends BaseFragment {
         PieDataSet ds = new PieDataSet(entries, "");
         ds.setColors(colors);
         ds.setValueTextSize(11f);
+        ds.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
+        ChartThemeHelper.applyPieChartTheme(binding.pieChartCategories);
         binding.pieChartCategories.setData(new PieData(ds));
         binding.pieChartCategories.setUsePercentValues(true);
         binding.pieChartCategories.getDescription().setEnabled(false);
@@ -176,44 +199,9 @@ public class AdminDashboardFragment extends BaseFragment {
         binding.pieChartCategories.invalidate();
     }
 
-    private void rebuildKg(View v) {
-        v.setEnabled(false);
-        // WP-10：执行中显示"重建中..."文案 + 进度条，给用户明确反馈（原版仅按钮变灰无提示）
-        if (v instanceof com.google.android.material.button.MaterialButton) {
-            ((com.google.android.material.button.MaterialButton) v).setText(R.string.dashboard_rebuild_kg_running);
-        }
-        binding.progress.setVisibility(View.VISIBLE);
-        disposables.add(adminRepository.rebuildKgAll()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        result -> {
-                            if (binding == null) return;
-                            v.setEnabled(true);
-                            if (v instanceof com.google.android.material.button.MaterialButton) {
-                                ((com.google.android.material.button.MaterialButton) v).setText(R.string.dashboard_rebuild_kg);
-                            }
-                            binding.progress.setVisibility(View.GONE);
-                            int processed = result.getData() != null ? result.getData() : 0;
-                            Snackbar.make(binding.getRoot(),
-                                    getString(R.string.dashboard_rebuild_kg_done_format, processed),
-                                    Snackbar.LENGTH_LONG).show();
-                        },
-                        throwable -> {
-                            if (binding == null) return;
-                            v.setEnabled(true);
-                            if (v instanceof com.google.android.material.button.MaterialButton) {
-                                ((com.google.android.material.button.MaterialButton) v).setText(R.string.dashboard_rebuild_kg);
-                            }
-                            binding.progress.setVisibility(View.GONE);
-                            showErrorSnackbar(throwable);
-                        }));
-    }
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 }

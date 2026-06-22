@@ -44,6 +44,7 @@ public class EntitySearchFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentEntitySearchBinding.inflate(themedInflater, container, false);
@@ -103,7 +104,7 @@ public class EntitySearchFragment extends BaseFragment {
             // WP-6：空结果友好提示（原版仅列表空白，用户无感知）
             boolean empty = results == null || results.isEmpty();
             if (binding != null) {
-                binding.textEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+                binding.layoutEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
             }
         });
 

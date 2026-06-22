@@ -13,25 +13,22 @@ import com.library.android.R;
 import com.library.android.databinding.ActivityBookEditBinding;
 import com.library.android.model.BookCreateRequest;
 import com.library.android.model.BookUpdateRequest;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.model.CategoryVO;
-import com.library.android.repository.BookRepository;
 import com.library.android.viewmodel.AdminViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 图书编目 Activity — 新增/修改图书.
  *
  * <p>通过 Intent extra "bookId" 区分新增（bookId=-1）和编辑模式.
- * <p>B.8 修复：原硬编码 categoryId=1，新增分类选择器（点击 inputCategory 弹出分类列表）.
+ *
+ * <p>P1-01：移除 {@code @Inject BookRepository}，分类树通过
+ * {@link AdminViewModel#loadCategoryTree()} 加载并 observe；分层合规.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -41,11 +38,6 @@ public class BookEditActivity extends AppCompatActivity {
 
     private ActivityBookEditBinding binding;
     private AdminViewModel viewModel;
-
-    @Inject
-    BookRepository bookRepository;
-
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     private boolean isEditMode = false;
     private long editBookId = -1;
@@ -66,7 +58,7 @@ public class BookEditActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(AdminViewModel.class);
 
         // 判断编辑模式
-        editBookId = getIntent().getLongExtra("bookId", -1);
+        editBookId = getIntent() != null ? getIntent().getLongExtra(NavArgKeys.BOOK_ID, -1) : -1;
         isEditMode = editBookId > 0;
 
         if (isEditMode) {
@@ -83,20 +75,17 @@ public class BookEditActivity extends AppCompatActivity {
 
         binding.btnSave.setOnClickListener(v -> saveBook());
         observeViewModel();
-        loadCategories();
-    }
 
-    /** 加载分类树并展平为 List，供选择器使用. */
-    private void loadCategories() {
-        disposables.add(bookRepository.getCategoryTree()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    if (result != null && result.isSuccess() && result.getData() != null) {
-                        flatCategories.clear();
-                        flattenCategories(result.getData(), 0);
-                    }
-                }, throwable -> Toast.makeText(this, getString(R.string.bookedit_category_load_failed), Toast.LENGTH_SHORT).show()));
+        // P1-01：分类通过 ViewModel observe（取代原 BookRepository 内联订阅）
+        viewModel.getCategoryTree().observe(this, tree -> {
+            flatCategories.clear();
+            if (tree != null) {
+                flattenCategories(tree, 0);
+            }
+        });
+        if (viewModel.getCategoryTree().getValue() == null) {
+            viewModel.loadCategoryTree();
+        }
     }
 
     private void flattenCategories(List<CategoryVO> nodes, int depth) {
@@ -113,7 +102,7 @@ public class BookEditActivity extends AppCompatActivity {
     private void openCategoryPicker() {
         if (flatCategories.isEmpty()) {
             Toast.makeText(this, getString(R.string.bookedit_category_loading), Toast.LENGTH_SHORT).show();
-            loadCategories();
+            viewModel.loadCategoryTree();
             return;
         }
         String[] names = new String[flatCategories.size()];
@@ -218,7 +207,7 @@ public class BookEditActivity extends AppCompatActivity {
 
         viewModel.getErrorEvent().observe(this, throwable -> {
             if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
-                Toast.makeText(this, throwable.getMessage() != null ? throwable.getMessage() : "", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, throwable.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -239,7 +228,6 @@ public class BookEditActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        disposables.clear();
         binding = null;
     }
 

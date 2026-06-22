@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.library.android.model.*;
 import com.library.android.repository.AdminRepository;
+import com.library.android.repository.BookRepository;
 import com.library.android.ui.common.LoadingState;
 
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class AdminViewModel extends BaseViewModel {
 
     private final AdminRepository repository;
+    private final BookRepository bookRepository;
 
     // 用户管理
     private final MutableLiveData<LoadingState> userLoadingState = new MutableLiveData<>(LoadingState.LOADING);
@@ -35,6 +37,8 @@ public class AdminViewModel extends BaseViewModel {
     private final MutableLiveData<com.library.android.model.BookDetailVO> createdBook = new MutableLiveData<>();
     private final MutableLiveData<com.library.android.model.BookDetailVO> updatedBook = new MutableLiveData<>();
     private final MutableLiveData<Boolean> deleteResult = new MutableLiveData<>();
+    /** P1-01：分类树（图书编目分类选择器使用，原 BookEditActivity 直接注入 BookRepository 已下沉到此）. */
+    private final MutableLiveData<List<CategoryVO>> categoryTree = new MutableLiveData<>();
 
     private int userPage = 1;
     private int userTotalPages = 0;
@@ -44,8 +48,9 @@ public class AdminViewModel extends BaseViewModel {
     private boolean isLoadingUsers = false;
 
     @Inject
-    public AdminViewModel(AdminRepository repository) {
+    public AdminViewModel(AdminRepository repository, BookRepository bookRepository) {
         this.repository = repository;
+        this.bookRepository = bookRepository;
     }
 
     // ---- 用户管理 ----
@@ -145,6 +150,25 @@ public class AdminViewModel extends BaseViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> deleteResult.setValue(result != null && result.isSuccess()),
                         throwable -> deleteResult.setValue(false)));
+    }
+
+    // ---- P1-01：分类树（BookEditActivity 等管理端编目页使用） ----
+    public LiveData<List<CategoryVO>> getCategoryTree() { return categoryTree; }
+
+    public void loadCategoryTree() {
+        disposables.add(bookRepository.getCategoryTree()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        result -> {
+                            if (result != null && result.isSuccess() && result.getData() != null) {
+                                categoryTree.setValue(result.getData());
+                            } else {
+                                postError(new RuntimeException(result != null ? result.getMessage() : "分类加载失败"));
+                            }
+                        },
+                        throwable -> postError(new RuntimeException(
+                                throwable.getMessage() != null ? throwable.getMessage() : "分类加载失败"))));
     }
 
 

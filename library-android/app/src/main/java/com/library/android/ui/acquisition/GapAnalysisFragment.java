@@ -48,6 +48,7 @@ public class GapAnalysisFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        com.library.android.ui.theme.ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = com.library.android.ui.theme.ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentGapAnalysisBinding.inflate(themedInflater, container, false);
@@ -115,7 +116,7 @@ public class GapAnalysisFragment extends BaseFragment {
         if (binding == null || r == null) return;
         binding.cardOverview.setVisibility(View.VISIBLE);
         binding.tvSubjectName.setText(r.getSubjectName() != null ? r.getSubjectName() : String.valueOf(r.getSubjectId()));
-        binding.tvOwned.setText(getString(R.string.acquisition_gap_owned, r.getOwnedBooks(), r.getTotalCoreBooks()));
+        binding.tvOwned.setText(getString(R.string.acquisition_gap_owned, r.getOwnedBooks()));
         binding.tvTotal.setText(getString(R.string.acquisition_gap_total, r.getTotalCoreBooks()));
         int covPct = (int) Math.round(r.getCoverage() * 100);
         binding.progressCoverage.setProgress(covPct);

@@ -8,9 +8,9 @@
          扫码主题：全屏黑色，用于条码扫描
          ============================================================ -->
 
-    <!-- ── 浅色主题（默认，DayNight 支持系统暗色自动切换） ── -->
-    <style name="Theme.LibrarySystem" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- 主色：暗红 CTA -->
+    <!-- ── 浅色主题基础（DayNight 支持系统暗色自动切换） ── -->
+    <style name="Theme.LibrarySystem.Base" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 主色：朱砂红 CTA -->
         <item name="colorPrimary">@color/m3_primary</item>
         <item name="colorOnPrimary">@color/m3_on_primary</item>
         <item name="colorPrimaryContainer">@color/m3_primary</item>
@@ -55,8 +55,10 @@
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:textColorTertiary">@color/text_tertiary</item>
+    </style>
 
-        <!-- 状态栏 -->
+    <!-- ── 浅色主题包装（状态栏等随配置变化的属性） ── -->
+    <style name="Theme.LibrarySystem" parent="Theme.LibrarySystem.Base">
         <item name="android:statusBarColor">@color/bg_card</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
@@ -102,6 +104,14 @@
         <!-- 状态栏 -->
         <item name="android:statusBarColor">@color/dark_bg_card</item>
         <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- ── SplashScreen 启动主题 ── -->
+    <style name="Theme.LibrarySystem.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/accent_cta</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/accent_cta</item>
+        <item name="postSplashScreenTheme">@style/Theme.LibrarySystem</item>
     </style>
 
     <!-- ── 扫码页面主题（全屏黑色沉浸） ── -->

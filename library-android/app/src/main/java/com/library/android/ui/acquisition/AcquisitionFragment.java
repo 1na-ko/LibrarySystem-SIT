@@ -31,6 +31,7 @@ public class AcquisitionFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        com.library.android.ui.theme.ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = com.library.android.ui.theme.ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentAcquisitionBinding.inflate(themedInflater, container, false);

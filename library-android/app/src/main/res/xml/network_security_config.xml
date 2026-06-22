@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  网络安全配置（A.6 加固）— 仅生产 IP 与本地开发地址允许 cleartext，其它域名强制 HTTPS.
-
-  历史问题：AndroidManifest 全局 usesCleartextTraffic="true" 在 release 构建中也允许任意 HTTP，
-  违反 OWASP MASVS NETWORK-1。本配置精确限定 cleartext 范围:
-   - 生产环境：101.132.24.73（与后端 docker-compose 部署一致）
-   - 模拟器开发：10.0.2.2（emulator 本机映射）
-   - 本地真机调试：localhost / 127.0.0.1
+  网络安全配置（A.6 加固 + P0-02 HTTPS 半改造）
+  ───────────────────────────────────────────────────────────────────────
+  当前生效域名（cleartext 允许）：
+   - 生产环境：101.132.24.73         (TODO[P0-02] 后端 HTTPS 上线后须移除)
+   - 模拟器开发：10.0.2.2             (emulator 本机映射，长期保留)
+   - 本地真机调试：localhost / 127.0.0.1 (长期保留)
   其余域名走 system 默认（强制 HTTPS）.
+
+  P0-02 切换 HTTPS 操作步骤（待后端证书就绪后执行）：
+   1. 后端部署 HTTPS（端口 8443，受信 CA 或 mTLS 自签证书）
+   2. local.properties 新增：api.use.https=true
+   3. 删除下方 <domain>101.132.24.73</domain> 行
+   4. 全量回归 + ./gradlew assembleRelease（自动触发 verifyReleaseHttps 校验）
+   5. P2-07 启用 CertificatePinner 锁定证书指纹
+  ───────────────────────────────────────────────────────────────────────
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
@@ -17,11 +24,11 @@
     </base-config>
 
     <domain-config cleartextTrafficPermitted="true">
-        <!-- 生产服务器 -->
+        <!-- TODO[P0-02]: 生产服务器 HTTPS 上线后必须移除以下条目 -->
         <domain includeSubdomains="false">101.132.24.73</domain>
-        <!-- 模拟器宿主机映射 -->
+        <!-- 模拟器宿主机映射（长期保留） -->
         <domain includeSubdomains="false">10.0.2.2</domain>
-        <!-- 本地真机调试 -->
+        <!-- 本地真机调试（长期保留） -->
         <domain includeSubdomains="false">localhost</domain>
         <domain includeSubdomains="false">127.0.0.1</domain>
     </domain-config>

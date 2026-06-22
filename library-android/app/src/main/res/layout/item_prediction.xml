@@ -3,14 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp">
+    android:padding="@dimen/space_md">
 
     <TextView
         android:id="@+id/tvSubject"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textColor="@color/text_primary"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_size_body"
         android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/tvDemand"
         app:layout_constraintStart_toStartOf="parent"
@@ -20,9 +20,9 @@
         android:id="@+id/tvMonth"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="@dimen/space_xs"
         android:textColor="@color/text_secondary"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_size_md"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvSubject" />
 
@@ -31,7 +31,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/accent_cta"
-        android:textSize="20sp"
+        android:textSize="@dimen/text_size_headline_small"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -40,16 +40,16 @@
         android:id="@+id/tvConfidence"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="@dimen/space_xs"
         android:textColor="@color/text_tertiary"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_size_md"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvDemand" />
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="12dp"
+        android:layout_height="@dimen/stroke_thickness"
+        android:layout_marginTop="@dimen/space_md"
         android:background="@color/border_light"
         app:layout_constraintTop_toBottomOf="@id/tvMonth" />
 

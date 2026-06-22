@@ -24,6 +24,8 @@ buildNumber.properties
 out/
 # VSCode（个人偏好不入库；共享配置如需提交请用 .vscode/extensions.json 等）
 .vscode/
+# Trae
+*.trae
 
 # ====== Android / Gradle ======
 .gradle/

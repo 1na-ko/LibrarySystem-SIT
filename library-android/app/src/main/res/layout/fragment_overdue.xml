@@ -15,7 +15,7 @@
         android:background="@color/bg_card"
         android:text="@string/overdue_hint"
         android:textColor="@color/text_secondary"
-        android:textSize="13sp" />
+        android:textSize="@dimen/text_size_body_small" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -29,22 +29,18 @@
             android:clipToPadding="false"
             android:padding="@dimen/space_sm" />
 
-        <LinearLayout
+        <TextView
             android:id="@+id/layoutEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/no_overdue_records"
-                android:textColor="@color/text_tertiary"
-                android:textSize="15sp" />
-
-        </LinearLayout>
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_overdue_records"
+            android:textColor="@color/text_tertiary"
+            android:textSize="@dimen/text_size_body_large" />
 
         <TextView
             android:id="@+id/textLoading"
@@ -53,7 +49,7 @@
             android:layout_gravity="center"
             android:text="@string/loading_text"
             android:textColor="@color/text_placeholder"
-            android:textSize="15sp"
+            android:textSize="@dimen/text_size_body_large"
             android:visibility="gone" />
 
     </FrameLayout>

@@ -6,6 +6,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.library.android.model.BookRecommendVO;
+import com.library.android.model.BookSimpleVO;
+import com.library.android.model.CategoryVO;
+import com.library.android.repository.BookRepository;
 import com.library.android.repository.UserRepository;
 
 import java.util.List;
@@ -13,9 +16,14 @@ import java.util.List;
 import javax.inject.Inject;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
- * 首页 ViewModel（WP4.1 新建）— 管理推荐流式加载，从 ProfileViewModel 拆分.
+ * 首页 ViewModel — 推荐流式 + 热门图书 + 分类导航.
+ *
+ * <p>P1-01：将原 HomeFragment 直接注入的 BookRepository 调用下沉至此，
+ * UI 层仅观察 LiveData，错误统一通过 BaseViewModel.errorEvent 发布.
  *
  * <p>Activity scope 保证 HomeFragment 与 RecommendationsFragment 共享推荐数据.
  *
@@ -28,6 +36,7 @@ public class HomeViewModel extends BaseViewModel {
     private static final String TAG = "HomeViewModel";
 
     private final UserRepository userRepository;
+    private final BookRepository bookRepository;
 
     private final MutableLiveData<List<BookRecommendVO>> recommendations = new MutableLiveData<>();
     /** AI 推荐导语（流式逐 token 累加）. */
@@ -37,14 +46,21 @@ public class HomeViewModel extends BaseViewModel {
     /** AI 导语是否仍在生成. */
     private final MutableLiveData<Boolean> reasonStreaming = new MutableLiveData<>(false);
 
+    /** P1-01：热门图书 / 分类树 LiveData（原 HomeFragment 内联订阅迁入）. */
+    private final MutableLiveData<List<BookSimpleVO>> hotBooks = new MutableLiveData<>();
+    private final MutableLiveData<List<CategoryVO>> categories = new MutableLiveData<>();
+
     @Inject
-    public HomeViewModel(UserRepository userRepository) {
+    public HomeViewModel(UserRepository userRepository, BookRepository bookRepository) {
         this.userRepository = userRepository;
+        this.bookRepository = bookRepository;
     }
 
     public LiveData<List<BookRecommendVO>> getRecommendations() { return recommendations; }
     public LiveData<String> getAiReason() { return aiReason; }
     public LiveData<Boolean> isReasonStreaming() { return reasonStreaming; }
+    public LiveData<List<BookSimpleVO>> getHotBooks() { return hotBooks; }
+    public LiveData<List<CategoryVO>> getCategories() { return categories; }
 
     /** 加载个性化推荐（同步版）. */
     public void loadRecommendations() {
@@ -107,6 +123,46 @@ public class HomeViewModel extends BaseViewModel {
                 }
             }
         });
+    }
+
+    /** P1-01：加载热门图书（取代 HomeFragment 内 bookRepository.getHotBooks 直接订阅）. */
+    public void loadHotBooks(int limit) {
+        disposables.add(bookRepository.getHotBooks(null, limit)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        result -> {
+                            if (result != null && result.isSuccess() && result.getData() != null) {
+                                hotBooks.setValue(result.getData());
+                            } else {
+                                postError(new RuntimeException(result != null ? result.getMessage() : "热门图书加载失败"));
+                            }
+                        },
+                        throwable -> {
+                            Log.e(TAG, "加载热门图书失败", throwable);
+                            postError(throwable);
+                        }
+                ));
+    }
+
+    /** P1-01：加载分类树（取代 HomeFragment 内 bookRepository.getCategoryTree 直接订阅）. */
+    public void loadCategoryTree() {
+        disposables.add(bookRepository.getCategoryTree()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        result -> {
+                            if (result != null && result.isSuccess() && result.getData() != null) {
+                                categories.setValue(result.getData());
+                            } else {
+                                postError(new RuntimeException(result != null ? result.getMessage() : "分类加载失败"));
+                            }
+                        },
+                        throwable -> {
+                            Log.e(TAG, "加载分类失败", throwable);
+                            postError(throwable);
+                        }
+                ));
     }
 
     @Override

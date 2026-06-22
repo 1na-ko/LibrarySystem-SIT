@@ -7,44 +7,39 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.library.android.R;
 import com.library.android.databinding.FragmentCategoryTreeBinding;
 import com.library.android.model.CategoryVO;
-import com.library.android.repository.BookRepository;
-import com.library.android.ui.main.MainActivity;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.LoadingState;
+import com.library.android.ui.main.MainActivity;
+import com.library.android.viewmodel.CategoryTreeViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 分类浏览 Fragment — 树形结构.
+ *
+ * <p>P1-01：移除 {@code @Inject BookRepository}，改由 {@link CategoryTreeViewModel}
+ * 加载分类树，UI 通过 LiveData + LoadingState + errorEvent 三路观察.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class CategoryTreeFragment extends Fragment {
+public class CategoryTreeFragment extends BaseFragment {
 
     private FragmentCategoryTreeBinding binding;
+    private CategoryTreeViewModel viewModel;
     private CategoryTreeAdapter adapter;
-    private List<CategoryVO> allCategories = new ArrayList<>();
-
-    @Inject
-    BookRepository bookRepository;
-
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     @Nullable
     @Override
@@ -57,8 +52,11 @@ public class CategoryTreeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewModel = new ViewModelProvider(this).get(CategoryTreeViewModel.class);
 
-        ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_category_tree));
+        if (requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_category_tree));
+        }
 
         // WP-7：点击分类 → 跳搜索页按 categoryId 搜书
         adapter = new CategoryTreeAdapter(category -> {
@@ -70,42 +68,57 @@ public class CategoryTreeFragment extends Fragment {
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvCategories.setAdapter(adapter);
 
-        loadCategories();
-    }
-
-    private void loadCategories() {
-        binding.layoutLoading.setVisibility(View.VISIBLE);
-        binding.layoutContent.setVisibility(View.GONE);
-
-        disposables.add(
-            bookRepository.getCategoryTree()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    result -> {
-                        if (binding == null) return;
-                        binding.layoutLoading.setVisibility(View.GONE);
-                        if (result.isSuccess() && result.getData() != null) {
-                            allCategories = result.getData();
-                            adapter.submitList(flattenTree(allCategories, 0));
-                            binding.layoutContent.setVisibility(View.VISIBLE);
-                        } else {
-                            binding.layoutEmpty.setVisibility(View.VISIBLE);
-                        }
-                    },
-                    throwable -> {
-                        if (binding == null) return;
-                        binding.layoutLoading.setVisibility(View.GONE);
-                        binding.layoutError.setVisibility(View.VISIBLE);
-                        binding.tvError.setText("加载失败：" + throwable.getMessage());
-                    }
-                )
-        );
-
         binding.btnRetry.setOnClickListener(v -> {
             binding.layoutError.setVisibility(View.GONE);
-            loadCategories();
+            viewModel.loadCategories();
         });
+
+        // P1-01：观察 ViewModel 状态（取代原 BookRepository 内联订阅）
+        viewModel.getLoadingState().observe(getViewLifecycleOwner(), this::renderState);
+        viewModel.getCategories().observe(getViewLifecycleOwner(), this::renderCategories);
+        observeError(viewModel.getErrorEvent());
+
+        if (viewModel.getCategories().getValue() == null) {
+            viewModel.loadCategories();
+        }
+    }
+
+    private void renderState(@Nullable LoadingState state) {
+        if (binding == null || state == null) return;
+        switch (state) {
+            case LOADING:
+                binding.layoutLoading.setVisibility(View.VISIBLE);
+                binding.layoutContent.setVisibility(View.GONE);
+                binding.layoutError.setVisibility(View.GONE);
+                binding.layoutEmpty.setVisibility(View.GONE);
+                break;
+            case CONTENT:
+                binding.layoutLoading.setVisibility(View.GONE);
+                binding.layoutContent.setVisibility(View.VISIBLE);
+                binding.layoutError.setVisibility(View.GONE);
+                binding.layoutEmpty.setVisibility(View.GONE);
+                break;
+            case EMPTY:
+                binding.layoutLoading.setVisibility(View.GONE);
+                binding.layoutContent.setVisibility(View.GONE);
+                binding.layoutEmpty.setVisibility(View.VISIBLE);
+                binding.layoutError.setVisibility(View.GONE);
+                break;
+            case ERROR:
+                binding.layoutLoading.setVisibility(View.GONE);
+                binding.layoutContent.setVisibility(View.GONE);
+                binding.layoutEmpty.setVisibility(View.GONE);
+                binding.layoutError.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void renderCategories(@Nullable List<CategoryVO> tree) {
+        if (binding == null) return;
+        if (tree == null) return;
+        adapter.submitList(flattenTree(tree, 0));
     }
 
     /** 将树形分类展平为带缩进的列表. */
@@ -123,7 +136,6 @@ public class CategoryTreeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 

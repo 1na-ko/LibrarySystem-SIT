@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 清空/关闭图标 — 标准 X 形 VectorDrawable -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
+    android:width="@dimen/icon_size_md"
+    android:height="@dimen/icon_size_md"
     android:viewportWidth="24"
     android:viewportHeight="24"
     android:tint="?attr/colorOnSurfaceVariant">

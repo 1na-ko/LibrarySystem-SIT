@@ -12,8 +12,8 @@
         android:id="@+id/inputCategory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="@dimen/space_md"
+        android:layout_marginTop="@dimen/space_sm"
         android:hint="@string/hot_books_filter_category"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -34,21 +34,18 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <LinearLayout
+        <TextView
             android:id="@+id/layoutEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/no_hot_books"
-                android:textSize="15sp"
-                android:textColor="@color/text_tertiary" />
-
-        </LinearLayout>
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_hot_books"
+            android:textSize="@dimen/text_size_body_large"
+            android:textColor="@color/text_tertiary" />
 
     </FrameLayout>
 

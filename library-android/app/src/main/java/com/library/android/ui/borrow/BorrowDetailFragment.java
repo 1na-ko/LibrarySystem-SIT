@@ -16,6 +16,7 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowDetailBinding;
 import com.library.android.model.BorrowRecordVO;
 import com.library.android.ui.common.Debounce;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
 import com.library.android.viewmodel.BorrowDetailViewModel;
 
@@ -50,7 +51,7 @@ public class BorrowDetailFragment extends Fragment {
         ((MainActivity) requireActivity()).setGlobalTitle("借阅详情");
 
         if (getArguments() != null) {
-            borrowId = getArguments().getLong("borrowId", 0);
+            borrowId = getArguments().getLong(NavArgKeys.BORROW_ID, 0);
         }
 
         setupButtons();

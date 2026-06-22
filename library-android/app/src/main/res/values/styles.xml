@@ -51,7 +51,7 @@
 
     <!-- ── 主要按钮（CTA）：accent_cta 填充 ── -->
     <style name="Widget.Library.Button.Primary" parent="Widget.Material3.Button">
-        <item name="android:textColor">@color/bg_card</item>
+        <item name="android:textColor">@color/m3_on_primary</item>
         <item name="backgroundTint">@color/accent_cta</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Library.Medium</item>
         <item name="android:minHeight">@dimen/button_min_height</item>
@@ -91,6 +91,7 @@
         <item name="boxStrokeColor">@color/border_light</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="hintTextColor">@color/text_placeholder</item>
+        <item name="endIconTint">@color/text_secondary</item>
         <item name="boxCornerRadiusTopStart">@dimen/radius_md</item>
         <item name="boxCornerRadiusTopEnd">@dimen/radius_md</item>
         <item name="boxCornerRadiusBottomStart">@dimen/radius_md</item>

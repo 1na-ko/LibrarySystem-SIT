@@ -5,13 +5,14 @@
 
     <!-- 底部导航 -->
     <string name="nav_home">首页</string>
-    <string name="nav_search">搜索</string>
+
     <string name="nav_borrow">借阅</string>
     <string name="nav_profile">我的</string>
 
     <!-- WP-1：二级页面 toolbar -->
     <string name="toolbar_back">返回</string>
-    <string name="toolbar_action">操作</string>
+    <string name="toolbar_more_actions">更多操作</string>
+
 
     <!-- WP-1：nav_graph 各 destination 标签（资源化） -->
     <string name="page_title_search">搜索</string>
@@ -220,6 +221,7 @@
     <string name="user_action_title_format">%1$s (%2$s)</string>
 
     <!-- 个人中心 -->
+    <string name="avatar_content_description">用户头像</string>
     <string name="borrow_history">借阅历史</string>
     <string name="borrow_stats">借阅统计</string>
     <string name="recommendations">个性化推荐</string>
@@ -242,6 +244,10 @@
     <string name="error_service_unavailable">服务暂时不可用，请稍后重试</string>
     <string name="error_validation">提交内容有误，请检查输入</string>
     <string name="error_unknown">发生未知错误，请稍后重试</string>
+    <!-- P2-07：网络层增强新增异常文案 -->
+    <string name="error_not_found">请求的资源不存在或已被删除</string>
+    <string name="error_rate_limit">请求过于频繁，请稍后再试</string>
+    <string name="error_rate_limit_with_seconds">请求过于频繁，请 %1$d 秒后再试</string>
 
     <!-- 图书详情页 -->
     <string name="borrow_this_book">借阅此书</string>
@@ -279,7 +285,7 @@
     <string name="acquisition_negotiation">智能谈判</string>
     <string name="acquisition_negotiation_desc">LLM 生成的谈判策略与建议</string>
     <string name="acquisition_subject_id_hint">学科 ID</string>
-    <string name="acquisition_months_hint">预测月数（1-12）</string>
+    <string name="acquisition_months_hint">预测月数（1–12）</string>
     <string name="acquisition_isbn_hint">ISBN（可选）</string>
     <string name="acquisition_title_hint">书名</string>
     <string name="acquisition_author_hint">作者（可选）</string>
@@ -377,9 +383,9 @@
 
     <!-- 谈判详情 -->
     <string name="negotiation_price_ref">参考价位</string>
-    <string name="negotiation_price_loading">价格区间加载中...</string>
+    <string name="negotiation_price_loading">价格区间加载中…</string>
     <string name="negotiation_ai_advisor">AI 谈判顾问</string>
-    <string name="negotiation_ai_drafting">AI 正在为您起草谈判策略、关键条款与风险预警...</string>
+    <string name="negotiation_ai_drafting">AI 正在为您起草谈判策略、关键条款与风险预警…</string>
     <string name="negotiation_create_hint">创建会话后将跳转至建议详情</string>
     <string name="negotiation_price_format">底价：¥%1$s\n中位价：¥%2$s\n顶价：¥%3$s\n建议报价：¥%4$s</string>
 
@@ -388,7 +394,7 @@
 
     <!-- 采编 -->
     <string name="acquisition_enter_isbn_or_title">请至少输入 ISBN 或书名</string>
-    <string name="acquisition_searching">查询中...</string>
+    <string name="acquisition_searching">查询中…</string>
     <string name="acquisition_duplicate_found">⚠ 检测到 %d 本可能重复的图书</string>
     <string name="acquisition_no_duplicate">✓ 未发现重复图书</string>
     <string name="acquisition_duplicate_hint">输入 ISBN 或书名后点击查重，结果以卡片展示</string>
@@ -414,4 +420,36 @@
     <string name="borrow_active_status">借阅中</string>
     <string name="borrow_returned_status">已归还</string>
     <string name="borrow_lost_status">已丢失</string>
+
+    <!-- 文案统一（P2-06）：消除 HardcodedText 警告 -->
+    <string name="login_cap_icon">学位帽图标</string>
+    <string name="year_range_separator">—</string>
+    <string name="date_format_hint">YYYY-MM-DD</string>
+
+    <!-- P3-06：热门搜索标签（可动态配置，支持运营更新） -->
+    <string-array name="hot_search_tags">
+        <item>Java</item>
+        <item>Python</item>
+        <item>机器学习</item>
+        <item>数据结构</item>
+        <item>人工智能</item>
+        <item>数据库</item>
+        <item>操作系统</item>
+        <item>计算机网络</item>
+        <item>算法导论</item>
+        <item>深度学习</item>
+        <item>自然语言处理</item>
+        <item>计算机视觉</item>
+        <item>软件工程</item>
+        <item>编译原理</item>
+        <item>离散数学</item>
+        <item>线性代数</item>
+        <item>概率论</item>
+        <item>分布式系统</item>
+        <item>微服务</item>
+        <item>云计算</item>
+        <item>大数据</item>
+        <item>区块链</item>
+        <item>物联网</item>
+    </string-array>
 </resources>

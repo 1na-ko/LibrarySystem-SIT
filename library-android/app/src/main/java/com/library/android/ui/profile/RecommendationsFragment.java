@@ -13,6 +13,7 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.bumptech.glide.Glide;
 import com.library.android.R;
 import com.library.android.databinding.FragmentRecommendationsBinding;
 import com.library.android.databinding.ItemRecommendationBinding;
@@ -177,6 +178,16 @@ public class RecommendationsFragment extends BaseFragment {
             if (item.getBook() != null) {
                 binding.tvTitle.setText(item.getBook().getTitle() != null ? item.getBook().getTitle() : "");
                 binding.tvAuthor.setText(item.getBook().getAuthor() != null ? item.getBook().getAuthor() : "");
+                String coverUrl = item.getBook().getCoverUrl();
+                if (!TextUtils.isEmpty(coverUrl)) {
+                    Glide.with(binding.ivCover.getContext())
+                            .load(coverUrl)
+                            .placeholder(R.drawable.ic_book_placeholder)
+                            .error(R.drawable.ic_book_placeholder)
+                            .into(binding.ivCover);
+                } else {
+                    binding.ivCover.setImageResource(R.drawable.ic_book_placeholder);
+                }
             }
             binding.tvReason.setText(item.getReason() != null ? item.getReason() : "");
             // WP-14：推荐书本点击跳详情（callback 模式，与首页一致，最可靠）

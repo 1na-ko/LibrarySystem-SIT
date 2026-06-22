@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/dark_bg_primary">
+    android:background="?android:attr/colorBackground">
 
     <!-- 控制面板 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:padding="@dimen/space_sm"
         android:gravity="center_vertical">
 
         <TextView
@@ -20,40 +20,40 @@
             android:layout_height="wrap_content"
             android:text="@string/direction_label"
             android:textAppearance="?attr/textAppearanceLabelMedium"
-            android:textColor="@color/dark_text_secondary" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <Spinner
             android:id="@+id/spinnerDirection"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="@dimen/button_min_height"
             android:layout_weight="1"
-            android:layout_marginHorizontal="8dp"
+            android:layout_marginHorizontal="@dimen/space_sm"
             android:entries="@array/trace_directions"
-            android:textColor="@color/dark_text_primary"
-            android:backgroundTint="@color/dark_text_secondary" />
+            android:textColor="?attr/colorOnSurface"
+            android:backgroundTint="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/max_depth_label"
             android:textAppearance="?attr/textAppearanceLabelMedium"
-            android:textColor="@color/dark_text_secondary" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <Spinner
             android:id="@+id/spinnerDepth"
-            android:layout_width="80dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
+            android:layout_width="@dimen/book_item_min_height"
+            android:layout_height="@dimen/button_min_height"
+            android:layout_marginStart="@dimen/space_sm"
             android:entries="@array/trace_depths"
-            android:textColor="@color/dark_text_primary"
-            android:backgroundTint="@color/dark_text_secondary" />
+            android:textColor="?attr/colorOnSurface"
+            android:backgroundTint="?attr/colorOnSurfaceVariant" />
 
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/dark_bg_primary">
+        android:background="?android:attr/colorBackground">
 
         <WebView
             android:id="@+id/webView"
@@ -66,8 +66,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/loading_text"
-            android:textColor="@color/dark_text_placeholder"
-            android:textSize="15sp"
+            android:textColor="?attr/colorOutline"
+            android:textSize="@dimen/text_size_body_large"
             android:visibility="gone" />
 
     </FrameLayout>

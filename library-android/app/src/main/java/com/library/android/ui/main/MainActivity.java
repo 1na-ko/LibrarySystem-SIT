@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -14,6 +15,7 @@ import com.library.android.databinding.ActivityMainBinding;
 import com.library.android.network.SessionManager;
 import com.library.android.network.TokenManager;
 import com.library.android.ui.search.SearchFragment;
+import com.library.android.ui.theme.ThemeManager;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -80,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -104,6 +107,9 @@ public class MainActivity extends AppCompatActivity {
         // ③ 二级页面：隐藏 Activity header（由页面级 page_toolbar 接管）+ 隐藏 Tab
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             int destId = destination.getId();
+
+            // P1-07：同步 ThemeManager 全局深色状态，供非强制深色页面或后续动态 inflate 使用
+            ThemeManager.getInstance().setDarkMode(ThemeManager.getInstance().isDarkDestination(destId));
 
             if (CLEAN_SCREEN_DESTINATIONS.contains(destId)) {
                 // ① 登录/注册：全屏

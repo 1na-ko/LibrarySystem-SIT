@@ -10,24 +10,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="@dimen/space_xl">
 
         <!-- ============ 顶部推荐区（AI 导语流式 + 查看全部） ============ -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardAiReason"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            app:cardElevation="2dp"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="1dp"
+            android:layout_margin="@dimen/space_md"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardCornerRadius="@dimen/space_md"
+            app:strokeWidth="@dimen/stroke_thickness"
             app:strokeColor="@color/border_light">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/space_lg">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -39,16 +39,17 @@
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:src="@drawable/ic_ai_assistant"
+                        android:contentDescription="@string/recommend_ai_title"
                         app:tint="@color/accent_cta" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="@dimen/space_sm"
                         android:text="@string/recommend_ai_title"
                         android:textColor="@color/text_primary"
-                        android:textSize="15sp"
+                        android:textSize="@dimen/text_size_body_large"
                         android:textStyle="bold" />
 
                     <ProgressBar
@@ -63,18 +64,18 @@
                     android:id="@+id/tvAiReason"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/space_sm"
                     android:text="@string/recommend_ai_initial"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    android:lineSpacingExtra="4dp" />
+                    android:textSize="@dimen/text_size_body"
+                    android:lineSpacingExtra="@dimen/space_xs" />
 
                 <!-- 推荐书目前 3 本（横向） -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvHomeRecommendations"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="@dimen/space_md"
                     android:overScrollMode="never"
                     android:nestedScrollingEnabled="false" />
 
@@ -83,12 +84,12 @@
                     android:id="@+id/tvAllRecommendations"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="4dp"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:paddingTop="@dimen/space_sm"
+                    android:paddingBottom="@dimen/space_xs"
                     android:text="@string/home_view_all_recommend"
                     android:textColor="@color/accent_cta"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/text_size_body_small"
                     android:gravity="end"
                     android:background="?attr/selectableItemBackground" />
 
@@ -101,8 +102,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="4dp">
+            android:layout_marginHorizontal="@dimen/space_md"
+            android:layout_marginTop="@dimen/space_xs">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -116,7 +117,7 @@
                     android:layout_weight="1"
                     android:text="@string/home_section_hot"
                     android:textColor="@color/text_primary"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_size_title"
                     android:textStyle="bold" />
 
                 <!-- WP1.2：查看全部热门图书 ▸ -->
@@ -126,7 +127,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/home_view_all_hot"
                     android:textColor="@color/accent_cta"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/text_size_body_small"
                     android:background="?attr/selectableItemBackground" />
 
             </LinearLayout>
@@ -135,7 +136,7 @@
                 android:id="@+id/rvHotBooks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="@dimen/space_sm"
                 android:nestedScrollingEnabled="false" />
 
         </LinearLayout>
@@ -145,7 +146,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginHorizontal="12dp"
+            android:layout_marginHorizontal="@dimen/space_md"
             android:layout_marginTop="20dp">
 
             <LinearLayout
@@ -160,7 +161,7 @@
                     android:layout_weight="1"
                     android:text="@string/home_section_category"
                     android:textColor="@color/text_primary"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_size_title"
                     android:textStyle="bold" />
 
                 <!-- WP-3：浏览全部分类入口 → CategoryTreeFragment -->
@@ -170,8 +171,8 @@
                     android:layout_height="wrap_content"
                     android:text="@string/home_view_all_category"
                     android:textColor="@color/accent_cta"
-                    android:textSize="13sp"
-                    android:padding="4dp"
+                    android:textSize="@dimen/text_size_body_small"
+                    android:padding="@dimen/space_xs"
                     android:background="?attr/selectableItemBackground" />
             </LinearLayout>
 
@@ -180,10 +181,10 @@
                 android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="@dimen/space_sm"
                 android:clipToPadding="false"
-                android:paddingStart="2dp"
-                android:paddingEnd="12dp"
+                android:paddingStart="@dimen/space_xxs"
+                android:paddingEnd="@dimen/space_md"
                 android:overScrollMode="never" />
 
         </LinearLayout>

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg_primary"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/space_lg">
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/inputIsbn"
@@ -23,7 +23,7 @@
         android:id="@+id/inputTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/space_sm"
         android:hint="@string/acquisition_title_hint"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
         <com.google.android.material.textfield.TextInputEditText
@@ -36,7 +36,7 @@
         android:id="@+id/inputAuthor"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/space_sm"
         android:hint="@string/acquisition_author_hint"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
         <com.google.android.material.textfield.TextInputEditText
@@ -49,7 +49,7 @@
         android:id="@+id/btnRun"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/space_md"
         android:text="@string/acquisition_run" />
 
     <!-- WP-11：结果区 — 状态横幅 + RecyclerView 卡片列表（原纯文本 StringBuilder） -->
@@ -57,20 +57,20 @@
         android:id="@+id/tvStatusBanner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:padding="12dp"
+        android:layout_marginTop="@dimen/space_md"
+        android:padding="@dimen/space_md"
         android:visibility="gone"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_size_body"
         android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvDuplicates"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="@dimen/space_xs"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingBottom="16dp" />
+        android:paddingBottom="@dimen/space_lg" />
 
     <TextView
         android:id="@+id/tvResultHint"
@@ -80,6 +80,6 @@
         android:gravity="center"
         android:text="@string/acquisition_duplicate_hint"
         android:textColor="@color/text_tertiary"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_size_body"
         android:visibility="visible" />
 </LinearLayout>

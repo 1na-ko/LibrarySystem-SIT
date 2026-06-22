@@ -15,7 +15,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutGlobalHeader"
         android:layout_width="0dp"
-        android:layout_height="48dp"
+        android:layout_height="@dimen/button_min_height"
         android:background="@color/bg_card"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -24,7 +24,7 @@
         <!-- 左侧返回按钮（默认隐藏；MainActivity 不再用其控制可见，由二级页面 toolbar 接管） -->
         <ImageButton
             android:id="@+id/btnGlobalBack"
-            android:layout_width="40dp"
+            android:layout_width="@dimen/book_cover_width"
             android:layout_height="40dp"
             android:layout_marginStart="@dimen/space_sm"
             android:src="@drawable/ic_back_vector"
@@ -41,11 +41,11 @@
             android:id="@+id/tvGlobalTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="56dp"
-            android:layout_marginEnd="56dp"
+            android:layout_marginStart="@dimen/list_item_height"
+            android:layout_marginEnd="@dimen/list_item_height"
             android:text="@string/home_title"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="@dimen/text_size_title_large"
             android:fontFamily="serif"
             android:maxLines="1"
             android:ellipsize="end"
@@ -58,7 +58,7 @@
         <!-- 右侧搜索图标：仅首页显示，其他 Tab 根页（借阅/我的）隐藏（MainActivity 控制） -->
         <ImageButton
             android:id="@+id/btnGlobalSearch"
-            android:layout_width="40dp"
+            android:layout_width="@dimen/book_cover_width"
             android:layout_height="40dp"
             android:layout_marginEnd="@dimen/space_sm"
             android:src="@drawable/ic_search_vector"
@@ -86,7 +86,7 @@
     <View
         android:id="@+id/divider_bottom_nav"
         android:layout_width="0dp"
-        android:layout_height="1dp"
+        android:layout_height="@dimen/stroke_thickness"
         android:background="@color/border_light"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintEnd_toEndOf="parent"

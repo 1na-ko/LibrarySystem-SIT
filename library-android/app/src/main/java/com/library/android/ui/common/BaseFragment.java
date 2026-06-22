@@ -16,7 +16,9 @@ import com.library.android.R;
 import com.library.android.network.exception.ApiException;
 import com.library.android.network.exception.BizConflictException;
 import com.library.android.network.exception.NetworkException;
+import com.library.android.network.exception.NotFoundException;
 import com.library.android.network.exception.PermissionDeniedException;
+import com.library.android.network.exception.RateLimitException;
 import com.library.android.network.exception.ServiceUnavailableException;
 import com.library.android.network.exception.SessionExpiredException;
 import com.library.android.network.exception.ValidationException;
@@ -69,6 +71,15 @@ public abstract class BaseFragment extends Fragment {
         if (throwable instanceof PermissionDeniedException) {
             return getString(R.string.error_permission_denied);
         }
+        if (throwable instanceof NotFoundException) {
+            return getString(R.string.error_not_found);
+        }
+        if (throwable instanceof RateLimitException) {
+            int retryAfter = ((RateLimitException) throwable).getRetryAfterSeconds();
+            return retryAfter > 0
+                    ? getString(R.string.error_rate_limit_with_seconds, retryAfter)
+                    : getString(R.string.error_rate_limit);
+        }
         if (throwable instanceof BizConflictException
                 || throwable instanceof ValidationException) {
             String serverMsg = ((ApiException) throwable).getServerMessage();
@@ -110,7 +121,8 @@ public abstract class BaseFragment extends Fragment {
     protected void setupToolbar(@NonNull View root, @NonNull CharSequence title) {
         View backBtn = root.findViewById(R.id.btnPageBack);
         View titleTv = root.findViewById(R.id.tvPageTitle);
-        if (titleTv instanceof android.widget.TextView) {
+        // titleTv 判空：部分 layout 可能不含 page_toolbar，findViewById 返回 null
+        if (titleTv != null && titleTv instanceof android.widget.TextView) {
             ((android.widget.TextView) titleTv).setText(title);
         }
         if (backBtn != null) {

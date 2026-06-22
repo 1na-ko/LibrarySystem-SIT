@@ -8,50 +8,46 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.bumptech.glide.Glide;
+
+import com.google.android.material.snackbar.Snackbar;
 import com.library.android.R;
 import com.library.android.databinding.FragmentHomeBinding;
 import com.library.android.databinding.ItemBookBinding;
 import com.library.android.model.BookRecommendVO;
 import com.library.android.model.BookSimpleVO;
 import com.library.android.model.CategoryVO;
-import com.library.android.repository.BookRepository;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.viewmodel.HomeViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 混合首页 Fragment（WP1）— 推荐卡片（AI 导语流式）+ 热门图书 + 分类导航.
- * <p>
- * 推荐复用 {@link HomeViewModel#loadRecommendationsStream()}（activity scope，与 RecommendationsFragment 共享），
- * 热门/分类通过 {@link BookRepository} 加载. 顶部不放搜索框，搜索由 MainActivity 全局搜索按钮进入 SearchFragment 二级页.
+ *
+ * <p>P1-01 重构：移除 {@code @Inject BookRepository}，热门 / 分类 / 推荐 三路加载
+ * 全部下沉到 {@link HomeViewModel}，UI 只观察 LiveData 与 errorEvent.
+ *
+ * <p>顶部不放搜索框，搜索由 MainActivity 全局搜索按钮进入 SearchFragment 二级页.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
  */
 @AndroidEntryPoint
-public class HomeFragment extends Fragment {
+public class HomeFragment extends BaseFragment {
 
     private FragmentHomeBinding binding;
     private HomeViewModel homeViewModel;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
-    @Inject
-    BookRepository bookRepository;
 
     private HomeRecommendAdapter recommendAdapter;
     private HotBookAdapter hotBookAdapter;
@@ -81,7 +77,7 @@ public class HomeFragment extends Fragment {
         binding.rvHotBooks.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvHotBooks.setAdapter(hotBookAdapter);
 
-        // 分类导航：WP-3 改横向滚动卡片，点击分类 → 跳搜索页按分类搜
+        // 分类导航：WP-3 横向滚动卡片，点击分类 → 跳搜索页按分类搜
         categoryAdapter = new CategoryAdapter(this::navigateToSearchByCategory);
         binding.rvCategories.setLayoutManager(
                 new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -100,12 +96,21 @@ public class HomeFragment extends Fragment {
                 Navigation.findNavController(view).navigate(R.id.action_homeFragment_to_categoryTreeFragment));
 
         setupRecommendObservers();
-        loadHotBooks();
-        loadCategories();
+        setupHotBooksAndCategoriesObservers();
+
+        // P1-01：错误统一通过 BaseFragment.observeError 展示（替代多处局部 Snackbar）
+        // 但保留首次加载失败时的"home_load_failed"友好提示（HomeViewModel 已 postError，在此 fallback）
+        observeError(homeViewModel.getErrorEvent());
 
         // 首次进入触发推荐流式（若未加载）
         if (homeViewModel.getRecommendations().getValue() == null) {
             homeViewModel.loadRecommendationsStream();
+        }
+        if (homeViewModel.getHotBooks().getValue() == null) {
+            homeViewModel.loadHotBooks(5);
+        }
+        if (homeViewModel.getCategories().getValue() == null) {
+            homeViewModel.loadCategoryTree();
         }
     }
 
@@ -131,60 +136,43 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void loadHotBooks() {
-        disposables.add(bookRepository.getHotBooks(null, 5)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    if (result != null && result.isSuccess() && result.getData() != null) {
-                        hotBookAdapter.submitList(result.getData());
-                    }
-                }, throwable -> {
-                    // WP-3：加载失败提示（原 printStackTrace 用户无感知）
-                    View root = getView();
-                    if (root != null) {
-                        com.google.android.material.snackbar.Snackbar.make(root,
-                                R.string.home_load_failed, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                    }
-                }));
+    /** P1-01：热门 + 分类 LiveData 观察（取代原 loadHotBooks/loadCategories 内联订阅）. */
+    private void setupHotBooksAndCategoriesObservers() {
+        homeViewModel.getHotBooks().observe(getViewLifecycleOwner(), books -> {
+            if (books != null) hotBookAdapter.submitList(books);
+        });
+        homeViewModel.getCategories().observe(getViewLifecycleOwner(), categories -> {
+            if (categories != null) categoryAdapter.submitList(categories);
+        });
     }
 
-    private void loadCategories() {
-        disposables.add(bookRepository.getCategoryTree()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    if (result != null && result.isSuccess() && result.getData() != null) {
-                        categoryAdapter.submitList(result.getData());
-                    }
-                }, throwable -> {
-                    View root = getView();
-                    if (root != null) {
-                        com.google.android.material.snackbar.Snackbar.make(root,
-                                R.string.home_load_failed, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                    }
-                }));
+    @Override
+    protected void showErrorSnackbar(@Nullable Throwable throwable) {
+        // 首页失败用更友好的统一文案，与原版"home_load_failed"行为一致
+        if (throwable == null) return;
+        View root = getView();
+        if (root == null) return;
+        Snackbar.make(root, R.string.home_load_failed, Snackbar.LENGTH_SHORT).show();
     }
 
     private void navigateToBookDetail(long bookId) {
         if (bookId <= 0) return;
         Bundle args = new Bundle();
-        args.putLong("bookId", bookId);
+        args.putLong(NavArgKeys.BOOK_ID, bookId);
         Navigation.findNavController(requireView()).navigate(R.id.action_homeFragment_to_bookDetailFragment, args);
     }
 
     private void navigateToSearchByCategory(CategoryVO category) {
         android.content.Intent intent = new android.content.Intent(requireContext(),
                 com.library.android.ui.search.SearchActivity.class);
-        intent.putExtra("categoryId", category.getId());
-        intent.putExtra("categoryName", category.getName() != null ? category.getName() : "");
+        intent.putExtra(NavArgKeys.CATEGORY_ID, category.getId());
+        intent.putExtra(NavArgKeys.CATEGORY_NAME, category.getName() != null ? category.getName() : "");
         startActivity(intent);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 
@@ -217,6 +205,17 @@ public class HomeFragment extends Fragment {
                 b.tvTitle.setText(item.getBook().getTitle() != null ? item.getBook().getTitle() : "");
                 b.tvAuthor.setText(item.getBook().getAuthor() != null ? item.getBook().getAuthor() : "");
                 b.tvAvailCopies.setText(b.getRoot().getContext().getString(R.string.avail_copies_format, item.getBook().getAvailCopies()));
+                // Glide 加载封面（含占位/错误回退）
+                String coverUrl = item.getBook().getCoverUrl();
+                if (!TextUtils.isEmpty(coverUrl)) {
+                    Glide.with(b.ivCover.getContext())
+                            .load(coverUrl)
+                            .placeholder(R.drawable.ic_book_placeholder)
+                            .error(R.drawable.ic_book_placeholder)
+                            .into(b.ivCover);
+                } else {
+                    b.ivCover.setImageResource(R.drawable.ic_book_placeholder);
+                }
             }
             b.getRoot().setOnClickListener(v -> listener.onClick(item));
         }
@@ -247,8 +246,17 @@ public class HomeFragment extends Fragment {
         protected void bind(ItemBookBinding b, BookSimpleVO item, int position) {
             b.tvTitle.setText(item.getTitle() != null ? item.getTitle() : "");
             b.tvAuthor.setText(item.getAuthor() != null ? item.getAuthor() : "");
-            // WP-3：资源化"可借 N"（原硬编码 "可借 "）
             b.tvAvailCopies.setText(b.getRoot().getContext().getString(R.string.avail_copies_format, item.getAvailCopies()));
+            String coverUrl = item.getCoverUrl();
+            if (!TextUtils.isEmpty(coverUrl)) {
+                Glide.with(b.ivCover.getContext())
+                        .load(coverUrl)
+                        .placeholder(R.drawable.ic_book_placeholder)
+                        .error(R.drawable.ic_book_placeholder)
+                        .into(b.ivCover);
+            } else {
+                b.ivCover.setImageResource(R.drawable.ic_book_placeholder);
+            }
             b.getRoot().setOnClickListener(v -> listener.onClick(item));
         }
     }
@@ -277,7 +285,7 @@ public class HomeFragment extends Fragment {
         @Override
         protected void bind(com.library.android.databinding.ItemCategoryHomeBinding b, CategoryVO item, int position) {
             b.tvCategoryName.setText(item.getName() != null ? item.getName() : "");
-            // WP-3：主页横向卡片不显子分类数量（字段 tvBookCount 存在但后端 CategoryVO 无此字段，留空）
+            // WP-3：主页横向卡片不显子分类数量
             b.tvBookCount.setText("");
             b.getRoot().setOnClickListener(v -> listener.onClick(item));
         }

@@ -13,12 +13,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/page_toolbar"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
+    android:layout_height="@dimen/button_min_height"
     android:background="?attr/colorSurface">
 
     <ImageButton
         android:id="@+id/btnPageBack"
-        android:layout_width="40dp"
+        android:layout_width="@dimen/book_cover_width"
         android:layout_height="40dp"
         android:layout_marginStart="@dimen/space_sm"
         android:src="@drawable/ic_back_vector"
@@ -33,10 +33,10 @@
         android:id="@+id/tvPageTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="56dp"
-        android:layout_marginEnd="56dp"
+        android:layout_marginStart="@dimen/list_item_height"
+        android:layout_marginEnd="@dimen/list_item_height"
         android:textColor="?android:attr/textColorPrimary"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_size_title_large"
         android:fontFamily="serif"
         android:maxLines="1"
         android:ellipsize="end"
@@ -49,20 +49,20 @@
     <!-- 右侧操作按钮槽位（默认隐藏，需要时在 Fragment 内显示并设置 icon/listener） -->
     <ImageButton
         android:id="@+id/btnPageAction"
-        android:layout_width="40dp"
+        android:layout_width="@dimen/book_cover_width"
         android:layout_height="40dp"
         android:layout_marginEnd="@dimen/space_sm"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/toolbar_more_actions"
         android:visibility="gone"
         app:tint="?android:attr/textColorPrimary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:ignore="ContentDescription" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <View
         android:layout_width="0dp"
-        android:layout_height="1dp"
+        android:layout_height="@dimen/stroke_thickness"
         android:background="@color/border_light"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

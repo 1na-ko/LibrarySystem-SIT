@@ -23,7 +23,9 @@ import com.library.android.databinding.FragmentBorrowBinding;
 import com.library.android.databinding.ItemBorrowRecordBinding;
 import com.library.android.model.BorrowRecordVO;
 import com.library.android.ui.common.BaseAdapter;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.common.PagingScrollListener;
+import com.library.android.ui.scanner.ScanBarcodeActivity;
 import com.library.android.viewmodel.BorrowViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -107,11 +109,11 @@ public class BorrowFragment extends Fragment {
     private final ActivityResultLauncher<Intent> scanLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
-                    String isbn = result.getData().getStringExtra("isbn");
+                    String isbn = result.getData().getStringExtra(NavArgKeys.ISBN);
                     if (isbn != null && !isbn.isEmpty()) {
                         Intent intent = new Intent(requireContext(),
                                 com.library.android.ui.search.SearchActivity.class);
-                        intent.putExtra("isbn", isbn);
+                        intent.putExtra(NavArgKeys.ISBN, isbn);
                         startActivity(intent);
                     }
                 }
@@ -119,14 +121,9 @@ public class BorrowFragment extends Fragment {
 
     private void setupFab() {
         binding.fabScanBorrow.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(requireContext(),
-                        Class.forName("com.library.android.ui.scanner.ScanBarcodeActivity"));
-                intent.putExtra("source", "borrow");
-                scanLauncher.launch(intent);
-            } catch (ClassNotFoundException e) {
-                Snackbar.make(binding.getRoot(), R.string.scanner_unavailable, Snackbar.LENGTH_SHORT).show();
-            }
+            Intent intent = new Intent(requireContext(), ScanBarcodeActivity.class);
+            intent.putExtra(NavArgKeys.SOURCE, "borrow");
+            scanLauncher.launch(intent);
         });
     }
 

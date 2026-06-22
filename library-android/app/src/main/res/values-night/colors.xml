@@ -35,11 +35,23 @@
     <!-- ── 边框 ── -->
     <color name="border_light">@color/dark_border_light</color>
 
+    <!-- ── 功能色 ── -->
+    <color name="accent_cta">@color/m3_dark_primary</color>
+
     <!-- ── Chip / 标签 ── -->
     <color name="chip_borrowed">@color/dark_chip_bg</color>
     <color name="chip_returned">@color/dark_chip_bg</color>
+    <color name="chip_overdue">@color/dark_chip_overdue</color>
     <color name="chip_active">@color/dark_chip_bg</color>
     <color name="accent_checkedout">#3A3A3C</color>
+
+    <!-- ── 图表配色 ── -->
+    <color name="chart_color_1">@color/dark_chart_color_1</color>
+    <color name="chart_color_2">@color/dark_chart_color_2</color>
+    <color name="chart_color_3">@color/dark_chart_color_3</color>
+    <color name="chart_color_4">@color/dark_chart_color_4</color>
+    <color name="chart_color_5">@color/dark_chart_color_5</color>
+    <color name="chart_color_6">@color/dark_chart_color_6</color>
 
     <!-- ── 登录页 ── -->
     <color name="login_bg_rice_paper">@color/dark_bg_primary</color>

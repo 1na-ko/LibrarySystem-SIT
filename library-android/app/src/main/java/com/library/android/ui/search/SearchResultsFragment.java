@@ -1,6 +1,7 @@
 package com.library.android.ui.search;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.bumptech.glide.Glide;
 import com.library.android.R;
 import com.library.android.databinding.FragmentSearchResultsBinding;
 import com.library.android.model.BookSimpleVO;
@@ -162,6 +164,16 @@ public class SearchResultsFragment extends BaseFragment {
             b.tvTitle.setText(item.getTitle() != null ? item.getTitle() : "");
             b.tvAuthor.setText(item.getAuthor() != null ? item.getAuthor() : "");
             b.tvAvailCopies.setText(b.getRoot().getContext().getString(R.string.avail_copies_format, item.getAvailCopies()));
+            String coverUrl = item.getCoverUrl();
+            if (!TextUtils.isEmpty(coverUrl)) {
+                Glide.with(b.ivCover.getContext())
+                        .load(coverUrl)
+                        .placeholder(R.drawable.ic_book_placeholder)
+                        .error(R.drawable.ic_book_placeholder)
+                        .into(b.ivCover);
+            } else {
+                b.ivCover.setImageResource(R.drawable.ic_book_placeholder);
+            }
             b.getRoot().setOnClickListener(v -> listener.onClick(item));
         }
     }

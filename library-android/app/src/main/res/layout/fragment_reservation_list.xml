@@ -9,7 +9,7 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="@dimen/button_min_height"
         style="@style/Widget.Library.TabLayout"
         app:tabMode="scrollable" />
 
@@ -32,22 +32,18 @@
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <LinearLayout
+        <TextView
             android:id="@+id/layoutEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/no_reservation_records"
-                android:textColor="@color/text_tertiary"
-                android:textSize="15sp" />
-
-        </LinearLayout>
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_reservation_records"
+            android:textColor="@color/text_tertiary"
+            android:textSize="@dimen/text_size_body_large" />
 
         <TextView
             android:id="@+id/textLoading"
@@ -56,25 +52,21 @@
             android:layout_gravity="center"
             android:text="@string/loading_text"
             android:textColor="@color/text_placeholder"
-            android:textSize="15sp"
+            android:textSize="@dimen/text_size_body_large"
             android:visibility="gone" />
 
-        <LinearLayout
+        <TextView
             android:id="@+id/layoutError"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/network_error_msg"
-                android:textColor="@color/text_tertiary"
-                android:textSize="15sp" />
-
-        </LinearLayout>
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/network_error_msg"
+            android:textColor="@color/text_tertiary"
+            android:textSize="@dimen/text_size_body_large" />
 
     </FrameLayout>
 

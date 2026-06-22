@@ -1,6 +1,6 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
+    android:width="@dimen/icon_size_md"
+    android:height="@dimen/icon_size_md"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- Material auto_awesome：闪烁星花，AI/智能推荐场景标准 icon -->

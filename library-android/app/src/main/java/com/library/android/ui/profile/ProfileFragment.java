@@ -1,7 +1,6 @@
 package com.library.android.ui.profile;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,18 +17,16 @@ import com.library.android.databinding.FragmentProfileBinding;
 import com.library.android.model.BorrowStatsVO;
 import com.library.android.model.UserProfile;
 import com.library.android.network.TokenManager;
-import com.library.android.repository.AuthRepository;
 import com.library.android.viewmodel.ProfileViewModel;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 个人中心 Fragment — 含用户信息卡片、借阅概览、功能入口.
+ *
+ * <p>P1-01：移除 {@code @Inject AuthRepository}，登出动作下沉到
+ * {@link ProfileViewModel#logout()}，UI 监听 logoutCompleted SingleLiveEvent
+ * 后执行本地清退 + 跳登录.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -37,14 +34,8 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 @AndroidEntryPoint
 public class ProfileFragment extends Fragment {
 
-    private static final String TAG = "ProfileFragment";
-
     private FragmentProfileBinding binding;
     private ProfileViewModel viewModel;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
-    @Inject
-    AuthRepository authRepository;
 
     @Nullable
     @Override
@@ -59,8 +50,6 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // B.4 关键修复：使用 requireActivity() scope 与 EditProfileFragment / BorrowStatsFragment 保持一致
-        // 原版用 new ViewModelProvider(this) 创建 Fragment 私有实例，
-        // 导致 EditProfileFragment 修改的资料不会同步到 ProfileFragment（同名不同实例）.
         viewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
         // 立即同步设置初始 UI，避免 XML 默认值导致"未登录"闪现
@@ -68,27 +57,14 @@ public class ProfileFragment extends Fragment {
 
         // 登录按钮 — WP-1：加 NavOptions 防栈叠加 + launchSingleTop
         binding.btnLogin.setOnClickListener(v -> {
-            androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+            NavOptions navOptions = new NavOptions.Builder()
                     .setLaunchSingleTop(true)
                     .build();
             Navigation.findNavController(view).navigate(R.id.loginFragment, null, navOptions);
         });
 
-        // 退出登录：先调后端 logout（命中 AT 黑名单 OWASP），再清本地 token + 跳转登录
-        binding.btnLogout.setOnClickListener(v -> {
-            v.setEnabled(false);  // 防抖：避免快速双击重复登出
-            disposables.add(authRepository.logout()
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            result -> performLocalLogout(view),
-                            throwable -> {
-                                // 后端不可达时仍要保证本地清退，避免用户卡死
-                                Log.w(TAG, "后端 logout 失败，仍执行本地登出", throwable);
-                                performLocalLogout(view);
-                            }
-                    ));
-        });
+        // P1-01：退出登录由 ViewModel 统一处理，UI 仅触发 + 监听完成事件
+        binding.btnLogout.setOnClickListener(v -> viewModel.logout());
 
         // 功能入口点击
         binding.layoutBorrowHistory.setOnClickListener(v ->
@@ -127,6 +103,16 @@ public class ProfileFragment extends Fragment {
 
         // 监听借阅统计，填充概览数字
         viewModel.getBorrowStats().observe(getViewLifecycleOwner(), this::updateBorrowOverview);
+
+        // P1-01：登出状态切换（按钮禁用防抖）
+        viewModel.isLoggingOut().observe(getViewLifecycleOwner(), inFlight -> {
+            if (binding != null) {
+                binding.btnLogout.setEnabled(!Boolean.TRUE.equals(inFlight));
+            }
+        });
+
+        // P1-01：登出完成后做本地清退 + 跳登录
+        viewModel.getLogoutCompleted().observe(getViewLifecycleOwner(), o -> performLocalLogout(view));
     }
 
     @Override
@@ -150,6 +136,9 @@ public class ProfileFragment extends Fragment {
     private void updateUI(UserProfile profile) {
         TokenManager tm = TokenManager.getInstance(requireContext());
         boolean loggedIn = tm.isLoggedIn();
+
+        // P2-05：头像占位图品牌化 — 优先显示姓名/用户名首字母，否则显示默认图标
+        updateAvatar(loggedIn, profile);
 
         // C.4 新增：根据用户角色控制管理工具区块可见性
         if (loggedIn && tm.isLibrarianOrAbove()) {
@@ -212,6 +201,51 @@ public class ProfileFragment extends Fragment {
         binding.tvOverdueCount.setText(String.valueOf(stats.getTotalOverdue()));
     }
 
+    /** P2-05：头像占位图品牌化 — 根据姓名/用户名首字母或默认图标渲染. */
+    private void updateAvatar(boolean loggedIn, @Nullable UserProfile profile) {
+        if (binding == null) return;
+
+        String initials = null;
+        if (loggedIn) {
+            String source = null;
+            if (profile != null) {
+                source = profile.getRealName();
+                if (source == null || source.trim().isEmpty()) {
+                    source = profile.getUsername();
+                }
+            }
+            if (source == null || source.trim().isEmpty()) {
+                TokenManager tm = TokenManager.getInstance(requireContext());
+                source = tm.getRealName();
+                if (source == null || source.trim().isEmpty()) {
+                    source = tm.getUsername();
+                }
+            }
+            if (source != null && !source.trim().isEmpty()) {
+                initials = extractInitial(source.trim());
+            }
+        }
+
+        if (initials != null && !initials.isEmpty()) {
+            binding.tvAvatarInitials.setText(initials);
+            binding.tvAvatarInitials.setVisibility(View.VISIBLE);
+            binding.ivAvatarDefault.setVisibility(View.GONE);
+        } else {
+            binding.tvAvatarInitials.setVisibility(View.GONE);
+            binding.ivAvatarDefault.setVisibility(View.VISIBLE);
+        }
+    }
+
+    /** 提取首字母：中文取首字，英文取首字母大写. */
+    private String extractInitial(@NonNull String source) {
+        char first = source.charAt(0);
+        if (Character.isLetter(first)) {
+            return String.valueOf(Character.toUpperCase(first));
+        }
+        // 非字母（如中文）直接返回首字符
+        return String.valueOf(first);
+    }
+
     /** 本地登出动作：清 token + 跳登录 + 清栈. */
     private void performLocalLogout(@NonNull View view) {
         TokenManager.getInstance(requireContext()).clear();
@@ -225,7 +259,6 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 }

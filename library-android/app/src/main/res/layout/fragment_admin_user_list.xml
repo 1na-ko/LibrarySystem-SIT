@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/dark_bg_primary">
+    android:background="?android:attr/colorBackground">
 
     <!-- 搜索栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:padding="@dimen/space_sm"
         android:gravity="center_vertical">
 
         <com.google.android.material.textfield.TextInputLayout
@@ -20,9 +20,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="@string/search_user_hint"
-            android:textColorHint="@color/dark_text_secondary"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-            app:boxBackgroundColor="@color/dark_bg_input">
+            app:boxBackgroundColor="?attr/colorSurfaceVariant">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editSearch"
@@ -30,16 +30,16 @@
                 android:layout_height="wrap_content"
                 android:singleLine="true"
                 android:imeOptions="actionSearch"
-                android:textColor="@color/dark_text_primary"
-                android:textColorHint="@color/dark_text_secondary" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
         <ImageButton
             android:id="@+id/btnFilter"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
+            android:layout_width="@dimen/space_xxxl"
+            android:layout_height="@dimen/button_min_height"
+            android:layout_marginStart="@dimen/space_xs"
             android:contentDescription="@string/filter"
             android:src="@android:drawable/ic_menu_sort_by_size"
             android:background="?attr/selectableItemBackgroundBorderless" />
@@ -55,32 +55,20 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:padding="8dp" />
+            android:padding="@dimen/space_sm" />
 
-        <LinearLayout
+        <TextView
             android:id="@+id/layoutEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="14sp"
-                android:textColor="@color/dark_text_placeholder" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/no_users"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="16sp" />
-
-        </LinearLayout>
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_users"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/text_size_title" />
 
         <TextView
             android:id="@+id/textLoading"
@@ -88,8 +76,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/loading_text"
-            android:textColor="@color/dark_text_placeholder"
-            android:textSize="15sp"
+            android:textColor="?attr/colorOutline"
+            android:textSize="@dimen/text_size_body_large"
             android:visibility="gone" />
 
     </FrameLayout>

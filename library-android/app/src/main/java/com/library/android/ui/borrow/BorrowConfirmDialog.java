@@ -16,6 +16,7 @@ import com.library.android.R;
 import com.library.android.databinding.DialogBorrowConfirmBinding;
 import com.library.android.model.BookSimpleVO;
 import com.library.android.ui.common.Debounce;
+import com.library.android.ui.common.NavArgKeys;
 import com.library.android.viewmodel.BorrowViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -39,7 +40,7 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
     public static BorrowConfirmDialog newInstance(BookSimpleVO book) {
         BorrowConfirmDialog dialog = new BorrowConfirmDialog();
         Bundle args = new Bundle();
-        args.putParcelable("book", book);
+        args.putParcelable(NavArgKeys.BOOK, book);
         dialog.setArguments(args);
         return dialog;
     }
@@ -67,7 +68,7 @@ public class BorrowConfirmDialog extends BottomSheetDialogFragment {
         viewModel = new ViewModelProvider(requireActivity()).get(BorrowViewModel.class);
 
         if (getArguments() != null) {
-            book = getArguments().getParcelable("book");
+            book = getArguments().getParcelable(NavArgKeys.BOOK);
         }
 
         displayBookInfo();

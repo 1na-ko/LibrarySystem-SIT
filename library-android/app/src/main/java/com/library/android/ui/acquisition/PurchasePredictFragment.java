@@ -19,7 +19,6 @@ import com.library.android.databinding.FragmentPurchasePredictBinding;
 import com.library.android.databinding.ItemPredictionBinding;
 import com.library.android.model.CategoryVO;
 import com.library.android.model.PurchasePredictionVO;
-import com.library.android.repository.BookRepository;
 import com.library.android.ui.common.BaseAdapter;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.main.MainActivity;
@@ -28,15 +27,13 @@ import com.library.android.viewmodel.AcquisitionViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * 采购预测 Fragment — WP5 改造：subjectId 改分类选择器（不再手填 ID）.
+ *
+ * <p>P1-01：移除 {@code @Inject BookRepository}，分类树通过
+ * {@link AcquisitionViewModel#loadCategories()} 加载并 observe.
  *
  * @author LibrarySystem Team
  * @since 1.0.0
@@ -47,10 +44,6 @@ public class PurchasePredictFragment extends BaseFragment {
     private FragmentPurchasePredictBinding binding;
     private AcquisitionViewModel viewModel;
     private PredictionAdapter adapter;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
-    @Inject
-    BookRepository bookRepository;
 
     private final List<CategoryVO> flatCategories = new ArrayList<>();
     private long selectedSubjectId = -1;
@@ -59,6 +52,7 @@ public class PurchasePredictFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        com.library.android.ui.theme.ThemeManager.getInstance().setDarkMode(true);
         android.content.Context themedContext = com.library.android.ui.theme.ThemeManager.getInstance().wrapContext(requireContext());
         android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
         binding = FragmentPurchasePredictBinding.inflate(themedInflater, container, false);
@@ -99,19 +93,15 @@ public class PurchasePredictFragment extends BaseFragment {
 
         observeError(viewModel.getErrorEvent());
         viewModel.getPredictions().observe(getViewLifecycleOwner(), this::renderResult);
-        loadCategories();
-    }
 
-    private void loadCategories() {
-        disposables.add(bookRepository.getCategoryTree()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    if (result != null && result.isSuccess() && result.getData() != null) {
-                        flatCategories.clear();
-                        flatten(result.getData());
-                    }
-                }, Throwable::printStackTrace));
+        // P1-01：分类树通过 ViewModel observe（取代原 BookRepository 内联订阅）
+        viewModel.getCategories().observe(getViewLifecycleOwner(), categoryList -> {
+            flatCategories.clear();
+            if (categoryList != null) flatten(categoryList);
+        });
+        if (viewModel.getCategories().getValue() == null) {
+            viewModel.loadCategories();
+        }
     }
 
     private void flatten(List<CategoryVO> nodes) {
@@ -125,7 +115,7 @@ public class PurchasePredictFragment extends BaseFragment {
     private void openCategoryPicker() {
         if (flatCategories.isEmpty()) {
             Toast.makeText(requireContext(), getString(R.string.acquisition_predict_category_loading), Toast.LENGTH_SHORT).show();
-            loadCategories();
+            viewModel.loadCategories();
             return;
         }
         String[] names = new String[flatCategories.size()];
@@ -146,13 +136,12 @@ public class PurchasePredictFragment extends BaseFragment {
         if (binding == null) return;
         binding.progress.setVisibility(View.GONE);
         adapter.submitList(data);
-        binding.tvEmpty.setVisibility(data == null || data.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.layoutEmpty.setVisibility(data == null || data.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        disposables.clear();
         binding = null;
     }
 

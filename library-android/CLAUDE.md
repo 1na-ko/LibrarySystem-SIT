@@ -106,7 +106,7 @@ library-android/app/src/main/java/com/library/android/
 |------|--------|------|
 | 主背景 | `#F7F4EB` | `bg_primary` |
 | 卡片背景 | `#FDFCF8` | `bg_card` |
-| 主强调色 | `#8B3A3A` | `accent_cta` |
+| 主强调色 | `#C93756` | `accent_cta` |
 | 可用色 | `#4A7C59` | `accent_available` |
 | 预约色 | `#D4A24C` | `accent_reserve` |
 | 深色背景 | `#1A1A1A` | `dark_bg_primary` |
@@ -176,7 +176,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - ✅ ViewModel 遮蔽清理（BorrowVM/ReservationVM）+ KG keyPath 接入
 - ✅ KG 模块 Loading 修复 + observeError + EntitySearch 空态
 - ✅ 3 处死按钮修复（推荐/热门/分类）+ HotBooks 标签横向滚动+单选 + 推荐页滚动+颜色统一
-- ✅ 预约取消按钮可见（朱砂红#8B3A3A）+ BorrowHistory 分页+可点击 + EditProfile 校验
+- ✅ 预约取消按钮可见（朱砂红#C93756）+ BorrowHistory 分页+可点击 + EditProfile 校验
 - ✅ 扫码权限运行时请求 + 暗色 7 Fragment 补 wrapContext
 - ✅ 管理端饼图数据修复 + 重建图谱进度反馈 + 用户组合筛选
 - ✅ 采编 DuplicateCheck/GapAnalysis 结构化卡片 UI + 表单 AutoComplete + 谈判返回不重触发

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg_primary"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/space_lg">
 
     <!-- WP-11：资源选择 — ExposedDropdownMenu 支持输入+预选（原 setFocusable(false)+AlertDialog 只能翻表找） -->
     <com.google.android.material.textfield.TextInputLayout
@@ -23,7 +23,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/space_sm"
         android:hint="@string/acquisition_supplier_id_hint"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -37,15 +37,15 @@
         android:id="@+id/btnCreate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/space_md"
         android:text="@string/acquisition_create" />
 
     <TextView
         android:id="@+id/tvHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:padding="12dp"
+        android:layout_marginTop="@dimen/space_lg"
+        android:padding="@dimen/space_md"
         android:textColor="@color/text_secondary"
         android:text="@string/negotiation_create_hint" />
 </LinearLayout>

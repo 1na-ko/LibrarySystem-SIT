@@ -23,13 +23,14 @@
             android:layout_height="match_parent"
             android:background="@color/border_light" />
 
-        <!-- 封面 -->
+        <!-- 封面：使用品牌化占位图 -->
         <ImageView
             android:id="@+id/ivCover"
             android:layout_width="@dimen/book_cover_width"
             android:layout_height="@dimen/book_cover_height"
             android:layout_marginStart="@dimen/space_md"
             android:background="@color/border_light"
+            android:src="@drawable/ic_book_placeholder_branded"
             android:scaleType="centerCrop"
             android:contentDescription="@string/book_cover" />
 
@@ -74,7 +75,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_secondary"
-                android:textSize="11sp"
+                android:textSize="@dimen/text_size_sm"
                 android:layout_marginTop="@dimen/space_xs" />
 
         </LinearLayout>

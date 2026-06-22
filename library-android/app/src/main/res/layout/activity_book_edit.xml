@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/space_lg">
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/inputIsbn"
@@ -30,7 +30,7 @@
             android:id="@+id/inputTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/book_title_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -45,7 +45,7 @@
             android:id="@+id/inputAuthor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/author_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -60,7 +60,7 @@
             android:id="@+id/inputPublisher"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/publisher_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -75,14 +75,14 @@
             android:id="@+id/inputPubDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/pub_date_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="YYYY-MM-DD" />
+                android:hint="@string/date_format_hint" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -90,7 +90,7 @@
             android:id="@+id/inputCategory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/category_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -108,7 +108,7 @@
             android:id="@+id/inputTotalCopies"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/total_copies_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -123,7 +123,7 @@
             android:id="@+id/inputLocation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/location_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -138,7 +138,7 @@
             android:id="@+id/inputDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/description_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -153,7 +153,7 @@
             android:id="@+id/inputKeywords"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:hint="@string/keywords_hint"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -168,7 +168,7 @@
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="@dimen/space_xl"
             android:text="@string/save_book"
             style="@style/Widget.Material3.Button" />
 
@@ -176,7 +176,7 @@
             android:id="@+id/btnDelete"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/space_sm"
             android:text="@string/delete_book"
             android:textColor="?attr/colorError"
             android:visibility="gone"

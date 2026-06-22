@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- 打开的书本：左页 -->
+    <path
+        android:fillColor="@color/text_tertiary"
+        android:pathData="M20,30 L58,30 L58,85 L20,85 C17,85 15,83 15,80 L15,35 C15,32 17,30 20,30 Z" />
+
+    <!-- 打开的书本：右页 -->
+    <path
+        android:fillColor="@color/text_tertiary"
+        android:pathData="M62,30 L100,30 C103,30 105,32 105,35 L105,80 C105,83 103,85 100,85 L62,85 L62,30 Z" />
+
+    <!-- 书脊阴影 -->
+    <path
+        android:fillColor="@color/text_tertiary"
+        android:pathData="M58,30 L62,30 L62,85 L58,85 Z" />
+
+    <!-- 左页文字行 -->
+    <path
+        android:fillColor="@color/bg_primary"
+        android:pathData="M25,42 L52,42"
+        android:strokeWidth="3"
+        android:strokeColor="@color/bg_primary"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="@color/bg_primary"
+        android:pathData="M25,54 L48,54"
+        android:strokeWidth="3"
+        android:strokeColor="@color/bg_primary"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="@color/bg_primary"
+        android:pathData="M25,66 L50,66"
+        android:strokeWidth="3"
+        android:strokeColor="@color/bg_primary"
+        android:strokeLineCap="round" />
+
+    <!-- 右页文字行 -->
+    <path
+        android:fillColor="@color/bg_primary"
+        android:pathData="M68,42 L95,42"
+        android:strokeWidth="3"
+        android:strokeColor="@color/bg_primary"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="@color/bg_primary"
+        android:pathData="M72,54 L95,54"
+        android:strokeWidth="3"
+        android:strokeColor="@color/bg_primary"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="@color/bg_primary"
+        android:pathData="M70,66 L95,66"
+        android:strokeWidth="3"
+        android:strokeColor="@color/bg_primary"
+        android:strokeLineCap="round" />
+
+    <!-- 底部装饰弧线 -->
+    <path
+        android:fillColor="@color/text_tertiary"
+        android:pathData="M35,95 C45,100 55,100 60,98 C65,100 75,100 85,95"
+        android:strokeWidth="3"
+        android:strokeColor="@color/text_tertiary"
+        android:strokeLineCap="round" />
+</vector>

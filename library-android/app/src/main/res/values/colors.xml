@@ -18,7 +18,7 @@
     <color name="text_placeholder">#B0B0B0</color>
 
     <!-- ── 功能色 ── -->
-    <color name="accent_cta">#8B3A3A</color>
+    <color name="accent_cta">#C93756</color>
     <color name="accent_available">#4A7C59</color>
     <color name="accent_checkedout">#D1D1D1</color>
     <color name="accent_reserve">#D4A24C</color>
@@ -49,7 +49,7 @@
     <color name="kg_edge_highlight">#1A3A5C</color>
 
     <!-- ── 图表配色（BorrowStats 等） ── -->
-    <color name="chart_color_1">#8B3A3A</color>
+    <color name="chart_color_1">#C93756</color>
     <color name="chart_color_2">#4A7C59</color>
     <color name="chart_color_3">#D4A24C</color>
     <color name="chart_color_4">#4A6B8A</color>
@@ -59,11 +59,11 @@
     <!-- ── 状态标签色（保持语义但使用新调色板） ── -->
     <color name="chip_borrowed">#E8F0EB</color>       <!-- accent_available @ 20% -->
     <color name="chip_returned">#F5F5F5</color>        <!-- accent_checkedout @ 20% -->
-    <color name="chip_overdue">#EFE3E3</color>         <!-- accent_cta @ 20% -->
+    <color name="chip_overdue">#F4D7DD</color>         <!-- accent_cta @ 20% -->
     <color name="chip_active">#E8F0EB</color>
 
     <!-- ── 兼容 Material 3 主题属性映射（供 themes.xml 使用） ── -->
-    <color name="m3_primary">#8B3A3A</color>
+    <color name="m3_primary">#C93756</color>
     <color name="m3_on_primary">#FDFCF8</color>
     <color name="m3_secondary">#4A7C59</color>
     <color name="m3_on_secondary">#FDFCF8</color>
@@ -77,7 +77,7 @@
     <color name="m3_outline">#E5E5E5</color>
 
     <!-- ── 深色模式 Material 3 主题属性映射 ── -->
-    <color name="m3_dark_primary">#D4A24C</color>        <!-- 深色下主色用金色更醒目 -->
+    <color name="m3_dark_primary">#C93756</color>        <!-- 与浅色模式统一使用朱砂红品牌色 -->
     <color name="m3_dark_on_primary">#1A1A1A</color>
     <color name="m3_dark_secondary">#4A6B8A</color>
     <color name="m3_dark_on_secondary">#F5F5F5</color>
@@ -92,10 +92,28 @@
 
     <!-- ── 深色模式 Chip 背景 ── -->
     <color name="dark_chip_bg">#3A3A3C</color>
+    <color name="dark_chip_overdue">#522233</color>
+
+    <!-- ── 深色模式图表配色（P2-08 会进一步微调）── -->
+    <color name="dark_chart_color_1">#E85A7A</color>
+    <color name="dark_chart_color_2">#6AAF7D</color>
+    <color name="dark_chart_color_3">#E8C06D</color>
+    <color name="dark_chart_color_4">#7A9BB5</color>
+    <color name="dark_chart_color_5">#E8E8E8</color>
+    <color name="dark_chart_color_6">#A8B9C4</color>
 
     <!-- ── 保留旧兼容色 ── -->
     <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
     <color name="error">#B3261E</color>
+
+    <!-- ── 占位图/插图灰阶（P2-05 前临时 Token 化）── -->
+    <color name="placeholder_primary">#E0E0E0</color>
+    <color name="placeholder_secondary">#BDBDBD</color>
+    <color name="placeholder_tertiary">#9E9E9E</color>
+
+    <!-- ── 登录页朱砂红深色阴影 ── -->
+    <color name="login_accent_vermillion_dark">#A52A46</color>
 
     <!-- ============================================================
          登录页专用色 — 朱砂红学术美学（v3.0，不影响全局 accent_cta）

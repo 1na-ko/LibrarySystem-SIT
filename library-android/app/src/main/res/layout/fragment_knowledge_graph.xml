@@ -2,16 +2,17 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/dark_bg_primary">
+    android:background="?android:attr/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:padding="@dimen/space_sm"
         android:gravity="center_vertical">
 
         <TextView
@@ -19,14 +20,14 @@
             android:layout_height="wrap_content"
             android:text="@string/depth_label"
             android:textAppearance="?attr/textAppearanceLabelMedium"
-            android:textColor="@color/dark_text_secondary" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <com.google.android.material.slider.Slider
             android:id="@+id/sliderDepth"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginHorizontal="12dp"
+            android:layout_marginHorizontal="@dimen/space_md"
             android:valueFrom="1"
             android:valueTo="3"
             android:stepSize="1"
@@ -38,9 +39,9 @@
             android:id="@+id/textDepthValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="2"
+            tools:text="2"
             android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textColor="@color/dark_text_primary" />
+            android:textColor="?attr/colorOnSurface" />
 
     </LinearLayout>
 
@@ -49,10 +50,10 @@
         android:id="@+id/chipGroupKgSubPages"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="8dp"
+        android:paddingHorizontal="@dimen/space_md"
+        android:paddingBottom="@dimen/space_sm"
         app:singleSelection="true"
-        app:chipSpacingHorizontal="8dp">
+        app:chipSpacingHorizontal="@dimen/space_sm">
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipLiteratureTrace"
@@ -60,10 +61,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/kg_tab_trace"
-            android:textColor="@color/dark_text_secondary"
-            app:chipBackgroundColor="@color/dark_chip_bg"
-            app:chipStrokeColor="@color/dark_text_placeholder"
-            app:chipStrokeWidth="1dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:chipBackgroundColor="?attr/colorSurfaceVariant"
+            app:chipStrokeColor="?attr/colorOutline"
+            app:chipStrokeWidth="@dimen/stroke_thickness"
             app:checkedIconEnabled="false" />
 
         <com.google.android.material.chip.Chip
@@ -72,10 +73,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/kg_tab_subject"
-            android:textColor="@color/dark_text_secondary"
-            app:chipBackgroundColor="@color/dark_chip_bg"
-            app:chipStrokeColor="@color/dark_text_placeholder"
-            app:chipStrokeWidth="1dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:chipBackgroundColor="?attr/colorSurfaceVariant"
+            app:chipStrokeColor="?attr/colorOutline"
+            app:chipStrokeWidth="@dimen/stroke_thickness"
             app:checkedIconEnabled="false" />
 
         <com.google.android.material.chip.Chip
@@ -84,10 +85,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/kg_tab_entity"
-            android:textColor="@color/dark_text_secondary"
-            app:chipBackgroundColor="@color/dark_chip_bg"
-            app:chipStrokeColor="@color/dark_text_placeholder"
-            app:chipStrokeWidth="1dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:chipBackgroundColor="?attr/colorSurfaceVariant"
+            app:chipStrokeColor="?attr/colorOutline"
+            app:chipStrokeWidth="@dimen/stroke_thickness"
             app:checkedIconEnabled="false" />
 
     </com.google.android.material.chip.ChipGroup>
@@ -95,7 +96,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/dark_bg_primary">
+        android:background="?android:attr/colorBackground">
 
         <WebView
             android:id="@+id/webView"
@@ -108,8 +109,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/loading_text"
-            android:textColor="@color/dark_text_placeholder"
-            android:textSize="15sp"
+            android:textColor="?attr/colorOutline"
+            android:textSize="@dimen/text_size_body_large"
             android:visibility="gone" />
 
     </FrameLayout>

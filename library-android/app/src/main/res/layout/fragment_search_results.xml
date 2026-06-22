@@ -22,7 +22,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="13sp"
+            android:textSize="@dimen/text_size_body_small"
             android:textColor="@color/text_secondary" />
 
     </LinearLayout>
@@ -42,23 +42,20 @@
         android:gravity="center"
         android:text="@string/loading_text"
         android:textColor="@color/text_placeholder"
-        android:textSize="15sp"
+        android:textSize="@dimen/text_size_body_large"
         android:visibility="gone" />
 
-    <LinearLayout
+    <TextView
         android:id="@+id/layoutEmpty"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/search_no_results"
-            android:textSize="15sp"
-            android:textColor="@color/text_tertiary" />
-    </LinearLayout>
+        android:visibility="gone"
+        android:drawablePadding="@dimen/space_md"
+        app:drawableTopCompat="@drawable/ill_empty_state"
+        android:text="@string/search_no_results"
+        android:textSize="@dimen/text_size_body_large"
+        android:textColor="@color/text_tertiary" />
 
 </LinearLayout>

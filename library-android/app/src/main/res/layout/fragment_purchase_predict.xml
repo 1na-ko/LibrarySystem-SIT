@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_primary"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/space_lg">
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/inputSubjectId"
@@ -24,7 +25,7 @@
         android:id="@+id/inputMonths"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/space_sm"
         android:hint="@string/acquisition_months_hint"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
         <com.google.android.material.textfield.TextInputEditText
@@ -32,14 +33,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:text="3" />
+            tools:text="3" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnRun"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/space_md"
         android:text="@string/acquisition_run" />
 
     <ProgressBar
@@ -47,24 +48,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/space_md"
         android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/space_md"
         android:layout_weight="1" />
 
     <TextView
-        android:id="@+id/tvEmpty"
+        android:id="@+id/layoutEmpty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:padding="24dp"
+        android:padding="@dimen/space_xl"
+        android:visibility="gone"
+        android:drawablePadding="@dimen/space_md"
+        app:drawableTopCompat="@drawable/ill_empty_state"
         android:text="@string/acquisition_no_data"
-        android:textColor="@color/text_tertiary"
-        android:visibility="gone" />
+        android:textColor="@color/text_tertiary" />
 
 </LinearLayout>

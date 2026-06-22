@@ -7,8 +7,8 @@
 
     <!-- Layer 4: 最外层阴影，偏移最大，最淡 -->
     <item
-        android:left="4dp"
-        android:top="4dp"
+        android:left="@dimen/space_xs"
+        android:top="@dimen/space_xs"
         android:right="0dp"
         android:bottom="-4dp">
         <shape android:shape="rectangle">
@@ -31,8 +31,8 @@
 
     <!-- Layer 2 -->
     <item
-        android:left="2dp"
-        android:top="2dp"
+        android:left="@dimen/space_xxs"
+        android:top="@dimen/space_xxs"
         android:right="0dp"
         android:bottom="-2dp">
         <shape android:shape="rectangle">
@@ -43,8 +43,8 @@
 
     <!-- Layer 1: 最内层阴影，最短偏移 -->
     <item
-        android:left="1dp"
-        android:top="1dp"
+        android:left="@dimen/stroke_thickness"
+        android:top="@dimen/stroke_thickness"
         android:right="0dp"
         android:bottom="-1dp">
         <shape android:shape="rectangle">
@@ -57,8 +57,8 @@
     <item
         android:left="0dp"
         android:top="0dp"
-        android:right="4dp"
-        android:bottom="4dp">
+        android:right="@dimen/space_xs"
+        android:bottom="@dimen/space_xs">
         <shape android:shape="rectangle">
             <solid android:color="@color/login_card_surface" />
             <corners android:radius="@dimen/radius_md" />

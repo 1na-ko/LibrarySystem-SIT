@@ -17,10 +17,10 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="14dp"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="1dp"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        app:cardCornerRadius="@dimen/space_xl"
+        app:cardElevation="@dimen/card_elevation"
         app:strokeWidth="0dp"
         app:cardBackgroundColor="@color/bg_card">
 
@@ -29,12 +29,12 @@
             android:layout_height="@dimen/search_bar_height"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="8dp">
+            android:paddingStart="@dimen/space_md"
+            android:paddingEnd="@dimen/space_sm">
 
             <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="@dimen/icon_size_md"
+                android:layout_height="@dimen/icon_size_md"
                 android:src="@drawable/ic_search_vector"
                 android:contentDescription="@string/search"
                 app:tint="@color/accent_cta" />
@@ -44,21 +44,21 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="@dimen/space_sm"
                 android:inputType="text"
                 android:maxLines="1"
                 android:imeOptions="actionSearch"
                 android:hint="@string/search_hint"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_tertiary"
-                android:textSize="15sp"
+                android:textSize="@dimen/text_size_body_large"
                 android:background="@null"
                 android:paddingVertical="0dp" />
 
             <ImageView
                 android:id="@+id/ivClear"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="@dimen/icon_size_md"
+                android:layout_height="@dimen/icon_size_md"
                 android:src="@drawable/ic_close_vector"
                 android:contentDescription="@string/clear"
                 android:visibility="gone"
@@ -68,10 +68,11 @@
                 android:id="@+id/btnAdvanced"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
                 android:text="@string/advanced_search"
                 android:textColor="@color/accent_cta"
-                android:textSize="12sp"
+                android:textSize="@dimen/text_size_md"
                 android:insetTop="0dp"
                 android:insetBottom="0dp" />
 
@@ -85,23 +86,17 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         android:background="@color/bg_card"
-        android:layout_marginHorizontal="12dp"
-        android:elevation="4dp" />
+        android:layout_marginHorizontal="@dimen/space_md"
+        android:elevation="@dimen/space_xs" />
 
     <!-- ═══ Tab 切换"热门搜索"/"分类浏览"（与搜索框有间距） ═══ -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
+        style="@style/Widget.Library.TabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="14dp"
-        android:layout_marginTop="14dp"
-        app:tabIndicatorColor="@color/accent_cta"
-        app:tabSelectedTextColor="@color/accent_cta"
-        app:tabTextColor="@color/text_secondary"
-        app:tabMode="fixed"
-        app:tabGravity="fill"
-        app:tabBackground="@android:color/transparent"
-        app:tabRippleColor="@android:color/transparent" />
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg" />
 
     <!-- ═══ 内容切换区 ═══ -->
     <androidx.core.widget.NestedScrollView
@@ -109,7 +104,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:fillViewport="true"
-        android:layout_marginHorizontal="12dp">
+        android:layout_marginHorizontal="@dimen/space_md">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -122,7 +117,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="@dimen/space_sm">
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupHotTags"
@@ -137,7 +132,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="@dimen/space_sm"
                 android:visibility="gone">
 
                 <androidx.recyclerview.widget.RecyclerView

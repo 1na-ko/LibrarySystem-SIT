@@ -16,9 +16,11 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.library.android.ui.common.BaseFragment;
+import com.library.android.ui.common.NavArgKeys;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.chip.Chip;
 import com.library.android.R;
@@ -70,22 +72,22 @@ public class SearchFragment extends BaseFragment {
         // 接收高级搜索/扫码/分类导航参数 → 立即执行搜索并跳到结果页
         Bundle args = getArguments();
         android.content.Intent activityIntent = requireActivity().getIntent();
-        if (args != null && (args.containsKey("title") || args.containsKey("author")
-                || args.containsKey("isbn") || args.containsKey("publisher"))) {
+        if (args != null && (args.containsKey(NavArgKeys.TITLE) || args.containsKey(NavArgKeys.AUTHOR)
+                || args.containsKey(NavArgKeys.ISBN) || args.containsKey(NavArgKeys.PUBLISHER))) {
             handleAdvancedSearchArgs(args);
-        } else if (activityIntent != null && activityIntent.hasExtra("isbn")) {
+        } else if (activityIntent != null && activityIntent.hasExtra(NavArgKeys.ISBN)) {
             handleAdvancedSearchArgs(activityIntent.getExtras());
             // 清除 Intent extra 防止 navigateUp 返回后重新触发导航（修复 ISBN 扫码后退死循环）
-            activityIntent.removeExtra("isbn");
-        } else if (activityIntent != null && activityIntent.hasExtra("categoryId")) {
-            long categoryId = activityIntent.getLongExtra("categoryId", 0);
-            String categoryName = activityIntent.getStringExtra("categoryName");
+            activityIntent.removeExtra(NavArgKeys.ISBN);
+        } else if (activityIntent != null && activityIntent.hasExtra(NavArgKeys.CATEGORY_ID)) {
+            long categoryId = activityIntent.getLongExtra(NavArgKeys.CATEGORY_ID, 0);
+            String categoryName = activityIntent.getStringExtra(NavArgKeys.CATEGORY_NAME);
             if (categoryName != null) binding.etSearch.setText(categoryName);
             viewModel.searchByCategory(categoryId, categoryName);
             Navigation.findNavController(view)
                     .navigate(R.id.action_searchFragment_to_searchResultsFragment);
-            activityIntent.removeExtra("categoryId");
-            activityIntent.removeExtra("categoryName");
+            activityIntent.removeExtra(NavArgKeys.CATEGORY_ID);
+            activityIntent.removeExtra(NavArgKeys.CATEGORY_NAME);
         } else {
             viewModel.loadHomeData();
             addHotSearchChips();
@@ -200,10 +202,10 @@ public class SearchFragment extends BaseFragment {
     }
 
     private void handleAdvancedSearchArgs(Bundle args) {
-        String title = args.getString("title");
-        String author = args.getString("author");
-        String isbn = args.getString("isbn");
-        String publisher = args.getString("publisher");
+        String title = args.getString(NavArgKeys.TITLE);
+        String author = args.getString(NavArgKeys.AUTHOR);
+        String isbn = args.getString(NavArgKeys.ISBN);
+        String publisher = args.getString(NavArgKeys.PUBLISHER);
         Integer pubYearFrom = args.containsKey("pubYearFrom") ? args.getInt("pubYearFrom") : null;
         Integer pubYearTo = args.containsKey("pubYearTo") ? args.getInt("pubYearTo") : null;
         Boolean onlyAvailable = args.containsKey("onlyAvailable") ? args.getBoolean("onlyAvailable") : null;
@@ -233,20 +235,14 @@ public class SearchFragment extends BaseFragment {
     private void addHotSearchChips() {
         if (binding == null) return;
         binding.chipGroupHotTags.removeAllViews();
-        String[] hotTags = {
-            "Java", "Python", "机器学习", "数据结构", "人工智能",
-            "数据库", "操作系统", "计算机网络", "算法导论", "深度学习",
-            "自然语言处理", "计算机视觉", "软件工程", "编译原理",
-            "离散数学", "线性代数", "概率论", "分布式系统",
-            "微服务", "云计算", "大数据", "区块链", "物联网"
-        };
+        String[] hotTags = getResources().getStringArray(R.array.hot_search_tags);
         for (String tag : hotTags) {
             Chip chip = new Chip(requireContext());
             chip.setText(tag);
             chip.setChipBackgroundColorResource(R.color.bg_card);
             chip.setChipStrokeColorResource(R.color.border_light);
             chip.setChipStrokeWidth(1f);
-            chip.setTextColor(getResources().getColor(R.color.text_secondary, null));
+            chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
             chip.setChipCornerRadiusResource(R.dimen.radius_sm);
             chip.setCheckable(false);
             chip.setClickable(true);

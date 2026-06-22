@@ -3,24 +3,12 @@
      Login Page — 中式学术美学 v3.0
      米黄宣纸底色 + 朱砂红点缀 + 多层纸影 + 光泽扫过动效
      ================================================================ -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/login_bg_rice_paper">
-
-    <!-- 小屏适配：内容过多时可滚动 -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="@dimen/space_xxl">
+    android:background="@color/login_bg_rice_paper"
+    android:fillViewport="true">
 
             <!-- ====================================================
                  Card — 多层纸影背景
@@ -28,6 +16,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="@dimen/space_xxl"
                 android:background="@drawable/bg_login_card_shadow"
                 android:orientation="vertical"
                 android:padding="@dimen/space_xl">
@@ -35,7 +25,7 @@
                 <!-- ── 顶部朱砂红渐变装饰线 ── -->
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="2dp"
+                    android:layout_height="@dimen/space_xxs"
                     android:background="@drawable/bg_login_top_accent" />
 
                 <!-- ── 博士帽图标 ── -->
@@ -45,7 +35,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="@dimen/space_xl"
                     android:src="@drawable/ic_login_cap"
-                    android:contentDescription="学位帽图标" />
+                    android:contentDescription="@string/login_cap_icon" />
 
                 <!-- ── 标题：图书馆管理系统 ── -->
                 <TextView
@@ -73,7 +63,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="@dimen/space_lg"
-                    android:hint="学号/工号"
+                    android:hint="@string/login_username_hint"
                     app:boxStrokeColor="@color/border_light"
                     app:hintTextColor="@color/text_placeholder">
 
@@ -91,10 +81,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="@dimen/space_xl"
-                    android:hint="密码"
+                    android:hint="@string/login_password_hint"
                     app:boxStrokeColor="@color/border_light"
-                    app:hintTextColor="@color/text_placeholder"
-                    app:passwordToggleEnabled="true">
+                    app:endIconDrawable="@drawable/ic_password_toggle"
+                    app:endIconMode="password_toggle"
+                    app:hintTextColor="@color/text_placeholder">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
@@ -142,12 +133,10 @@
                 <!-- ── 底部朱砂红横线收尾 ── -->
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
+                    android:layout_height="@dimen/stroke_thickness"
                     android:layout_marginTop="@dimen/space_lg"
                     android:background="@drawable/bg_login_bottom_line" />
 
             </LinearLayout>
 
-        </LinearLayout>
     </ScrollView>
-</FrameLayout>

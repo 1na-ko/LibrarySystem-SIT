@@ -26,6 +26,7 @@ import com.library.android.R;
 import com.library.android.databinding.FragmentBorrowStatsBinding;
 import com.library.android.model.BorrowStatsVO;
 import com.library.android.ui.main.MainActivity;
+import com.library.android.ui.theme.ChartThemeHelper;
 import com.library.android.viewmodel.ProfileViewModel;
 
 import java.util.ArrayList;
@@ -85,6 +86,7 @@ public class BorrowStatsFragment extends Fragment {
         // 分类分布饼图
         if (stats.getCategoryDistribution() != null && !stats.getCategoryDistribution().isEmpty()) {
             PieChart pieChart = new PieChart(requireContext());
+            ChartThemeHelper.applyPieChartTheme(pieChart);
             binding.layoutPieChart.addView(pieChart);
 
             List<PieEntry> pieEntries = new ArrayList<>();
@@ -107,6 +109,7 @@ public class BorrowStatsFragment extends Fragment {
             PieDataSet dataSet = new PieDataSet(pieEntries, "分类分布");
             dataSet.setColors(colors);
             dataSet.setValueTextSize(12f);
+            dataSet.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
 
             PieData data = new PieData(dataSet);
             pieChart.setData(data);
@@ -120,6 +123,7 @@ public class BorrowStatsFragment extends Fragment {
         // 月度趋势折线图
         if (stats.getMonthlyTrend() != null && !stats.getMonthlyTrend().isEmpty()) {
             LineChart lineChart = new LineChart(requireContext());
+            ChartThemeHelper.applyLineChartTheme(lineChart);
             binding.layoutLineChart.addView(lineChart);
 
             List<Entry> lineEntries = new ArrayList<>();
@@ -137,6 +141,7 @@ public class BorrowStatsFragment extends Fragment {
             lineDataSet.setCircleColor(ContextCompat.getColor(requireContext(), R.color.chart_color_1));
             lineDataSet.setCircleRadius(3f);
             lineDataSet.setValueTextSize(10f);
+            lineDataSet.setValueTextColor(ChartThemeHelper.getTextPrimaryColor(requireContext()));
 
             LineData lineData = new LineData(lineDataSet);
             lineChart.setData(lineData);
