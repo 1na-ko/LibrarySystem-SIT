@@ -12,11 +12,11 @@ import com.library.core.mapper.CategoryMapper;
 import com.library.kg.config.KnowledgeGraphProperties;
 import com.library.kg.dto.BookEntityList;
 import com.library.kg.dto.BookEntityList.Entity;
-import com.library.kg.dto.RelationList;
-import com.library.kg.dto.RelationList.Relation;
 import com.library.kg.repository.Neo4jRepository;
 import com.library.kg.service.GraphBuildService;
+import com.library.kg.service.TopicNetworkBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 /**
  * 知识图谱构建服务实现.
  * <p>
- * NER（实体识别）→ RE（关系抽取）→ MERGE（Neo4j 写入）→ 实体对齐。
+ * NER（实体识别）→ MERGE（Neo4j 写入）→ 实体对齐。
  * LLM（DeepSeek API）优先，不可用时降级为本地 HanLP 分词 + 规则。
  *
  * @author LibrarySystem Team
@@ -47,6 +47,14 @@ public class GraphBuildServiceImpl implements GraphBuildService {
     private final CategoryMapper categoryMapper;
     private final KnowledgeGraphProperties kgProperties;
     private final LlmService llmService;
+    /**
+     * 主题网络构建器（通过 ObjectProvider 延迟解析）.
+     * <p>
+     * TopicNetworkBuilderImpl 仅依赖 {@link Neo4jRepository} / {@link KnowledgeGraphProperties}，
+     * 当前不存在循环依赖；改用 {@link ObjectProvider} 延迟注入以保持解耦，并在未来若上游
+     * （如召回流水线）反向依赖 GraphBuildService 时避免循环依赖风险。
+     */
+    private final ObjectProvider<TopicNetworkBuilder> topicNetworkBuilderProvider;
 
     public GraphBuildServiceImpl(
             Neo4jRepository neo4jRepository,
@@ -54,13 +62,15 @@ public class GraphBuildServiceImpl implements GraphBuildService {
             BookMapper bookMapper,
             CategoryMapper categoryMapper,
             KnowledgeGraphProperties kgProperties,
-            @Autowired(required = false) LlmService llmService) {
+            @Autowired(required = false) LlmService llmService,
+            ObjectProvider<TopicNetworkBuilder> topicNetworkBuilderProvider) {
         this.neo4jRepository = neo4jRepository;
         this.nlpService = nlpService;
         this.bookMapper = bookMapper;
         this.categoryMapper = categoryMapper;
         this.kgProperties = kgProperties;
         this.llmService = llmService;
+        this.topicNetworkBuilderProvider = topicNetworkBuilderProvider;
     }
 
     @Override
@@ -79,11 +89,8 @@ public class GraphBuildServiceImpl implements GraphBuildService {
             // 1. 实体识别
             BookEntityList entities = recognizeEntities(book);
 
-            // 2. 关系抽取
-            List<Relation> relations = extractRelations(book, entities);
-
-            // 3. 写入 Neo4j
-            writeToNeo4j(book, entities, relations);
+            // 2. 写入 Neo4j
+            writeToNeo4j(book, entities);
 
             log.info("知识图谱构建成功: bookId={}, title={}", bookId, book.getTitle());
         } catch (BizException e) {
@@ -122,6 +129,17 @@ public class GraphBuildServiceImpl implements GraphBuildService {
             }
         }
         log.info("全量重建完成: 成功 {} 本", built);
+        // 全量重建后自动触发主题网络（RELATED_TO + PageRank）重建
+        try {
+            TopicNetworkBuilder builder = topicNetworkBuilderProvider.getIfAvailable();
+            if (builder != null) {
+                builder.buildTopicNetwork();
+            } else {
+                log.warn("TopicNetworkBuilder 不可用，跳过主题网络重建");
+            }
+        } catch (Exception e) {
+            log.warn("主题网络重建失败（不影响全量重建结果）: {}", e.getMessage());
+        }
         return built;
     }
 
@@ -225,80 +243,9 @@ public class GraphBuildServiceImpl implements GraphBuildService {
                 || (entities.getSubjects() != null && !entities.getSubjects().isEmpty());
     }
 
-    // ---- RE ----
-
-    private List<Relation> extractRelations(Book book, BookEntityList entities) {
-        if (llmService != null && hasAnyEntity(entities)) {
-            try {
-                String prompt = buildRePrompt(book, entities);
-                RelationList result = llmService.chat(prompt, RelationList.class);
-                if (result != null && result.getRelations() != null && !result.getRelations().isEmpty()) {
-                    return result.getRelations();
-                }
-            } catch (LlmUnavailableException e) {
-                log.warn("LLM RE 失败，降级共现统计: {}", e.getMessage());
-            } catch (Exception e) {
-                log.warn("LLM RE 异常，降级共现统计: {}", e.getMessage());
-            }
-        }
-        return fallbackRe(book, entities);
-    }
-
-    private List<Relation> fallbackRe(Book book, BookEntityList entities) {
-        List<Relation> relations = new ArrayList<>();
-        // 作者 → 书：AUTHORED_BY
-        if (entities.getAuthors() != null) {
-            for (Entity author : entities.getAuthors()) {
-                relations.add(new Relation(author.getName(), book.getTitle(), "AUTHORED_BY", 0.9));
-            }
-        }
-        // 关键词 → 书：HAS_KEYWORD
-        if (entities.getKeywords() != null) {
-            for (Entity kw : entities.getKeywords()) {
-                relations.add(new Relation(kw.getName(), book.getTitle(), "HAS_KEYWORD", kw.getConfidence() != null ? kw.getConfidence() : 0.7));
-            }
-        }
-        // 书 → 学科：BELONGS_TO
-        if (entities.getSubjects() != null) {
-            for (Entity subj : entities.getSubjects()) {
-                relations.add(new Relation(book.getTitle(), subj.getName(), "BELONGS_TO", subj.getConfidence() != null ? subj.getConfidence() : 0.9));
-            }
-        }
-        return relations;
-    }
-
-    private String buildRePrompt(Book book, BookEntityList entities) {
-        return """
-                你是一位知识图谱关系抽取专家。给定一本图书和已识别的实体列表，
-                请判断哪些实体与该图书之间存在关系。
-
-                ## 图书
-                - 书名：%s
-
-                ## 已识别实体
-                - 作者：%s
-                - 关键词：%s
-                - 学科：%s
-
-                ## 关系类型
-                - AUTHORED_BY：某作者撰写了本书
-                - BELONGS_TO：本书属于某学科
-                - HAS_KEYWORD：本书包含某关键词
-
-                ## 要求
-                请以 JSON 格式返回关系列表（relations，不要输出其他内容）：
-                每项含 source（实体名）、target（图书名或实体名）、type、weight（0-1）
-                例如：{"source":"周志明","target":"深入理解Java虚拟机","type":"AUTHORED_BY","weight":1.0}
-                """.formatted(
-                        nullToEmpty(book.getTitle()),
-                        entitiesListStr(entities.getAuthors()),
-                        entitiesListStr(entities.getKeywords()),
-                        entitiesListStr(entities.getSubjects()));
-    }
-
     // ---- Neo4j 写入 ----
 
-    private void writeToNeo4j(Book book, BookEntityList entities, List<Relation> relations) {
+    private void writeToNeo4j(Book book, BookEntityList entities) {
         // 写入 Book 节点
         Map<String, Object> bookMatch = Map.of("id", book.getId());
         Map<String, Object> bookSet = Map.of(
@@ -313,6 +260,62 @@ public class GraphBuildServiceImpl implements GraphBuildService {
         mergeEntities("Author", "AUTHORED_BY", entities.getAuthors(), book.getId());
         mergeEntities("Keyword", "HAS_KEYWORD", entities.getKeywords(), book.getId());
         mergeEntities("Subject", "BELONGS_TO", entities.getSubjects(), book.getId());
+
+        // 基于共享关键词构建 CITES 引用边（课设场景下的合理代理，详见 buildCitationsBySharedKeywords javadoc）
+        buildCitationsBySharedKeywords(book, entities);
+    }
+
+    /**
+     * 基于"共享关键词"启发式构建 CITES 引用边.
+     * <p>
+     * <b>业务正当性</b>：课设场景下没有真实的参考文献元数据（如 CrossRef DOI 引用列表），
+     * 因此采用领域内常见的代理方式——同主题图书之间存在隐含的知识传承关系（类似 co-citation analysis）。
+     * 策略为：找出与当前图书共享至少 2 个关键词的其他图书，按"新书 → 旧书"方向（createTime 较晚的指向较早的）
+     * 建立 CITES 边，权重为共享关键词数 / 当前图书关键词总数。
+     * <p>
+     * 限制每本书最多创建 5 条 CITES 边，防止图谱过密；MERGE 语义保证幂等。
+     * <p>
+     * 异常仅 log.warn 不抛出，保持主流程降级。
+     *
+     * @param book     当前正在构建图谱的图书（含 createTime 用于方向判定）
+     * @param entities NER 识别出的实体（用于计算 totalKeywords）
+     */
+    private void buildCitationsBySharedKeywords(Book book, BookEntityList entities) {
+        int totalKeywords = (entities.getKeywords() == null) ? 0 : entities.getKeywords().size();
+        if (totalKeywords == 0) {
+            return;
+        }
+        try {
+            // 共享关键词 ≥ 2 视为存在引用关系；weight = shared / totalKeywords 保证 > 0；每本最多 5 条。
+            // 设计权衡：原计划用 createTime 限定"新书 → 旧书"方向，但 Book 节点未持久化 createTime 属性
+            // （writeToNeo4j 仅写入 id/title/isbn/borrowCount/categoryId）；
+            // 课设场景下采用 MIN(id) 比较作为方向代理——较小 id 的图书通常更早入库，让较大 id 的指向它。
+            // 此外 Cypher 5.x 要求 WHERE-ORDER BY-LIMIT 必须依附同一 WITH/RETURN，
+            // 不能在 WHERE 之后裸接 ORDER BY，故用第二个 WITH 子句封装。
+            String cypher = """
+                    MATCH (newBook:Book {id: $bookId})-[:HAS_KEYWORD]->(k:Keyword)<-[:HAS_KEYWORD]-(oldBook:Book)
+                    WHERE oldBook.id < $bookId
+                    WITH oldBook, count(DISTINCT k) AS shared
+                    WHERE shared >= 2
+                    WITH oldBook, shared
+                    ORDER BY shared DESC
+                    LIMIT 5
+                    MATCH (src:Book {id: $bookId})
+                    MERGE (src)-[r:CITES]->(oldBook)
+                    SET r.weight = toFloat(shared) / $totalKeywords
+                    RETURN count(r) AS created
+                    """;
+            Map<String, Object> params = new HashMap<>();
+            params.put("bookId", book.getId());
+            params.put("totalKeywords", totalKeywords);
+            List<Long> result = neo4jRepository.query(cypher, params,
+                    rec -> rec.get("created").asLong());
+            long created = result.isEmpty() ? 0L : result.get(0);
+            log.info("CITES 引用边构建完成: bookId={}, 创建 {} 条 (共享关键词≥2, 共 {} 关键词)",
+                    book.getId(), created, totalKeywords);
+        } catch (Exception e) {
+            log.warn("CITES 引用边构建失败 bookId={}: {}", book.getId(), e.getMessage());
+        }
     }
 
     /**
@@ -361,12 +364,5 @@ public class GraphBuildServiceImpl implements GraphBuildService {
 
     private String nullToEmpty(String s) {
         return s != null ? s : "";
-    }
-
-    private String entitiesListStr(List<Entity> entities) {
-        if (entities == null || entities.isEmpty()) return "无";
-        return entities.stream()
-                .map(e -> e.getName() + (e.getConfidence() != null ? "(" + e.getConfidence() + ")" : ""))
-                .collect(Collectors.joining("、"));
     }
 }

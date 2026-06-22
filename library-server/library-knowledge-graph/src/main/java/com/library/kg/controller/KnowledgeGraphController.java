@@ -112,6 +112,14 @@ public class KnowledgeGraphController {
         return Result.success(count);
     }
 
+    @PostMapping("/admin/kg/build-topic-network")
+    @RequirePermission("kg:admin")
+    @Operation(summary = "构建主题关联网络", description = "计算关键词 Jaccard 共现 + PageRank 中心度")
+    public Result<Void> buildTopicNetwork() {
+        topicNetworkBuilder.buildTopicNetwork();
+        return Result.success();
+    }
+
     // ---- 内部 ----
 
     private TraceDirection parseDirection(String direction) {

@@ -25,7 +25,6 @@ import com.library.android.model.GraphNode;
 import com.library.android.model.KnowledgeGraphVO;
 import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
-import com.library.android.ui.theme.ThemeManager;
 import com.library.android.ui.theme.WebViewThemeHelper;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
@@ -55,10 +54,8 @@ public class KnowledgeGraphFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        ThemeManager.getInstance().setDarkMode(true);
-        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
-        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
-        binding = FragmentKnowledgeGraphBinding.inflate(themedInflater, container, false);
+        // WP-FE-FIX：KG 改为跟随应用 DayNight，不再强制深色
+        binding = FragmentKnowledgeGraphBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
@@ -113,6 +110,8 @@ public class KnowledgeGraphFragment extends Fragment {
     }
 
     private void setupSlider() {
+        // 主动设置初值，避免 OnChangeListener 未触发时数字为空
+        binding.textDepthValue.setText(String.valueOf(currentDepth));
         binding.sliderDepth.addOnChangeListener((slider, value, fromUser) -> {
             int depth = (int) value;
             binding.textDepthValue.setText(String.valueOf(depth));
@@ -143,7 +142,7 @@ public class KnowledgeGraphFragment extends Fragment {
         viewModel.getBookGraph().observe(getViewLifecycleOwner(), this::renderGraph);
 
         viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
-                binding.textLoading.setVisibility(state == com.library.android.ui.common.LoadingState.LOADING ? View.VISIBLE : View.GONE));
+                binding.layoutLoading.setVisibility(state == com.library.android.ui.common.LoadingState.LOADING ? View.VISIBLE : View.GONE));
 
         viewModel.getErrorEvent().observe(getViewLifecycleOwner(), throwable -> {
             if (throwable != null) {

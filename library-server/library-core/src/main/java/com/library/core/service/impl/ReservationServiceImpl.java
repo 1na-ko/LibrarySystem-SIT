@@ -82,7 +82,13 @@ public class ReservationServiceImpl implements ReservationService {
             log.error("Redis 预约锁获取异常: key={}, error={}", lockKey, e.getMessage());
             throw new BizException(ErrorCode.INTERNAL_ERROR);
         }
-        if (!Boolean.TRUE.equals(locked)) {
+        if (locked == null) {
+            // Redis 不可用——基础设施问题，不应误报为业务冲突
+            log.warn("预约锁获取失败：Redis 不可用，userId={}, bookId={}", userId, bookId);
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "系统繁忙，请稍后再试");
+        }
+        if (!locked) {
+            // 业务冲突：同用户已有进行中的预约或正在并发请求
             throw new BizException(ErrorCode.ALREADY_RESERVED);
         }
 

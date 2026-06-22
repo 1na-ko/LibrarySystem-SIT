@@ -59,12 +59,13 @@ public class CategoryTreeFragment extends BaseFragment {
             ((MainActivity) requireActivity()).setGlobalTitle(getString(R.string.page_title_category_tree));
         }
 
-        // WP-7：点击分类 → 跳搜索页按 categoryId 搜书
+        // WP-7：点击分类 → 启动独立 SearchActivity（与 HomeFragment.navigateToSearchByCategory 一致，
+        // 避免 MainActivity 全局 header + page_toolbar 双 TitleBar 嵌套）
         adapter = new CategoryTreeAdapter(category -> {
-            Bundle args = new Bundle();
-            args.putLong(NavArgKeys.CATEGORY_ID, category.getId());
-            args.putString(NavArgKeys.CATEGORY_NAME, category.getName() != null ? category.getName() : "");
-            androidx.navigation.Navigation.findNavController(view).navigate(R.id.searchFragment, args);
+            android.content.Intent intent = new android.content.Intent(requireContext(), SearchActivity.class);
+            intent.putExtra(NavArgKeys.CATEGORY_ID, category.getId());
+            intent.putExtra(NavArgKeys.CATEGORY_NAME, category.getName() != null ? category.getName() : "");
+            startActivity(intent);
         });
         binding.rvCategories.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvCategories.setAdapter(adapter);

@@ -1,9 +1,11 @@
 package com.library.core.repository;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
@@ -124,15 +126,16 @@ public class BookESRepository {
      * 叠加 {@code function_score} 对 borrowCount 做 field_value_factor 加权，
      * 既奖励热门书又避免完全被热度主导排序。
      *
-     * @param keyword    搜索关键词
-     * @param author     作者筛选（可选）
-     * @param categoryId 分类筛选（可选）
-     * @param sortBy     排序方式: relevance / borrowCount / pubDate
-     * @param pageNum    页码（1-based）
-     * @param pageSize   每页条数
+     * @param keyword     搜索关键词
+     * @param author      作者筛选（可选）
+     * @param categoryIds 分类筛选（可选，已由 Service 层递归展开为父分类 + 全部后代）；
+     *                    为 null 或空表示不按分类过滤
+     * @param sortBy      排序方式: relevance / borrowCount / pubDate
+     * @param pageNum     页码（1-based）
+     * @param pageSize    每页条数
      * @return 分页结果（records 为 ES 返回的 bookId 列表，需调用方转为 VO）
      */
-    public PageResult<Long> fullTextSearch(String keyword, String author, Long categoryId,
+    public PageResult<Long> fullTextSearch(String keyword, String author, List<Long> categoryIds,
                                            String sortBy, int pageNum, int pageSize) {
         if (!StringUtils.hasText(keyword)) {
             return PageResult.empty(pageNum, pageSize);
@@ -156,8 +159,16 @@ public class BookESRepository {
                                                 if (StringUtils.hasText(author)) {
                                                     b.filter(f -> f.term(t -> t.field("author.keyword").value(author)));
                                                 }
-                                                if (categoryId != null) {
-                                                    b.filter(f -> f.term(t -> t.field("categoryId").value(categoryId)));
+                                                if (categoryIds != null && !categoryIds.isEmpty()) {
+                                                    List<FieldValue> values = categoryIds.stream()
+                                                            .filter(id -> id != null)
+                                                            .map(FieldValue::of)
+                                                            .toList();
+                                                    if (!values.isEmpty()) {
+                                                        b.filter(f -> f.terms(t -> t
+                                                                .field("categoryId")
+                                                                .terms(TermsQueryField.of(tt -> tt.value(values)))));
+                                                    }
                                                 }
                                                 return b;
                                             })
@@ -206,12 +217,27 @@ public class BookESRepository {
     }
 
     /**
+     * 高级组合搜索（不带分类递归展开，保留供单元测试 / 调用方未注入 CategoryService 时使用）.
+     */
+    public PageResult<Long> advancedSearch(BookAdvancedSearchDTO dto) {
+        return advancedSearch(dto, null);
+    }
+
+    /**
      * 高级组合搜索.
      * <p>
      * 使用 {@code bool} query 组合多个 {@code must}/{@code filter} 子句，
      * 各字段按数值精确或文本模糊匹配。
+     * <p>
+     * 分类过滤优先级：当 {@code resolvedCategoryIds} 非空时使用 {@code terms}
+     * 多值过滤（覆盖 dto.categoryId 自身及其全部后代分类），用于支持点击父分类
+     * 也能命中挂在子分类下的图书；否则退回 {@code dto.categoryId} 单值 {@code term} 过滤。
+     *
+     * @param dto                 前端请求 DTO（categoryId 为单值，由前端契约保持不变）
+     * @param resolvedCategoryIds Service 层通过 {@code CategoryService.collectDescendantIds}
+     *                            递归展开后的分类 ID 列表（含 parentId 自身），可为 null
      */
-    public PageResult<Long> advancedSearch(BookAdvancedSearchDTO dto) {
+    public PageResult<Long> advancedSearch(BookAdvancedSearchDTO dto, List<Long> resolvedCategoryIds) {
         try {
             int pageNum = dto.getPageNum() != null ? dto.getPageNum() : 1;
             int pageSize = dto.getPageSize() != null ? dto.getPageSize() : 20;
@@ -248,7 +274,19 @@ public class BookESRepository {
                                     }));
                                 }
                                 if (dto.getCategoryId() != null) {
-                                    b.filter(f -> f.term(t -> t.field("categoryId").value(dto.getCategoryId())));
+                                    if (resolvedCategoryIds != null && !resolvedCategoryIds.isEmpty()) {
+                                        List<FieldValue> values = resolvedCategoryIds.stream()
+                                                .filter(id -> id != null)
+                                                .map(FieldValue::of)
+                                                .toList();
+                                        if (!values.isEmpty()) {
+                                            b.filter(f -> f.terms(t -> t
+                                                    .field("categoryId")
+                                                    .terms(TermsQueryField.of(tt -> tt.value(values)))));
+                                        }
+                                    } else {
+                                        b.filter(f -> f.term(t -> t.field("categoryId").value(dto.getCategoryId())));
+                                    }
                                 }
                                 if (Boolean.TRUE.equals(dto.getOnlyAvailable())) {
                                     b.filter(f -> f.range(r -> r.field("availCopies").gt(JsonData.of(0))));

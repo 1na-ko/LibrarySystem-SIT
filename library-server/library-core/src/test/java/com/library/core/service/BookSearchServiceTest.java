@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +48,9 @@ class BookSearchServiceTest {
 
     @Mock
     private BookService bookService;
+
+    @Mock
+    private CategoryService categoryService;
 
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
@@ -141,6 +145,28 @@ class BookSearchServiceTest {
             assertThat(result.getRecords()).isEmpty();
             assertThat(result.getTotal()).isEqualTo(0);
         }
+
+        @Test
+        @DisplayName("按父分类全文搜索时应递归展开为全部后代分类 ID 传给 ES")
+        @SuppressWarnings("unchecked")
+        void searchByParentCategoryShouldExpandToDescendants() {
+            BookSearchDTO dto = BookSearchDTO.builder()
+                    .keyword("Java").categoryId(2L).pageNum(1).pageSize(20).build();
+            PageResult<Long> esResult = PageResult.of(List.of(1L), 1, 1, 20);
+
+            when(valueOperations.get(anyString())).thenReturn(null);
+            when(categoryService.collectDescendantIds(2L))
+                    .thenReturn(List.of(2L, 201L, 202L, 203L));
+            ArgumentCaptor<List<Long>> idsCaptor = ArgumentCaptor.forClass(List.class);
+            when(bookESRepository.fullTextSearch(eq("Java"), eq(null), idsCaptor.capture(),
+                    eq(null), eq(1), eq(20))).thenReturn(esResult);
+            when(bookService.listByIds(List.of(1L))).thenReturn(List.of(sampleBook));
+
+            bookSearchService.search(dto);
+
+            assertThat(idsCaptor.getValue()).containsExactly(2L, 201L, 202L, 203L);
+            verify(categoryService).collectDescendantIds(2L);
+        }
     }
 
     @Nested
@@ -154,12 +180,32 @@ class BookSearchServiceTest {
                     .title("Java").onlyAvailable(true).pageNum(1).pageSize(20).build();
             PageResult<Long> esResult = PageResult.of(List.of(1L), 1, 1, 20);
 
-            when(bookESRepository.advancedSearch(dto)).thenReturn(esResult);
+            when(bookESRepository.advancedSearch(eq(dto), eq(null))).thenReturn(esResult);
             when(bookService.listByIds(List.of(1L))).thenReturn(List.of(sampleBook));
 
             PageResult<BookSimpleVO> result = bookSearchService.advancedSearch(dto);
 
             assertThat(result.getRecords()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("按父分类高级搜索时应递归展开为全部后代分类 ID")
+        @SuppressWarnings("unchecked")
+        void shouldExpandParentCategoryToDescendantsForAdvancedSearch() {
+            BookAdvancedSearchDTO dto = BookAdvancedSearchDTO.builder()
+                    .categoryId(2L).pageNum(1).pageSize(20).build();
+            PageResult<Long> esResult = PageResult.of(List.of(1L), 1, 1, 20);
+
+            when(categoryService.collectDescendantIds(2L))
+                    .thenReturn(List.of(2L, 201L, 202L, 203L));
+            ArgumentCaptor<List<Long>> idsCaptor = ArgumentCaptor.forClass(List.class);
+            when(bookESRepository.advancedSearch(eq(dto), idsCaptor.capture())).thenReturn(esResult);
+            when(bookService.listByIds(List.of(1L))).thenReturn(List.of(sampleBook));
+
+            bookSearchService.advancedSearch(dto);
+
+            assertThat(idsCaptor.getValue()).containsExactly(2L, 201L, 202L, 203L);
+            verify(categoryService).collectDescendantIds(2L);
         }
     }
 

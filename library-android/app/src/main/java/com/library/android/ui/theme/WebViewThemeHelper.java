@@ -25,13 +25,11 @@ public final class WebViewThemeHelper {
     /**
      * 判断当前是否应使用暗色主题渲染 WebView 内容。
      *
-     * <p>优先使用 {@link ThemeManager#isDarkMode()}（知识图谱/采编/管理模块强制深色）；
-     * 若未设置，则回退到系统 DayNight 配置。
+     * <p>WP-FE-FIX：直接读取系统/应用 DayNight 配置（uiMode），
+     * 让 KG WebView 与应用主题一致，不再依赖 {@link ThemeManager} 的强制深色状态
+     * （后者可能因采编/管理页设置而残留 true）。
      */
     public static boolean isDarkMode(@NonNull Context context) {
-        if (ThemeManager.getInstance().isDarkMode()) {
-            return true;
-        }
         int nightMode = context.getResources().getConfiguration().uiMode
                 & Configuration.UI_MODE_NIGHT_MASK;
         return nightMode == Configuration.UI_MODE_NIGHT_YES;

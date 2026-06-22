@@ -39,11 +39,11 @@ public class ThemeManager {
 
     static {
         Set<Integer> set = new ArraySet<>();
-        // 知识图谱
-        set.add(R.id.knowledgeGraphFragment);
-        set.add(R.id.literatureTraceFragment);
-        set.add(R.id.subjectNetworkFragment);
-        set.add(R.id.entitySearchFragment);
+        // WP-FE-FIX：知识图谱 4 个 Fragment 已改为跟随应用 DayNight，不再强制深色
+        // set.add(R.id.knowledgeGraphFragment);
+        // set.add(R.id.literatureTraceFragment);
+        // set.add(R.id.subjectNetworkFragment);
+        // set.add(R.id.entitySearchFragment);
         // 智能采编
         set.add(R.id.acquisitionFragment);
         set.add(R.id.purchasePredictFragment);

@@ -132,6 +132,17 @@ public class Neo4jRepository {
         }
     }
 
+    /** 标识符（属性名）正则白名单：仅字母数字下划线，且不以数字开头，防 Cypher 注入 */
+    private static final java.util.regex.Pattern IDENTIFIER_PATTERN =
+            java.util.regex.Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+
+    /** 校验属性名/标识符是否合法（仅字母数字下划线），防 Cypher 注入 */
+    private void requireValidIdentifier(String identifier) {
+        if (identifier == null || !IDENTIFIER_PATTERN.matcher(identifier).matches()) {
+            throw new IllegalArgumentException("非法的属性名（仅允许字母数字下划线）: " + identifier);
+        }
+    }
+
     // ---- 节点与关系写入 ----
 
     /**
@@ -196,19 +207,25 @@ public class Neo4jRepository {
      * 批量 MERGE 节点（同 label，单一 key 属性匹配）.
      * <p>
      * 将 for 循环中逐条 {@code saveNode(label, {key: name}, {key: name})} 的 N+1 模式
-     * 替换为单次 {@code UNWIND $rows AS row MERGE (n:<label> {<key>: row.name})}。
+     * 替换为单次 {@code UNWIND $rows AS row MERGE (n:<label> {<key>: row.<key>})}。
+     * <p>
+     * <b>注意</b>：{@code key} 直接拼接进 Cypher，调用方必须传入硬编码白名单值
+     * （仅字母数字下划线），否则方法将抛出 {@link IllegalArgumentException}，防 Cypher 注入。
      *
-     * @param label     节点标签
-     * @param key       匹配属性名（如 "name"）
+     * @param label     节点标签（白名单内）
+     * @param key       匹配属性名（如 "name" / "id"），必须仅含字母数字下划线
      * @param keyValues 属性值列表
      */
     public void batchMergeNodes(String label, String key, List<String> keyValues) {
         requireValidLabel(label);
+        requireValidIdentifier(key);
         if (keyValues == null || keyValues.isEmpty()) return;
 
+        // row 中以 key 同名属性承载值，确保 Cypher 引用 row.<key> 时能取到对应值
+        final String keyParam = key;
         Map<String, Object> params = Map.of("rows",
-                keyValues.stream().map(v -> Map.of("name", (Object) v)).toList());
-        String cypher = "UNWIND $rows AS row MERGE (n:" + label + " {" + key + ": row.name})";
+                keyValues.stream().map(v -> Map.<String, Object>of(keyParam, v)).toList());
+        String cypher = "UNWIND $rows AS row MERGE (n:" + label + " {" + key + ": row." + key + "})";
         execute(cypher, params);
     }
 

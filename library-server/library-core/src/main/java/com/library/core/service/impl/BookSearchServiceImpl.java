@@ -6,6 +6,7 @@ import com.library.core.dto.BookSearchDTO;
 import com.library.core.repository.BookESRepository;
 import com.library.core.service.BookSearchService;
 import com.library.core.service.BookService;
+import com.library.core.service.CategoryService;
 import com.library.core.vo.BookSimpleVO;
 import com.library.core.vo.SuggestVO;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ public class BookSearchServiceImpl implements BookSearchService {
 
     private final BookESRepository bookESRepository;
     private final BookService bookService;
+    private final CategoryService categoryService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final long CACHE_TTL_MINUTES = 30;
@@ -69,7 +71,8 @@ public class BookSearchServiceImpl implements BookSearchService {
 
     @Override
     public PageResult<BookSimpleVO> advancedSearch(BookAdvancedSearchDTO dto) {
-        PageResult<Long> idResult = bookESRepository.advancedSearch(dto);
+        List<Long> resolvedCategoryIds = resolveCategoryIds(dto.getCategoryId());
+        PageResult<Long> idResult = bookESRepository.advancedSearch(dto, resolvedCategoryIds);
         return convertToBookVO(idResult);
     }
 
@@ -97,10 +100,25 @@ public class BookSearchServiceImpl implements BookSearchService {
      * 执行 ES 搜索并转换为 VO.
      */
     private PageResult<BookSimpleVO> doSearch(BookSearchDTO dto) {
+        List<Long> resolvedCategoryIds = resolveCategoryIds(dto.getCategoryId());
         PageResult<Long> idResult = bookESRepository.fullTextSearch(
-                dto.getKeyword(), dto.getAuthor(), dto.getCategoryId(),
+                dto.getKeyword(), dto.getAuthor(), resolvedCategoryIds,
                 dto.getSortBy(), dto.getPageNum(), dto.getPageSize());
         return convertToBookVO(idResult);
+    }
+
+    /**
+     * 将单个 categoryId 递归展开为 [parentId, 全部后代分类 ID]，用于 ES {@code terms} 多值过滤.
+     * <p>
+     * 目的是支持点击父分类（如"文学" id=2）也能命中挂在子分类（201/202/203）下的图书。
+     * categoryId 为 null 时返回 null（Repository 视为不过滤）。
+     */
+    private List<Long> resolveCategoryIds(Long categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+        List<Long> ids = categoryService.collectDescendantIds(categoryId);
+        return (ids == null || ids.isEmpty()) ? List.of(categoryId) : ids;
     }
 
     /**

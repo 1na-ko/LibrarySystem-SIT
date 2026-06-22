@@ -12,12 +12,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,5 +71,41 @@ class OverdueCheckJobTest {
         overdueCheckJob.checkOverdue();
 
         verify(batchProcessor, never()).processBatch(anyList(), any(LocalDate.class));
+    }
+
+    @Test
+    @DisplayName("批处理全部失败时游标应推进，避免同批反复扫描")
+    void shouldAdvanceCursorEvenWhenBatchProcessingFails() {
+        // 第一批 id=1-5，第二批 id=6-10，第三批返回空终止循环
+        List<BorrowRecord> firstBatch = buildBatch(1L, 5L);
+        List<BorrowRecord> secondBatch = buildBatch(6L, 10L);
+
+        when(borrowRecordMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(firstBatch)
+                .thenReturn(secondBatch)
+                .thenReturn(List.of());
+        // 模拟批处理全部失败（状态未变，返回 0）
+        when(batchProcessor.processBatch(anyList(), any(LocalDate.class))).thenReturn(0);
+
+        overdueCheckJob.checkOverdue();
+
+        // 验证：selectList 仅被调用 3 次（而非 maxIterations=1000 次兜底），
+        // 说明游标推进生效，避免了同批被无限重复扫描。
+        verify(borrowRecordMapper, times(3)).selectList(any(LambdaQueryWrapper.class));
+        verify(batchProcessor, times(2)).processBatch(anyList(), any(LocalDate.class));
+    }
+
+    private List<BorrowRecord> buildBatch(long startIdInclusive, long endIdInclusive) {
+        List<BorrowRecord> batch = new ArrayList<>();
+        for (long id = startIdInclusive; id <= endIdInclusive; id++) {
+            BorrowRecord r = new BorrowRecord();
+            r.setId(id);
+            r.setUserId(1L);
+            r.setBookId(10L);
+            r.setDueDate(LocalDate.now().minusDays(5));
+            r.setStatus(BorrowStatusEnum.BORROWED);
+            batch.add(r);
+        }
+        return batch;
     }
 }

@@ -101,15 +101,30 @@
             android:clipToPadding="false"
             android:padding="@dimen/space_sm" />
 
-        <TextView
-            android:id="@+id/textLoading"
+        <LinearLayout
+            android:id="@+id/layoutLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="@string/loading_text"
-            android:textColor="?attr/colorOutline"
-            android:textSize="@dimen/text_size_body_large"
-            android:visibility="gone" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="visible">
+
+            <ProgressBar
+                style="?android:attr/progressBarStyle"
+                android:layout_width="32dp"
+                android:layout_height="32dp" />
+
+            <TextView
+                android:id="@+id/textLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/loading_text"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="@dimen/text_size_body_large" />
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/layoutEmpty"

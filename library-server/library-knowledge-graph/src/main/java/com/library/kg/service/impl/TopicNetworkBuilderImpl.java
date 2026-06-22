@@ -76,10 +76,12 @@ public class TopicNetworkBuilderImpl implements TopicNetworkBuilder {
     @Override
     public KnowledgeGraphVO buildSubjectNetwork(String subjectName, int topK) {
         // 查询该 Subject 下的 Top-K 关键词（按 PageRank 降序）
+        // 关键：MATCH 路径 (s)<-[:BELONGS_TO]-(b:Book)-[:HAS_KEYWORD]->(k) 在多本图书共享同一关键词时
+        // 会产生 N 条路径，必须用 DISTINCT 去重，否则前端会看到同一关键词重复出现 N 次。
         String cypher = """
                 MATCH (s:Subject {name: $subjectName})<-[:BELONGS_TO]-(:Book)-[:HAS_KEYWORD]->(k:Keyword)
                 WHERE k.pagerank IS NOT NULL
-                RETURN id(k) AS id, k.name AS label, k.pagerank AS pagerank
+                RETURN DISTINCT id(k) AS id, k.name AS label, k.pagerank AS pagerank
                 ORDER BY k.pagerank DESC LIMIT $topK
                 """;
         List<GraphNode> nodes = neo4jRepository.query(cypher,

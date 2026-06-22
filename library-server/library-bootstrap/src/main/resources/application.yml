@@ -118,7 +118,8 @@ mybatis-plus:
 jwt:
   # ⚠️ 开发环境默认密钥仅用于本地调试——严禁用于生产！
   # 生产环境必须通过 JWT_SECRET 环境变量注入强随机密钥（≥256-bit）
-  secret: ${JWT_SECRET:library-system-dev-jwt-secret-replace-in-production-2026}
+  # 生产必须通过环境变量 JWT_SECRET 注入；占位符长度 ≥32 字节满足启动校验，但仅供开发；启动时会发出警告日志
+  secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION_AT_LEAST_32_BYTES_LONG}
   access-token-expiration: 7200000      # 2 小时
   refresh-token-expiration: 604800000   # 7 天
 
@@ -211,10 +212,10 @@ kg:
 acquisition:
   prediction-min-months: 6
   prediction-history-months: 12
-  duplicate-title-threshold: 0.8
+  duplicate-title-threshold: 0.6        # 同步自 Java 默认值（WP-0 修复后阈值）
   duplicate-author-title-threshold: 0.7
   gap-core-book-top-n: 50
-  gap-heat-threshold: 0.7
+  gap-heat-threshold: 0.4               # 同步自 Java 默认值（WP-0 修复后阈值）
   gap-coverage-threshold: 0.8
   negotiation-history-months: 24
   season-exam-factor: 1.3

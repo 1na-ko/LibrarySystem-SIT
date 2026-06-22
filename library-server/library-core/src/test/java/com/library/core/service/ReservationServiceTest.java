@@ -2,6 +2,7 @@ package com.library.core.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.library.common.exception.BizException;
+import com.library.common.exception.ErrorCode;
 import com.library.core.entity.Book;
 import com.library.core.entity.Reservation;
 import com.library.core.enums.ReservationStatusEnum;
@@ -125,6 +126,34 @@ class ReservationServiceTest {
                     .isInstanceOf(BizException.class)
                     .hasMessageContaining("已预约");
         }
+
+        @Test
+        @DisplayName("setIfAbsent 返回 null（Redis 不可用）时应抛出 INTERNAL_ERROR")
+        void reserve_whenRedisReturnsNull_shouldThrowInternalError() {
+            when(bookMapper.selectById(10L)).thenReturn(book);
+            // 分布式锁：Redis 不可用降级返回 null（区别于 false 的业务冲突语义）
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class))).thenReturn(null);
+
+            assertThatThrownBy(() -> reservationService.reserve(1L, 10L))
+                    .isInstanceOf(BizException.class)
+                    .extracting(e -> ((BizException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INTERNAL_ERROR);
+        }
+
+        @Test
+        @DisplayName("setIfAbsent 返回 false（锁已被持有）时应抛出 ALREADY_RESERVED")
+        void reserve_whenLockAlreadyHeld_shouldThrowAlreadyReserved() {
+            when(bookMapper.selectById(10L)).thenReturn(book);
+            // 分布式锁：key 已存在，setIfAbsent 返回 false（业务冲突）
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class))).thenReturn(false);
+
+            assertThatThrownBy(() -> reservationService.reserve(1L, 10L))
+                    .isInstanceOf(BizException.class)
+                    .extracting(e -> ((BizException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.ALREADY_RESERVED);
+        }
     }
 
     @Nested
@@ -166,9 +195,23 @@ class ReservationServiceTest {
         }
 
         @Test
-        @DisplayName("已通知状态的预约取消应抛出 CONFLICT")
-        void shouldThrowConflictWhenNotWaiting() {
+        @DisplayName("已通知状态（NOTIFIED）的预约允许用户主动取消（与实现一致：48h 通知窗口内用户可放弃）")
+        void shouldAllowCancelWhenNotified() {
             reservation.setStatus(ReservationStatusEnum.NOTIFIED);
+            when(reservationMapper.selectById(1L)).thenReturn(reservation);
+            when(reservationMapper.updateById(any(Reservation.class))).thenReturn(1);
+            when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
+            when(zSetOperations.remove(anyString(), anyString())).thenReturn(1L);
+
+            reservationService.cancel(1L, 1L);
+
+            verify(reservationMapper).updateById(any(Reservation.class));
+        }
+
+        @Test
+        @DisplayName("终态预约（RESERVED/COMPLETED/EXPIRED/CANCELLED）取消应抛出 CONFLICT")
+        void shouldThrowConflictWhenTerminalState() {
+            reservation.setStatus(ReservationStatusEnum.COMPLETED);
             when(reservationMapper.selectById(1L)).thenReturn(reservation);
 
             assertThatThrownBy(() -> reservationService.cancel(1L, 1L))

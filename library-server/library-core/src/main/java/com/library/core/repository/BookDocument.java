@@ -1,5 +1,7 @@
 package com.library.core.repository;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +23,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BookDocument {
 
     /** 图书 ID（与 MySQL 主键一致） */
@@ -62,7 +65,16 @@ public class BookDocument {
     /** 馆藏位置 */
     private String location;
 
-    /** 出版日期 */
+    /**
+     * 出版日期.
+     * <p>
+     * 必须显式声明 {@code @JsonFormat}，原因：
+     * ES Java Client 内部的 JacksonJsonpMapper 在某些场景下不一定使用 Spring 注入的 ObjectMapper
+     * （取决于 ES 客户端版本与 JsonpMapper 的 builder 配置）。
+     * 不加注解时默认 ObjectMapper 无法把 ES 返回的 "2019-12-01" 字符串反序列化为 LocalDate，
+     * 抛 "Failed to decode response" 导致搜索全部返回空。
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate pubDate;
 
     /** Completion Suggester 输入（书名 + 作者 + 关键词拆分） */

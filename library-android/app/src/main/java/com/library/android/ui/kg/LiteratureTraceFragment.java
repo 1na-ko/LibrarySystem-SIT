@@ -25,7 +25,6 @@ import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.common.NavArgKeys;
 import com.library.android.ui.main.MainActivity;
-import com.library.android.ui.theme.ThemeManager;
 import com.library.android.ui.theme.WebViewThemeHelper;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
@@ -55,10 +54,8 @@ public class LiteratureTraceFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        ThemeManager.getInstance().setDarkMode(true);
-        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
-        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
-        binding = FragmentLiteratureTraceBinding.inflate(themedInflater, container, false);
+        // WP-FE-FIX：KG 改为跟随应用 DayNight，不再强制深色
+        binding = FragmentLiteratureTraceBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
@@ -141,7 +138,7 @@ public class LiteratureTraceFragment extends BaseFragment {
         viewModel.getTraceGraph().observe(getViewLifecycleOwner(), this::renderTrace);
         // WP-6 P0：原代码把 LiveData<LoadingState> 当 Boolean 用，Boolean.TRUE.equals(LoadingState.LOADING) 永远 false
         viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
-                binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
+                binding.layoutLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
         // WP-6：错误事件订阅（原版无 observeError，加载失败页面空白用户无感知）
         observeError(viewModel.getErrorEvent());
     }

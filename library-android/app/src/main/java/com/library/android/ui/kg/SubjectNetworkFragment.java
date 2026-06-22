@@ -23,7 +23,6 @@ import com.library.android.model.KnowledgeGraphVO;
 import com.library.android.ui.common.BaseFragment;
 import com.library.android.ui.common.LoadingState;
 import com.library.android.ui.main.MainActivity;
-import com.library.android.ui.theme.ThemeManager;
 import com.library.android.ui.theme.WebViewThemeHelper;
 import com.library.android.viewmodel.KnowledgeGraphViewModel;
 
@@ -50,10 +49,8 @@ public class SubjectNetworkFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        ThemeManager.getInstance().setDarkMode(true);
-        android.content.Context themedContext = ThemeManager.getInstance().wrapContext(requireContext());
-        android.view.LayoutInflater themedInflater = inflater.cloneInContext(themedContext);
-        binding = FragmentSubjectNetworkBinding.inflate(themedInflater, container, false);
+        // WP-FE-FIX：KG 改为跟随应用 DayNight，不再强制深色
+        binding = FragmentSubjectNetworkBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
@@ -112,7 +109,7 @@ public class SubjectNetworkFragment extends BaseFragment {
         viewModel.getSubjectNetwork().observe(getViewLifecycleOwner(), this::renderNetwork);
         // WP-6 P0：Loading 类型修复（原 Boolean.TRUE.equals 永远 false 致指示器永不显示）
         viewModel.getLoadingState().observe(getViewLifecycleOwner(), state ->
-                binding.textLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
+                binding.layoutLoading.setVisibility(state == LoadingState.LOADING ? View.VISIBLE : View.GONE));
         observeError(viewModel.getErrorEvent());
     }
 
