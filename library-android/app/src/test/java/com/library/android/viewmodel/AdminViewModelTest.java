@@ -145,4 +145,21 @@ public class AdminViewModelTest {
 
         assertNotNull(viewModel.getErrorEvent().getValue());
     }
+
+    @Test
+    public void loadMoreUsers_shouldAppendToList() {
+        UserManageVO u1 = mock(UserManageVO.class);
+        when(adminRepo.listUsers(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(Single.just(ResultFactory.success(
+                        PageResults.of(Collections.singletonList(u1), 1, 2))));
+        viewModel.loadUsers(null, null, null);
+        assertEquals(1, viewModel.getUserList().getValue().size());
+
+        UserManageVO u2 = mock(UserManageVO.class);
+        when(adminRepo.listUsers(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(Single.just(ResultFactory.success(
+                        PageResults.of(Collections.singletonList(u2), 2, 2))));
+        viewModel.loadMoreUsers();
+        assertEquals(2, viewModel.getUserList().getValue().size());
+    }
 }

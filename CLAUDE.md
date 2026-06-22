@@ -3,7 +3,7 @@
 > **项目**: 图书馆智能管理系统 (LibrarySystem-SIT) — [README](README.md)
 > **状态**: 阶段 0-9 ✅ | 阶段 10 ✅ | 阶段 11 ✅ | 阶段 12 ✅ | 阶段 13 ✅ | **阶段 14 ✅（系统化重构：后端采编修复+部署 + 前端 12 WP 全部通过 + 真机走查修复）**
 > **生产环境**: `http://101.132.24.73:8080/api/v1`（Ubuntu 24.04 / 4C7G / docker-compose + systemd）
-> **最后更新**: 2026-06-19
+> **最后更新**: 2026-06-22
 
 ---
 
@@ -506,8 +506,23 @@ open http://localhost:8080/api/v1/swagger-ui.html
 - ✅ **取消反馈** — 失败时显示 Snackbar `cancel_failed` 替代静默吞没
 
 ### 待实现
-- 集成测试运行：受 Docker Desktop 29 兼容问题阻塞（详见 `docs/implementation/阶段10完成记录.md` §5）
-- Repository MockWebServer 集成测试（需先解决 Docker 问题）
+- 集成测试运行：Docker Desktop 29 兼容问题已通过 `make itest-tcp` 解决，35 项集成测试完成（阶段 10 后第二轮）
+- ✅ ~~Repository MockWebServer 集成测试~~ — 已完成：8 个 Repository 全部覆盖（35 测试类 / 178 tests）
+- Android 真机 ANP0220602001126 回归验证（建议整体走查后执行）
+
+### 前端质量审计修复（2026-06-22）
+
+> 对 2026-06-19 审计报告的 90 个问题（FQA-001~086 + INT-H01~04）进行全面修复与验证。
+
+- **Critical（P0）3 项全部消除**：TokenManager 三级降级 + 明文 HTTP 半改造 + StringFormat 匹配
+- **High（P1）23 项全部修复**：MVVM 重构 8 页面 + 品牌色统一 + ThemeManager 深色逻辑 + WebView 暗色适配 + 密码可见性图标修复等
+- **Medium（P2）40/42 已修复**：设计 Token 统一 84.8% + 暗色重构 + contentDescription + 品牌打磨 + 图表主题适配 + Profile/setGlobalTitle 硬编码中文消除 + Bundle key 常量化 + Utf8Fix Release 日志修复
+- **Low（P3）18/22 已修复**：targetSdk=35 + 反射移除 + 热门标签 XML 资源化 + chip stroke width Token 化
+- **测试增强**：151 → 178 tests（新增 BaseViewModel/SessionManager/SingleLiveEvent 测试 + ViewModel/Repository 边界条件覆盖）
+- **遗留**：P3-01 未使用资源（待技术债窗口）、真机回归验证
+- **编译**：`./gradlew assembleDebug` BUILD SUCCESSFUL ✅
+- **测试**：`./gradlew testDebugUnitTest` 178/178 通过 ✅
+- **Lint**：0 Error ✅
 
 ### 编码约定
 - **Commit**: [Conventional Commits](https://www.conventionalcommits.org/)，中文 subject

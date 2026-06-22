@@ -123,4 +123,20 @@ public class BookDetailViewModelTest {
 
         verify(reservationRepo, times(1)).reserveBook(1L);
     }
+
+    @Test
+    public void loadBookDetail_relatedBooksFailure_shouldStillExposeDetail() {
+        BookDetailVO detail = mock(BookDetailVO.class);
+        when(bookRepo.getBookDetail(anyLong()))
+                .thenReturn(Single.just(ResultFactory.success(detail)));
+        // 相关推荐加载失败
+        when(bookRepo.getRelatedBooks(anyLong(), anyInt()))
+                .thenReturn(Single.error(new java.io.IOException("offline")));
+
+        viewModel.loadBookDetail(1L);
+
+        // 即使相关推荐失败，详情仍应正确返回
+        assertNotNull(viewModel.getBookDetail().getValue());
+        assertEquals(LoadingState.CONTENT, viewModel.getLoadingState().getValue());
+    }
 }

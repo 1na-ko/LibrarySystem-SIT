@@ -104,7 +104,7 @@
 | **搜索** | Elasticsearch 8.11 + IK 分词器 |
 | **图库** | Neo4j 5.17 + APOC + GDS（PageRank / Dijkstra） |
 | **缓存** | Redis 7.2（缓存 / 分布式锁 / ZSET 排队 / 令牌桶限流） |
-| **消息** | RabbitMQ 3.12（异步事件，待引入 Starter） |
+| **消息** | RabbitMQ 3.12（事件总线 / 异步消息） |
 | **迁移** | Flyway 9.22（V1 基线 10 表 + V2 种子数据 + V3 索引补充） |
 | **文档** | SpringDoc OpenAPI 2.6 |
 | **NLP** | HanLP 1.8 portable（分词 / 关键词提取） |

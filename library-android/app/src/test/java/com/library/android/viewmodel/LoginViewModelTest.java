@@ -130,4 +130,22 @@ public class LoginViewModelTest {
         assertNotNull(err);
         assertTrue(err.getMessage().contains("网络错误"));
     }
+
+    @Test
+    public void login_nullResponseData_shouldHandleGracefully() {
+        LoginResponse resp = mock(LoginResponse.class);
+        when(resp.getAccessToken()).thenReturn(null);
+        when(resp.getRefreshToken()).thenReturn("rt");
+        when(resp.getUser()).thenReturn(null);
+
+        when(repository.login(anyString(), anyString()))
+                .thenReturn(Single.just(ResultFactory.success(resp)));
+
+        viewModel.login("u", "p");
+        // 不应崩溃，且 tokenManager.saveTokens 被调用（null accessToken 也是合法参数）
+        verify(tokenManager).saveTokens(null, "rt");
+        assertTrue(Boolean.TRUE.equals(viewModel.isLoginSuccess().getValue()));
+    }
+
+
 }

@@ -8,6 +8,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
@@ -141,5 +143,18 @@ public class BorrowViewModelTest {
 
         Boolean result = viewModel.returnBook(1L).getValue();
         assertEquals(Boolean.TRUE, result);
+    }
+
+    @Test
+    public void loadMore_whenAtLastPage_shouldNotCallRepository() {
+        // 单页就满额，loadMore 应该短路
+        when(repository.getMyBorrows(any(), anyInt(), anyInt()))
+                .thenReturn(Single.just(ResultFactory.success(
+                        PageResults.of(Collections.emptyList(), 1, 1))));
+        viewModel.loadBorrows(null);
+        verify(repository, times(1)).getMyBorrows(any(), anyInt(), anyInt());
+
+        viewModel.loadMore();  // totalPages=1, currentPage=1, 不应再调 repo
+        verify(repository, times(1)).getMyBorrows(any(), anyInt(), anyInt());
     }
 }

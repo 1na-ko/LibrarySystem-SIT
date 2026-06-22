@@ -85,4 +85,18 @@ public class KnowledgeGraphRepositoryTest extends AbstractRepositoryTest {
         obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
         obs.assertNoErrors();
     }
+
+    @Test
+    public void searchEntities_empty_shouldReturnEmptyList() {
+        enqueueJson(200, successData("{\"nodes\":[],\"edges\":[]}"));
+
+        TestObserver<Result<List<EntitySearchResult>>> obs =
+                repository.searchEntities("nonexistent", "BOOK").test();
+        obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
+        obs.assertValue(r -> {
+            assertTrue(r.isSuccess());
+            assertTrue(r.getData().isEmpty());
+            return true;
+        });
+    }
 }

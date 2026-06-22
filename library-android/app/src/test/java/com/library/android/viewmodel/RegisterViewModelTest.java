@@ -76,4 +76,13 @@ public class RegisterViewModelTest {
         assertNotNull(t);
         assertTrue(t.getMessage().contains("网络错误"));
     }
+
+
+
+    @Test
+    public void register_allEmptyFields_shouldPostError() {
+        viewModel.register("", "", "", "", "");
+        assertNotNull(viewModel.getErrorEvent().getValue());
+        verify(repository, never()).register(anyString(), anyString(), anyString(), anyString(), anyString());
+    }
 }

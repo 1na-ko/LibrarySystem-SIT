@@ -639,7 +639,7 @@ ALTER DATABASE library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ## 8. 项目结构速览
 
-> **项目状态**（2026-06-16）：阶段 0–8 全部完成 ✅ —— 后端 Maven **7 模块全部已实现**，8 模块 BUILD SUCCESS，全量 347 项测试全绿。Flyway V1–V6 迁移脚本就位。阶段 9–11 待实施。Android 前端由前端组搭建中。
+> **项目状态**（2026-06-22）：阶段 0–14 全部完成 ✅ —— 后端 Maven **7 模块全部已实现**，8 模块 BUILD SUCCESS，全量 355+ 项测试全绿。Flyway V1–V7 迁移脚本就位。Android 前端已完成 35 测试类 / 178 tests 单元测试，质量审计 90 问题 94% 修复完成。
 >
 > 以下目录树为**当前已实现结构**，✅ 表示已落地。
 
@@ -798,7 +798,7 @@ cd library-android
 ./gradlew assembleDebug
 
 # 运行单元测试
-./gradlew test
+./gradlew testDebugUnitTest
 
 # 运行 lint 检查
 ./gradlew lint

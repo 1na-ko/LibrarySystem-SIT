@@ -142,4 +142,16 @@ public class ProfileViewModelTest {
         // 后端不可达也应触发完成事件（语义：本地仍要清退）
         assertNotNull(viewModel.getLogoutCompleted().getValue());
     }
+
+    @Test
+    public void updateProfile_nullEmail_shouldStillCallRepo() {
+        when(userRepo.updateMyProfile(anyMap()))
+                .thenReturn(Single.just(ResultFactory.success(null)));
+        when(userRepo.getMyProfile())
+                .thenReturn(Single.just(ResultFactory.success(mock(UserProfile.class))));
+
+        viewModel.updateProfile(null, "13800138000");
+
+        verify(userRepo, times(1)).updateMyProfile(anyMap());
+    }
 }

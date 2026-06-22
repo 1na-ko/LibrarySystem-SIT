@@ -103,4 +103,26 @@ public class BookRepositoryTest extends AbstractRepositoryTest {
         obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
         obs.assertError(ServiceUnavailableException.class);
     }
+
+    @Test
+    public void getHotBooks_empty_shouldReturnEmptyList() {
+        enqueueJson(200, successData("[]"));
+
+        TestObserver<Result<List<BookSimpleVO>>> obs = repository.getHotBooks(null, 10).test();
+        obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
+        obs.assertValue(r -> {
+            assertTrue(r.isSuccess());
+            assertTrue(r.getData().isEmpty());
+            return true;
+        });
+    }
+
+    @Test
+    public void getBookDetail_404_shouldThrowNotFoundException() {
+        enqueueJson(404, "{\"code\":404,\"message\":\"not found\",\"data\":null}");
+
+        TestObserver<Result<BookDetailVO>> obs = repository.getBookDetail(999L).test();
+        obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
+        obs.assertError(com.library.android.network.exception.NotFoundException.class);
+    }
 }

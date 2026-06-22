@@ -637,7 +637,7 @@ public static final int days = 30;            // 非 final 且未大写
 | library-acquisition | 80% |
 | library-security | 90% |
 | library-bootstrap | 70% |
-| library-android | 50% |
+| library-android | 50%（**当前：35 测试类 / 178 tests，ViewModel + Repository 全覆盖**） |
 
 ### 7.2 测试命名规范
 
@@ -769,8 +769,8 @@ class BookServiceTest {
 | 缩进 | 4 个空格 |
 | Code Style | Google Java Style |
 | 最小 SDK | API 26 (Android 8.0) |
-| 目标 SDK | API 34 (Android 14) |
-| 编译 SDK | API 34 |
+| 目标 SDK | API 35 (Android 15) |
+| 编译 SDK | API 35 |
 
 ### 9.3 共享 EditorConfig
 

@@ -4,7 +4,7 @@
 > **技术栈**: Java 17 + Gradle Kotlin DSL + MVVM + Hilt + Retrofit + RxJava3 + ViewBinding
 > **设计系统**: Material Design 3 + 朱砂红学术美学（v3.0）
 > **生产服务**: `http://101.132.24.73:8080/api/v1/`
-> **最后更新**: 2026-06-19（阶段 14 系统化重构 + 真机走查修复）
+> **最后更新**: 2026-06-22（阶段 14 + 前端质量审计修复 + 测试套件增强）
 
 ---
 
@@ -182,8 +182,30 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - ✅ 采编 DuplicateCheck/GapAnalysis 结构化卡片 UI + 表单 AutoComplete + 谈判返回不重触发
 
 ### 已知限制（阶段 14 未覆盖）
-- ECharts 本地化（离线不可用，当前 CDN 在线可用）
 - 无障碍/横屏适配
+- P3-01 未使用资源清理（待技术债窗口）
+
+### 前端质量审计修复（2026-06-22）
+
+> 基于 `.trae/specs/frontend-quality-audit-2026-06-19/` 审计报告的 90 个问题全面修复。
+
+- **Critical/High 全部消除**：TokenManager 降级 / HTTPS 半改造 / MockInterceptor 隔离 / 8 页面 MVVM 重构
+- **品牌色统一**：`accent_cta`/`m3_primary` → `#C93756`
+- **暗色模式**：12 Fragment ThemeManager.setDarkMode + WebViewThemeHelper + `values-night/themes.xml`
+- **ContentDescription**：17 处补齐，装饰箭头 @null
+- **硬编码中文消除**：ProfileFragment 4 处 + 9 处 setGlobalTitle → `getString(R.string.*)`
+- **Bundle key 常量化**：8 处迁移到 `NavArgKeys` 常量
+- **Utf8Fix**：移除 `BuildConfig.DEBUG` 条件编译 → 无条件 Log.w
+- **targetSdk=35**：附带 `suppressUnsupportedCompileSdk=35`
+- **Chip / ScanBarcodeActivity label / chipStrokeWidth** Token 化
+
+### 测试套件增强（2026-06-22）
+
+- 测试类：32 → 35（新增 SessionManagerTest / BaseViewModelTest / SingleLiveEventTest）
+- 测试用例：151 → **178**（新增 27 个边界条件测试）
+- 新增 ViewModel/Repository 边界：loadMore 分页、null 输入、混合状态、空列表等
+- `./gradlew testDebugUnitTest` **178/178 全部通过** ✅
+- `./gradlew lint` **0 Error** ✅
 
 ### 阶段 14 后真机走查修复（2026-06-19）
 

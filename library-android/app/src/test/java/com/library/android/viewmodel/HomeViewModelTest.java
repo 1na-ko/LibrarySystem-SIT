@@ -86,4 +86,16 @@ public class HomeViewModelTest {
 
         assertNotNull(viewModel.getErrorEvent().getValue());
     }
+
+    @Test
+    public void loadRecommendations_success_shouldExposeBooks() {
+        com.library.android.model.BookRecommendVO rec = mock(com.library.android.model.BookRecommendVO.class);
+        when(userRepository.getRecommendations(anyInt()))
+                .thenReturn(Single.just(ResultFactory.success(Collections.singletonList(rec))));
+
+        viewModel.loadRecommendations();
+
+        assertNotNull(viewModel.getRecommendations().getValue());
+        assertEquals(1, viewModel.getRecommendations().getValue().size());
+    }
 }

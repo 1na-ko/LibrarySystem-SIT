@@ -33,8 +33,17 @@
 | [implementation/阶段9完成记录](implementation/阶段9完成记录.md) | 阶段 9（系统管理与监控）完成详情——用户管理/流通统计/操作日志/定时任务/Prometheus |
 | [implementation/阶段9后审计修复记录](implementation/阶段9后审计修复记录.md) | 阶段 0-9 四维度质量审计（3P0+16P1+29P2+33P3）+ 三批修复落地（62747e0 / 剩余修复 / 回溯修正），全量 360 项测试全绿 |
 | [implementation/阶段9后第二轮回溯审计修复记录](implementation/阶段9后第二轮回溯审计修复记录.md) | 阶段 0-9 第二轮回溯复审（6P1+13P2+20P3=39 项），含 JWT 默认密钥回归修复，全量 362 项测试全绿 |
+| [implementation/阶段10完成记录](implementation/阶段10完成记录.md) | 阶段 10（事件总线 + 集成测试 + 安全加固）完成详情 |
+| [implementation/阶段10后审计修复记录](implementation/阶段10后审计修复记录.md) | 阶段 10 后综合质量审计修复（7 项确认缺陷） |
 | [implementation/前端人员A完成记录](implementation/前端人员A完成记录.md) | Android 前端人员 A — 基础架构 + 认证 + 图书检索 + 个人中心 完成详情 |
 | [implementation/前端人员B完成记录](implementation/前端人员B完成记录.md) | Android 前端人员 B — 借阅管理/预约管理/知识图谱/系统管理/条码扫描 完成详情 |
+
+### 质量审计文档
+
+| 文档 | 说明 |
+|------|------|
+| [../.trae/specs/frontend-quality-audit-2026-06-19/](../.trae/specs/frontend-quality-audit-2026-06-19/) | Android 前端全面质量审计（90 问题 / 36 任务 / 94% 修复完成） |
+| [../.trae/documents/test-suite-audit-and-enhance-plan.md](../.trae/documents/test-suite-audit-and-enhance-plan.md) | 前端测试套件审查与增强计划（151→178 tests） |
 
 ### 技术参考
 

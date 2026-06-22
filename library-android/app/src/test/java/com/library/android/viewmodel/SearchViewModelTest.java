@@ -128,4 +128,25 @@ public class SearchViewModelTest {
         assertNotNull(viewModel.getSuggestions().getValue());
         assertEquals(1, viewModel.getSuggestions().getValue().size());
     }
+
+    @Test
+    public void loadMore_shouldAppendToExistingResults() {
+        BookSimpleVO b1 = mock(BookSimpleVO.class);
+        BookSimpleVO b2 = mock(BookSimpleVO.class);
+        // 必须使用 ArrayList：loadMore 内部对 List 做 addAll，singletonList 不可变
+        java.util.ArrayList<BookSimpleVO> list1 = new java.util.ArrayList<>();
+        list1.add(b1);
+        java.util.ArrayList<BookSimpleVO> list2 = new java.util.ArrayList<>();
+        list2.add(b2);
+        // 第一次 search 返回 page 1 of 2，第二次 loadMore 返回 page 2 of 2
+        when(repository.searchBooks(anyString(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(Single.just(ResultFactory.success(PageResults.of(list1, 1, 2))))
+                .thenReturn(Single.just(ResultFactory.success(PageResults.of(list2, 2, 2))));
+
+        viewModel.search("k");
+        assertEquals(1, viewModel.getSearchResults().getValue().size());
+
+        viewModel.loadMore();
+        assertEquals(2, viewModel.getSearchResults().getValue().size());
+    }
 }

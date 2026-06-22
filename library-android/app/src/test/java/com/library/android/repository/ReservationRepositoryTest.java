@@ -72,4 +72,18 @@ public class ReservationRepositoryTest extends AbstractRepositoryTest {
         obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
         obs.assertError(PermissionDeniedException.class);
     }
+
+    @Test
+    public void getMyReservations_empty_shouldReturnEmptyRecords() {
+        enqueueJson(200, successData("{\"records\":[],\"total\":0,\"pageNum\":1,\"pageSize\":20,\"totalPages\":0}"));
+
+        TestObserver<Result<PageResult<ReservationVO>>> obs =
+                repository.getMyReservations(null, 1, 20).test();
+        obs.awaitDone(2, java.util.concurrent.TimeUnit.SECONDS);
+        obs.assertValue(r -> {
+            assertTrue(r.isSuccess());
+            assertTrue(r.getData().getRecords().isEmpty());
+            return true;
+        });
+    }
 }
