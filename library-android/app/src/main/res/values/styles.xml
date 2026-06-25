@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ============================================================
+         Design Tokens v2.1 — 可复用组件样式
+         ============================================================ -->
+
+    <!-- ── 卡片：1px 边框，0dp 浮起，4dp 圆角（替代阴影依赖） ── -->
+    <style name="Widget.Library.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardElevation">0dp</item>
+        <item name="strokeWidth">@dimen/stroke_thickness</item>
+        <item name="strokeColor">@color/border_light</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Library.Medium</item>
+    </style>
+
+    <!-- ── 搜索栏：0dp 圆角，白色背景，底部仅 1px 下划线 ── -->
+    <style name="Widget.Library.SearchBar" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeColor">@color/border_light</item>
+        <item name="boxCornerRadiusTopStart">0dp</item>
+        <item name="boxCornerRadiusTopEnd">0dp</item>
+        <item name="boxCornerRadiusBottomStart">0dp</item>
+        <item name="boxCornerRadiusBottomEnd">0dp</item>
+        <item name="boxBackgroundColor">@color/bg_input</item>
+        <item name="boxBackgroundMode">filled</item>
+        <item name="hintTextColor">@color/text_placeholder</item>
+        <item name="startIconTint">@color/text_tertiary</item>
+        <item name="endIconTint">@color/text_tertiary</item>
+    </style>
+
+    <!-- ── TabLayout：2dp 下划线指示器，无背景胶囊 ── -->
+    <style name="Widget.Library.TabLayout" parent="Widget.Material3.TabLayout">
+        <item name="tabIndicatorHeight">@dimen/tab_indicator_height</item>
+        <item name="tabIndicatorColor">@color/text_primary</item>
+        <item name="tabIndicatorAnimationMode">linear</item>
+        <item name="tabBackground">@android:color/transparent</item>
+        <item name="tabRippleColor">@android:color/transparent</item>
+        <item name="tabSelectedTextColor">@color/text_primary</item>
+        <item name="tabTextColor">@color/text_secondary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- ── 筛选标签（Chip Filter）：2dp 直角边框，选中态反色 ── -->
+    <style name="Widget.Library.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/bg_card</item>
+        <item name="chipStrokeColor">@color/border_light</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Library.Small</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:checkable">true</item>
+    </style>
+
+    <!-- ── 主要按钮（CTA）：accent_cta 填充 ── -->
+    <style name="Widget.Library.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:textColor">@color/m3_on_primary</item>
+        <item name="backgroundTint">@color/accent_cta</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Library.Medium</item>
+        <item name="android:minHeight">@dimen/button_min_height</item>
+    </style>
+
+    <!-- 次要按钮：outlined -->
+    <style name="Widget.Library.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/border_light</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Library.Medium</item>
+        <item name="android:minHeight">@dimen/button_min_height</item>
+    </style>
+
+    <!-- 文字按钮 -->
+    <style name="Widget.Library.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:minHeight">@dimen/button_min_height</item>
+    </style>
+
+    <!-- ── BottomNavigationView ── -->
+    <style name="Widget.Library.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:background">@color/bg_card</item>
+        <item name="itemIconTint">@color/text_tertiary</item>
+        <item name="itemTextColor">@color/text_tertiary</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Library.BottomNav.ActiveIndicator</item>
+        <item name="android:elevation">0dp</item>
+        <item name="labelVisibilityMode">labeled</item>
+    </style>
+
+    <style name="Widget.Library.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/accent_cta</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Library.Small</item>
+    </style>
+
+    <!-- ── OutlinedBox 输入框 ── -->
+    <style name="Widget.Library.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/border_light</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="hintTextColor">@color/text_placeholder</item>
+        <item name="endIconTint">@color/text_secondary</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_md</item>
+    </style>
+
+    <!-- ── 分页页码 ── -->
+    <style name="TextAppearance.Library.PageCurrent">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Library.PageNormal">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+</resources>

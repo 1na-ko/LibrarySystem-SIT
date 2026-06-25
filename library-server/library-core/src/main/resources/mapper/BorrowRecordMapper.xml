@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.core.mapper.BorrowRecordMapper">
+
+    <!--
+      协同过滤全量活跃借阅查询.
+      仅返回 user_id 和 book_id 用于构建用户-图书交互矩阵，
+      其余字段为 null（或默认值），调用方不应访问非 userId/bookId 字段.
+    -->
+    <select id="selectAllActiveForCF"
+            resultType="com.library.core.entity.BorrowRecord">
+        SELECT user_id, book_id
+        FROM borrow_record
+        WHERE deleted = 0
+          AND status IN ('BORROWED', 'RENEWED', 'RETURNED')
+    </select>
+
+    <!-- 批量查询用户在借数量（BORROWED/RENEWED） -->
+    <select id="countCurrentBorrowsByUserIds" resultType="map">
+        SELECT user_id, COUNT(*) AS cnt
+        FROM borrow_record
+        WHERE deleted = 0
+          AND status IN ('BORROWED', 'RENEWED')
+          AND user_id IN
+          <foreach collection="userIds" item="uid" open="(" separator="," close=")">#{uid}</foreach>
+        GROUP BY user_id
+    </select>
+
+    <!-- 批量查询用户超期数量（OVERDUE） -->
+    <select id="countOverdueByUserIds" resultType="map">
+        SELECT user_id, COUNT(*) AS cnt
+        FROM borrow_record
+        WHERE deleted = 0
+          AND status = 'OVERDUE'
+          AND user_id IN
+          <foreach collection="userIds" item="uid" open="(" separator="," close=")">#{uid}</foreach>
+        GROUP BY user_id
+    </select>
+
+    <!-- Dashboard: 按借阅日期统计数量 -->
+    <select id="countByDateRange" resultType="long">
+        SELECT COUNT(*) FROM borrow_record
+        WHERE deleted = 0 AND borrow_date BETWEEN #{start} AND #{end}
+    </select>
+
+    <!-- Dashboard: 按归还日期统计数量 -->
+    <select id="countByReturnDateRange" resultType="long">
+        SELECT COUNT(*) FROM borrow_record
+        WHERE deleted = 0 AND return_date BETWEEN #{start} AND #{end}
+    </select>
+
+    <!-- Dashboard: 当前超期未还总数 -->
+    <select id="countOverdue" resultType="long">
+        SELECT COUNT(*) FROM borrow_record
+        WHERE deleted = 0 AND status = 'OVERDUE'
+    </select>
+
+    <!-- Dashboard: 当前活跃借阅人数（去重） -->
+    <select id="countDistinctActiveBorrowers" resultType="long">
+        SELECT COUNT(DISTINCT user_id) FROM borrow_record
+        WHERE deleted = 0 AND status IN ('BORROWED', 'RENEWED')
+    </select>
+
+    <!-- Dashboard: 按借阅日期分组统计 -->
+    <select id="countByDateRangeGrouped" resultType="map">
+        SELECT borrow_date AS date, COUNT(*) AS cnt
+        FROM borrow_record
+        WHERE deleted = 0 AND borrow_date BETWEEN #{start} AND #{end}
+        GROUP BY borrow_date ORDER BY borrow_date
+    </select>
+
+    <!-- Dashboard: 按归还日期分组统计 -->
+    <select id="countByReturnDateRangeGrouped" resultType="map">
+        SELECT return_date AS date, COUNT(*) AS cnt
+        FROM borrow_record
+        WHERE deleted = 0 AND return_date BETWEEN #{start} AND #{end}
+        GROUP BY return_date ORDER BY return_date
+    </select>
+
+    <!-- Dashboard: 热门分类 Top-N -->
+    <select id="topBorrowCategories" resultType="map">
+        SELECT c.name AS category_name, COUNT(*) AS cnt
+        FROM borrow_record br
+        JOIN book b ON br.book_id = b.id AND b.deleted = 0
+        JOIN category c ON b.category_id = c.id AND c.deleted = 0
+        WHERE br.deleted = 0
+        GROUP BY c.id, c.name
+        ORDER BY cnt DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

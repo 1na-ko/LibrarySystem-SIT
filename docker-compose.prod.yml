@@ -1,0 +1,125 @@
+# =============================================================================
+# 图书馆智能管理系统 — 生产环境 Docker Compose
+# 安全设计：
+#   1. 所有中间件端口仅绑定 127.0.0.1（不暴露公网），仅应用 8080 对外
+#   2. 密码全部从 .env.prod 读取（不入库），部署时在服务器生成强随机值
+#   3. 与开发 docker-compose.yml 分离，互不影响
+# 启动：docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# =============================================================================
+services:
+  mysql:
+    image: mysql:8.0.35
+    container_name: library-mysql-prod
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-library_db}
+    # 仅绑 127.0.0.1，不暴露公网；应用通过 localhost:3306 连接
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: library-redis-prod
+    restart: unless-stopped
+    # 强密码从环境变量注入，仅绑 127.0.0.1
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: library-es-prod
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+    # ES 仅绑 127.0.0.1（9200 HTTP + 9300 transport 都不公网）
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+      - es_plugins:/usr/share/elasticsearch/plugins
+
+  # IK 分词器安装器（首次安装后需 restart elasticsearch 生效）
+  es-ik-installer:
+    image: elasticsearch:8.11.0
+    container_name: library-es-ik-install-prod
+    command: >
+      bash -c "
+        if [ -d /usr/share/elasticsearch/plugins/analysis-ik ]; then
+          echo 'IK plugin already installed, skipping.'
+        else
+          echo 'Installing IK plugin...'
+          bin/elasticsearch-plugin install --batch https://get.infini.cloud/elasticsearch/analysis-ik/8.11.0
+          echo 'IK plugin installed. Please restart elasticsearch: docker compose -f docker-compose.prod.yml restart elasticsearch'
+        fi
+      "
+    volumes:
+      - es_plugins:/usr/share/elasticsearch/plugins
+    depends_on:
+      - elasticsearch
+
+  neo4j:
+    image: neo4j:5.17.0-community
+    container_name: library-neo4j-prod
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+    # 7474 (HTTP) + 7687 (Bolt) 仅绑 127.0.0.1
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "${NEO4J_USERNAME}", "-p", "${NEO4J_PASSWORD}", "RETURN 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: library-rabbitmq-prod
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    # 5672 (AMQP) + 15672 (管理界面) 仅绑 127.0.0.1
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  redis_data:
+  es_data:
+  es_plugins:
+  neo4j_data:
+  neo4j_logs:
+  rabbitmq_data:

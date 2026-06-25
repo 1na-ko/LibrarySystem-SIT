@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WP-14：搜索页全面重构 — 优雅简洁的比例协调设计。
+  搜索框固定顶部（圆角+悬浮 elevation），下方 TabLayout 紧凑切换"热门搜索"/"分类浏览"，
+  内容区随 Tab 切换显隐。搜索提交后导航到独立 SearchResultsFragment。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <include layout="@layout/page_toolbar" />
+
+    <!-- ═══ 搜索输入区（圆角卡片式，无底线） ═══ -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        app:cardCornerRadius="@dimen/space_xl"
+        app:cardElevation="@dimen/card_elevation"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="@color/bg_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/search_bar_height"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/space_md"
+            android:paddingEnd="@dimen/space_sm">
+
+            <ImageView
+                android:layout_width="@dimen/icon_size_md"
+                android:layout_height="@dimen/icon_size_md"
+                android:src="@drawable/ic_search_vector"
+                android:contentDescription="@string/search"
+                app:tint="@color/accent_cta" />
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/space_sm"
+                android:inputType="text"
+                android:maxLines="1"
+                android:imeOptions="actionSearch"
+                android:hint="@string/search_hint"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_tertiary"
+                android:textSize="@dimen/text_size_body_large"
+                android:background="@null"
+                android:paddingVertical="0dp" />
+
+            <ImageView
+                android:id="@+id/ivClear"
+                android:layout_width="@dimen/icon_size_md"
+                android:layout_height="@dimen/icon_size_md"
+                android:src="@drawable/ic_close_vector"
+                android:contentDescription="@string/clear"
+                android:visibility="gone"
+                app:tint="@color/text_tertiary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAdvanced"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:text="@string/advanced_search"
+                android:textColor="@color/accent_cta"
+                android:textSize="@dimen/text_size_md"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 输入建议下拉（浮在搜索框下方） -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSuggestions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:background="@color/bg_card"
+        android:layout_marginHorizontal="@dimen/space_md"
+        android:elevation="@dimen/space_xs" />
+
+    <!-- ═══ Tab 切换"热门搜索"/"分类浏览"（与搜索框有间距） ═══ -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        style="@style/Widget.Library.TabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg" />
+
+    <!-- ═══ 内容切换区 ═══ -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:layout_marginHorizontal="@dimen/space_md">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 热门搜索标签区域（Tab 0） -->
+            <LinearLayout
+                android:id="@+id/layoutHotSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/space_sm">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupHotTags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleLine="false" />
+            </LinearLayout>
+
+            <!-- 分类浏览区域（Tab 1） -->
+            <LinearLayout
+                android:id="@+id/layoutCategoryBrowse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/space_sm"
+                android:visibility="gone">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvCategories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

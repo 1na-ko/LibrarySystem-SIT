@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Design Tokens v2.1: 推荐项 — 灰度封面缩略图 + 书名。
+     禁止：评分角标、标签、Emoji、彩色图标。 -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/bg_card">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:minHeight="@dimen/book_item_min_height"
+        android:padding="@dimen/space_md"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
+
+        <!-- 左侧色条：推荐项统一使用 accent_reserve 金色 -->
+        <View
+            android:layout_width="@dimen/book_status_bar_width"
+            android:layout_height="match_parent"
+            android:background="@color/accent_reserve" />
+
+        <!-- 灰度封面缩略图 40×56dp -->
+        <ImageView
+            android:id="@+id/ivCover"
+            android:layout_width="@dimen/book_cover_width"
+            android:layout_height="@dimen/book_cover_height"
+            android:background="@color/border_light"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/book_cover"
+            android:layout_marginStart="@dimen/space_md" />
+
+        <!-- 书名 + 作者 + 推荐理由 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="@dimen/space_md">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.Title"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvAuthor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.BodySecondary"
+                android:layout_marginTop="@dimen/space_xxs"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.Caption"
+                android:layout_marginTop="@dimen/space_xxs"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 底部分割线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/divider_thickness"
+        android:background="@color/border_light" />
+
+</LinearLayout>

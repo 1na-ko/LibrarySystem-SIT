@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?android:attr/colorBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/space_md"
+        android:gravity="center_vertical">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/search_entity_hint"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            app:boxBackgroundColor="?attr/colorSurfaceVariant">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:imeOptions="actionSearch"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_sm"
+            android:text="@string/search"
+            style="@style/Widget.Material3.Button" />
+
+    </LinearLayout>
+
+    <!-- 实体类型筛选 -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_md"
+        app:checkedChip="@id/chipAll"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chip_all"
+            style="@style/Widget.Material3.Chip.Filter" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipBook"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chip_book"
+            style="@style/Widget.Material3.Chip.Filter" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAuthor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chip_author"
+            style="@style/Widget.Material3.Chip.Filter" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipKeyword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chip_keyword"
+            style="@style/Widget.Material3.Chip.Filter" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipSubject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chip_subject"
+            style="@style/Widget.Material3.Chip.Filter" />
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="@dimen/space_sm" />
+
+        <LinearLayout
+            android:id="@+id/layoutLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="visible">
+
+            <ProgressBar
+                style="?android:attr/progressBarStyle"
+                android:layout_width="32dp"
+                android:layout_height="32dp" />
+
+            <TextView
+                android:id="@+id/textLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/loading_text"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="@dimen/text_size_body_large" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/layoutEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/entity_search_empty"
+            android:textColor="?attr/colorOutline"
+            android:textSize="@dimen/text_size_body" />
+
+    </FrameLayout>
+
+</LinearLayout>

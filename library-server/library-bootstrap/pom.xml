@@ -42,6 +42,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- RabbitMQ：阶段10 事件总线。RabbitMqConfig 声明 Exchange/Queue/死信/Converter/RetryTemplate -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
         <!-- 生成 IDE 元数据以支持自定义配置键（jwt.* 等）的自动补全 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -79,6 +88,23 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- JaCoCo 聚合覆盖率报告：library-bootstrap 依赖全部业务模块（compile scope），
+                 report-aggregate 在 verify 阶段收集各模块 target/jacoco.exec 生成聚合报告，
+                 输出 target/site/jacoco-aggregate/index.html（对照 Makefile coverage 目标提示路径）。
+                 父 POM pluginManagement 已配 prepare-agent + 单模块 report + excludes（排除 config/entity/dto/mapper/Application）。 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

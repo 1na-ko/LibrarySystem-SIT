@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WP-14：热门图书 — 标签改下拉菜单（ExposedDropdownMenu），节省空间且交互更优雅 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <!-- 分类筛选下拉菜单 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_md"
+        android:layout_marginTop="@dimen/space_sm"
+        android:hint="@string/hot_books_filter_category"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/etCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text|textNoSuggestions"
+            android:text="@string/tab_all" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvHotBooks"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/layoutEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_hot_books"
+            android:textSize="@dimen/text_size_body_large"
+            android:textColor="@color/text_tertiary" />
+
+    </FrameLayout>
+
+</LinearLayout>

@@ -1,9 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material Design 3 主题 -->
-    <style name="Theme.LibrarySystem" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorOnPrimary">@color/on_primary</item>
-        <item name="colorSecondary">@color/secondary</item>
+    <!-- ============================================================
+         Design Tokens v2.1 — 双主题架构
+         浅色主题：默认，用于浏览/借阅/搜索
+         深色主题：Theme.LibrarySystem.Dark，通过 ContextThemeWrapper 应用于
+                  知识图谱和采编模块（非系统 DayNight 自动切换）
+         扫码主题：全屏黑色，用于条码扫描
+         ============================================================ -->
+
+    <!-- ── 浅色主题基础（DayNight 支持系统暗色自动切换） ── -->
+    <style name="Theme.LibrarySystem.Base" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 主色：朱砂红 CTA -->
+        <item name="colorPrimary">@color/m3_primary</item>
+        <item name="colorOnPrimary">@color/m3_on_primary</item>
+        <item name="colorPrimaryContainer">@color/m3_primary</item>
+        <item name="colorOnPrimaryContainer">@color/m3_on_primary</item>
+
+        <!-- 次色：绿（可借状态） -->
+        <item name="colorSecondary">@color/m3_secondary</item>
+        <item name="colorOnSecondary">@color/m3_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/m3_secondary</item>
+        <item name="colorOnSecondaryContainer">@color/m3_on_secondary</item>
+
+        <!-- 三级色：金（预约锁定） -->
+        <item name="colorTertiary">@color/m3_tertiary</item>
+        <item name="colorOnTertiary">@color/m3_on_primary</item>
+        <item name="colorTertiaryContainer">@color/m3_tertiary</item>
+        <item name="colorOnTertiaryContainer">@color/m3_on_primary</item>
+
+        <!-- 错误 -->
+        <item name="colorError">@color/m3_error</item>
+        <item name="colorOnError">@color/m3_on_error</item>
+        <item name="colorErrorContainer">#EFE3E3</item>
+        <item name="colorOnErrorContainer">#8B3A3A</item>
+
+        <!-- 表面 / 背景 -->
+        <item name="android:colorBackground">@color/bg_primary</item>
+        <item name="colorSurface">@color/m3_surface</item>
+        <item name="colorOnSurface">@color/m3_on_surface</item>
+        <item name="colorSurfaceVariant">@color/m3_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m3_on_surface_variant</item>
+        <item name="colorOutline">@color/m3_outline</item>
+        <item name="colorOutlineVariant">@color/m3_outline</item>
+
+        <!-- 全局 ShapeAppearance 默认值（强制 4dp 上限） -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Library.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Library.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Library.Medium</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Library.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Library.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Library.Medium</item>
+
+        <!-- 全局文本颜色 -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorTertiary">@color/text_tertiary</item>
+    </style>
+
+    <!-- ── 浅色主题包装（状态栏等随配置变化的属性） ── -->
+    <style name="Theme.LibrarySystem" parent="Theme.LibrarySystem.Base">
+        <item name="android:statusBarColor">@color/bg_card</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- ── 深色主题（知识图谱 / 采编专用） ── -->
+    <style name="Theme.LibrarySystem.Dark" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- 主色：深色下用金色 -->
+        <item name="colorPrimary">@color/m3_dark_primary</item>
+        <item name="colorOnPrimary">@color/m3_dark_on_primary</item>
+        <item name="colorPrimaryContainer">@color/m3_dark_primary</item>
+        <item name="colorOnPrimaryContainer">@color/m3_dark_on_primary</item>
+
+        <!-- 次色 -->
+        <item name="colorSecondary">@color/m3_dark_secondary</item>
+        <item name="colorOnSecondary">@color/m3_dark_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/m3_dark_secondary</item>
+        <item name="colorOnSecondaryContainer">@color/m3_dark_on_secondary</item>
+
+        <!-- 三级色 -->
+        <item name="colorTertiary">@color/m3_dark_tertiary</item>
+        <item name="colorOnTertiary">@color/m3_dark_on_secondary</item>
+        <item name="colorTertiaryContainer">@color/m3_dark_tertiary</item>
+        <item name="colorOnTertiaryContainer">@color/m3_dark_on_secondary</item>
+
+        <!-- 错误 -->
+        <item name="colorError">@color/m3_dark_error</item>
+        <item name="colorOnError">@color/m3_dark_on_error</item>
+
+        <!-- 表面 / 背景 -->
+        <item name="android:colorBackground">@color/dark_bg_primary</item>
+        <item name="colorSurface">@color/m3_dark_surface</item>
+        <item name="colorOnSurface">@color/m3_dark_on_surface</item>
+        <item name="colorSurfaceVariant">@color/m3_dark_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m3_dark_on_surface_variant</item>
+        <item name="colorOutline">@color/m3_dark_outline</item>
+        <item name="colorOutlineVariant">@color/m3_dark_outline</item>
+
+        <!-- 全局 ShapeAppearance -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Library.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Library.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Library.Medium</item>
+
+        <!-- 状态栏 -->
+        <item name="android:statusBarColor">@color/dark_bg_card</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- ── SplashScreen 启动主题 ── -->
+    <style name="Theme.LibrarySystem.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/accent_cta</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/accent_cta</item>
+        <item name="postSplashScreenTheme">@style/Theme.LibrarySystem</item>
+    </style>
+
+    <!-- ── 扫码页面主题（全屏黑色沉浸） ── -->
+    <style name="Theme.LibrarySystem.Scan" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

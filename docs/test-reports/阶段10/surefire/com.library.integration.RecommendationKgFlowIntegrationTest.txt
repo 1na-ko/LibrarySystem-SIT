@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.library.integration.RecommendationKgFlowIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 29.09 s -- in com.library.integration.RecommendationKgFlowIntegrationTest

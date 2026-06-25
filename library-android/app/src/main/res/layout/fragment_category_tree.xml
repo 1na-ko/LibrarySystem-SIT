@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary">
+
+        <!-- 加载中 -->
+        <LinearLayout
+            android:id="@+id/layoutLoading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/textLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/loading_text"
+                android:textColor="@color/text_placeholder"
+                android:textSize="@dimen/text_size_body_large" />
+
+        </LinearLayout>
+
+        <!-- 分类树列表 -->
+        <LinearLayout
+            android:id="@+id/layoutContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </LinearLayout>
+
+        <!-- 空数据 -->
+        <TextView
+            android:id="@+id/layoutEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:visibility="gone"
+            android:drawablePadding="@dimen/space_md"
+            app:drawableTopCompat="@drawable/ill_empty_state"
+            android:text="@string/no_category_data"
+            android:textSize="@dimen/text_size_body_large"
+            android:textColor="@color/text_tertiary" />
+
+        <!-- 错误 -->
+        <LinearLayout
+            android:id="@+id/layoutError"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="@dimen/empty_state_illustration_size"
+                android:layout_height="@dimen/empty_state_illustration_size"
+                android:src="@drawable/ill_empty_state"
+                android:contentDescription="@null"
+                android:layout_marginBottom="@dimen/space_md" />
+
+            <TextView
+                android:id="@+id/tvError"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_size_body_large"
+                android:textColor="@color/text_tertiary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/retry"
+                android:layout_marginTop="@dimen/space_md" />
+
+        </LinearLayout>
+
+    </FrameLayout>

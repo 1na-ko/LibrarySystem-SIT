@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size_md"
+    android:height="@dimen/icon_size_md"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Lens: circle, stroke only -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="2"
+        android:pathData="M10,10m-5.5,0a5.5,5.5 0,1 1,11 0a5.5,5.5 0,1 1,-11 0" />
+
+    <!-- Handle: diagonal line from lens bottom-right -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M14,14L21,21" />
+</vector>

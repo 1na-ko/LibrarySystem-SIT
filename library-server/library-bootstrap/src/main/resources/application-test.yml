@@ -11,9 +11,9 @@ spring:
 
   flyway:
     enabled: true
-    # 先执行结构迁移，再执行测试种子数据（classpath:db/test-data 尚未创建，
-    # 各业务模块编写集成测试时按需补充该目录下的 SQL/Java 数据初始化脚本）。
-    locations: classpath:db/migration,classpath:db/test-data
+    # 仅执行结构迁移。测试种子数据路径 classpath:db/test-data 将在阶段 10 集成测试时启用，
+    # 届时各业务模块按需补充该目录下的 SQL/Java 数据初始化脚本。
+    locations: classpath:db/migration
 
 logging:
   level:

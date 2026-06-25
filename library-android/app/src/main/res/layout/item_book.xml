@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/book_item_min_height"
+    android:orientation="vertical"
+    android:background="@color/bg_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <!-- 主行：状态色条 + 封面 + 文字信息 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/space_md">
+
+        <!-- 左侧状态色条（adapter 按状态着色：绿/灰/金） -->
+        <View
+            android:id="@+id/statusBar"
+            android:layout_width="@dimen/book_status_bar_width"
+            android:layout_height="match_parent"
+            android:background="@color/border_light" />
+
+        <!-- 封面：使用品牌化占位图 -->
+        <ImageView
+            android:id="@+id/ivCover"
+            android:layout_width="@dimen/book_cover_width"
+            android:layout_height="@dimen/book_cover_height"
+            android:layout_marginStart="@dimen/space_md"
+            android:background="@color/border_light"
+            android:src="@drawable/ic_book_placeholder_branded"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/book_cover" />
+
+        <!-- 右侧文字列 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="@dimen/space_md">
+
+            <!-- 书名 -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.Title"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <!-- 作者 · 分类 -->
+            <TextView
+                android:id="@+id/tvAuthor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.BodySecondary"
+                android:layout_marginTop="@dimen/space_xs"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- ISBN -->
+            <TextView
+                android:id="@+id/tvIsbn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.Library.Mono"
+                android:layout_marginTop="@dimen/space_xxs" />
+
+            <!-- 可借册数 / 已借出 -->
+            <TextView
+                android:id="@+id/tvAvailCopies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_size_sm"
+                android:layout_marginTop="@dimen/space_xs" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 底部分割线：0.5dp -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/divider_thickness"
+        android:background="@color/border_light" />
+
+</LinearLayout>

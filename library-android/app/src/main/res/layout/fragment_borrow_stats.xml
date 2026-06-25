@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_lg">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stats_title"
+                android:textSize="@dimen/text_size_headline"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <!-- 统计数字卡片 第一行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/space_xl">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="@dimen/space_sm"
+                    style="@style/Widget.Library.Card">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/space_lg">
+
+                        <TextView
+                            android:id="@+id/tvTotalBorrows"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_login_title"
+                            android:textStyle="bold"
+                            android:textColor="@color/accent_cta" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/total_borrows_label"
+                            android:textSize="@dimen/text_size_body_small"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="@dimen/space_xs" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_sm"
+                    style="@style/Widget.Library.Card">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/space_lg">
+
+                        <TextView
+                            android:id="@+id/tvCurrentBorrows"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_login_title"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/current_borrows_label"
+                            android:textSize="@dimen/text_size_body_small"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="@dimen/space_xs" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- 统计数字卡片 第二行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/space_sm">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="@dimen/space_sm"
+                    style="@style/Widget.Library.Card">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/space_lg">
+
+                        <TextView
+                            android:id="@+id/tvOverdueCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_login_title"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/overdue_label"
+                            android:textSize="@dimen/text_size_body_small"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="@dimen/space_xs" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_sm"
+                    style="@style/Widget.Library.Card">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/space_lg">
+
+                        <TextView
+                            android:id="@+id/tvTotalFines"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_login_title"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/stats_total_fines"
+                            android:textSize="@dimen/text_size_body_small"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="@dimen/space_xs" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- 分类分布图 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/stats_category_dist"
+                android:textSize="@dimen/text_size_title_large"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="@dimen/space_xl" />
+
+            <FrameLayout
+                android:id="@+id/layoutPieChart"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:layout_marginTop="@dimen/space_sm" />
+
+            <!-- 月度趋势图 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/stats_monthly_trend"
+                android:textSize="@dimen/text_size_title_large"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="@dimen/space_xl" />
+
+            <FrameLayout
+                android:id="@+id/layoutLineChart"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:layout_marginTop="@dimen/space_sm" />
+
+        </LinearLayout>
+
+    </ScrollView>

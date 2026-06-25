@@ -18,6 +18,11 @@
             <groupId>com.library</groupId>
             <artifactId>library-common</artifactId>
         </dependency>
+        <!--
+          library-ai 依赖说明：
+          阶段 6（推荐引擎）已实际消费——RecommendationServiceImpl 注入 LlmService
+          生成个性化推荐理由，ContentBasedServiceImpl 注入 EmbeddingService 构建用户画像。
+        -->
         <dependency>
             <groupId>com.library</groupId>
             <artifactId>library-ai</artifactId>
@@ -38,6 +43,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- RabbitMQ：阶段10 事件总线。ESSyncListener/ReservationNotifier 改为 @RabbitListener 消费，
+             EventBusBridge 在事务提交后桥接转发领域事件至 MQ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.redisson</groupId>

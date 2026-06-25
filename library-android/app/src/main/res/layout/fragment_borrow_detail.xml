@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_lg">
+
+            <!-- 图书信息卡片 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Library.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_lg">
+
+                    <ImageView
+                        android:id="@+id/imageCover"
+                        android:layout_width="@dimen/borrow_detail_cover_width"
+                        android:layout_height="@dimen/borrow_detail_cover_height"
+                        android:contentDescription="@string/book_cover"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_book_placeholder" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_md"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textBookTitle"
+                            style="@style/TextAppearance.Library.Title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="深入理解Java虚拟机" />
+
+                        <TextView
+                            android:id="@+id/textAuthor"
+                            style="@style/TextAppearance.Library.BodySecondary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            tools:text="周志明" />
+
+                        <TextView
+                            android:id="@+id/textIsbn"
+                            style="@style/TextAppearance.Library.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            tools:text="ISBN: 978-7-111-58680-7" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 借阅详情卡片 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Library.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        style="@style/TextAppearance.Library.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/borrow_info" />
+
+                    <!-- 借阅日期 + 应还日期 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/TextAppearance.Library.Label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/borrow_date_label" />
+
+                            <TextView
+                                android:id="@+id/textBorrowDate"
+                                style="@style/TextAppearance.Library.Body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                tools:text="2026-06-01" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/TextAppearance.Library.Label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/due_date_label" />
+
+                            <TextView
+                                android:id="@+id/textDueDate"
+                                style="@style/TextAppearance.Library.Body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                tools:text="2026-07-01" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- 分割线 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/divider_thickness"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:background="@color/border_light" />
+
+                    <!-- 状态 + 归还日期 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/TextAppearance.Library.Label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/status_label" />
+
+                            <TextView
+                                android:id="@+id/textStatus"
+                                style="@style/TextAppearance.Library.Body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                tools:text="借阅中" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/layoutReturnDate"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <TextView
+                                style="@style/TextAppearance.Library.Label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/return_date_label" />
+
+                            <TextView
+                                android:id="@+id/textReturnDate"
+                                style="@style/TextAppearance.Library.Body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                tools:text="2026-06-20" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- 分割线 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/divider_thickness"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:background="@color/border_light" />
+
+                    <!-- 续借次数 + 罚款金额 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/TextAppearance.Library.Label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/renew_count_label" />
+
+                            <TextView
+                                android:id="@+id/textRenewCount"
+                                style="@style/TextAppearance.Library.Body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                tools:text="0/1" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/layoutFine"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <TextView
+                                style="@style/TextAppearance.Library.Label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/fine_label"
+                                android:textColor="@color/accent_cta" />
+
+                            <TextView
+                                android:id="@+id/textFine"
+                                style="@style/TextAppearance.Library.Body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                android:textColor="@color/accent_cta"
+                                tools:text="¥5.50" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 操作按钮 -->
+            <LinearLayout
+                android:id="@+id/layoutActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:orientation="horizontal"
+                android:visibility="visible">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRenew"
+                    style="@style/Widget.Library.Button.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_sm"
+                    android:layout_weight="1"
+                    android:text="@string/renew_book" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReturn"
+                    style="@style/Widget.Library.Button.Primary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_sm"
+                    android:layout_weight="1"
+                    android:text="@string/return_book" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

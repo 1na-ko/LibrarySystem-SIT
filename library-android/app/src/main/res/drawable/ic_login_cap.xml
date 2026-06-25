@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 博士帽图标：双圈 + 学位帽，朱砂红 #C93756 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- 外圈 ring-outer -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M256,58A198,198 0,1 1,255.99 58Z"
+        android:strokeColor="@color/login_accent_vermillion"
+        android:strokeWidth="3.5" />
+
+    <!-- 内圈 ring-inner -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M256,74A182,182 0,1 1,255.99 74Z"
+        android:strokeColor="@color/login_accent_vermillion"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.6" />
+
+    <!-- 学位帽图标组，translate(256, 248) -->
+    <group
+        android:translateX="256"
+        android:translateY="248">
+
+        <!-- 帽顶主体 cap-main -->
+        <path
+            android:fillColor="@color/login_accent_vermillion"
+            android:pathData="M-75,-15L0,-55L75,-15L0,25Z" />
+
+        <!-- 帽顶阴影 cap-shadow -->
+        <path
+            android:fillColor="@color/login_accent_vermillion_dark"
+            android:pathData="M-75,-15L-75,-10L0,30L75,-10L75,-15L0,25Z" />
+
+        <!-- 帽身主体 cap-main -->
+        <path
+            android:fillColor="@color/login_accent_vermillion"
+            android:pathData="M-55,0L-55,55L55,55L55,0L0,25Z" />
+
+        <!-- 帽身阴影 -->
+        <path
+            android:fillColor="@color/login_accent_vermillion_dark"
+            android:fillAlpha="0.3"
+            android:pathData="M0,25L55,0L55,55L0,55Z" />
+
+        <!-- 流苏弧线 -->
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M55,-5Q70,5 70,25Q70,40 60,40Q50,40 50,25Q50,10 55,-5"
+            android:strokeColor="@color/login_accent_vermillion"
+            android:strokeWidth="4" />
+
+        <!-- 流苏组件 translate(60, 40) -->
+        <group
+            android:translateX="60"
+            android:translateY="40">
+
+            <!-- 流苏椭圆主体 -->
+            <path
+                android:fillColor="@color/login_accent_vermillion"
+                android:pathData="M-5,8A5,12 0,1 1,5 8A5,12 0,1 1,-5 8Z" />
+
+            <!-- 流苏椭圆阴影 -->
+            <path
+                android:fillColor="@color/login_accent_vermillion_dark"
+                android:fillAlpha="0.4"
+                android:pathData="M-3,8A3,10 0,1 1,3 8A3,10 0,1 1,-3 8Z" />
+        </group>
+
+        <!-- 高光线 highlight 1: 帽顶折线 -->
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M-75,-15L0,-55L75,-15"
+            android:strokeColor="@color/white"
+            android:strokeWidth="1.8"
+            android:strokeAlpha="0.7"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+
+        <!-- 高光线 highlight 2: 帽身折线 -->
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M-55,0L0,25L55,0"
+            android:strokeColor="@color/white"
+            android:strokeWidth="1.8"
+            android:strokeAlpha="0.35"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+
+        <!-- 高光线 highlight 3: 帽底横线 -->
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M-55,55L55,55"
+            android:strokeColor="@color/white"
+            android:strokeWidth="1.8"
+            android:strokeAlpha="0.21"
+            android:strokeLineCap="round" />
+
+        <!-- 帽顶圆点 -->
+        <path
+            android:fillColor="@color/login_accent_vermillion"
+            android:pathData="M0,-58A3,3 0,1 1,0 -51.99A3,3 0,1 1,0 -58Z" />
+    </group>
+
+</vector>

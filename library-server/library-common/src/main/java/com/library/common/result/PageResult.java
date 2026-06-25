@@ -1,5 +1,6 @@
 package com.library.common.result;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.List;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PageResult<T> {
 
     /** 当前页数据列表 */
@@ -68,7 +69,9 @@ public class PageResult<T> {
         result.total = total;
         result.pageNum = pageNum;
         result.pageSize = pageSize;
-        result.totalPages = (int) Math.ceil((double) total / pageSize);
+        result.totalPages = pageSize > 0
+                ? (int) Math.ceil((double) total / pageSize)
+                : 0;
         return result;
     }
 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 由 Debounce 工具用作 View.setTag(int) 的 key，避免 tag 冲突. -->
+    <item name="tag_debounce_timestamp" type="id" />
+</resources>

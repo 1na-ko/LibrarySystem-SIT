@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ============================================================
+         Design Tokens v2.1 — 排版系统
+         AAPT2 resolves dotted names hierarchically, so we provide
+         the base TextAppearance.Library as an intermediate style.
+         ============================================================ -->
+
+    <!-- 基类（满足 AAPT2 链接器层级解析） -->
+    <style name="TextAppearance.Library" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- 大标题: serif, 24sp -->
+    <style name="TextAppearance.Library.Display" parent="TextAppearance.Library">
+        <item name="android:textSize">24sp</item>
+        <item name="android:fontFamily">serif</item>
+    </style>
+
+    <!-- 标题: serif, 16sp, bold -->
+    <style name="TextAppearance.Library.Title" parent="TextAppearance.Library">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">serif</item>
+    </style>
+
+    <!-- 正文: sans, 14sp -->
+    <style name="TextAppearance.Library.Body" parent="TextAppearance.Library">
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <!-- 次要正文: sans, 12sp -->
+    <style name="TextAppearance.Library.BodySecondary" parent="TextAppearance.Library">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <!-- 辅助文字: sans, 11sp -->
+    <style name="TextAppearance.Library.Caption" parent="TextAppearance.Library">
+        <item name="android:textColor">@color/text_tertiary</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <!-- 等宽数字: mono, 10sp -->
+    <style name="TextAppearance.Library.Mono" parent="TextAppearance.Library">
+        <item name="android:textColor">@color/text_tertiary</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
+
+    <!-- 标签文字: sans, 12sp -->
+    <style name="TextAppearance.Library.Label" parent="TextAppearance.Library">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <!-- ── 登录页大标题：思源宋体 / 28sp / 朱砂红 ── -->
+    <style name="TextAppearance.Login.Title" parent="TextAppearance.Library.Display">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/login_accent_vermillion</item>
+        <item name="android:fontFamily">serif</item>
+        <!-- TODO: 替换为 @font/noto_serif_sc_bold_subset 做字体子集化 -->
+    </style>
+</resources>

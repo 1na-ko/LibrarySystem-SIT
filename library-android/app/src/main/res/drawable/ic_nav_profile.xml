@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/icon_size_md"
+    android:height="@dimen/icon_size_md"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Head: circle -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,6m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <!-- Body: rounded upper torso -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M4,20c0,-4.418 3.582,-7 8,-7s8,2.582 8,7v1H4v-1Z" />
+</vector>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/space_md"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/ivExpand"
+        android:layout_width="@dimen/icon_size_md"
+        android:layout_height="@dimen/icon_size_md"
+        android:src="@drawable/ic_arrow_right"
+        android:contentDescription="@null"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvCategoryName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        style="@style/TextAppearance.Library.Body"
+        android:layout_marginStart="@dimen/space_sm" />
+
+    <TextView
+        android:id="@+id/tvBookCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/TextAppearance.Library.Caption"
+        android:layout_marginStart="@dimen/space_sm" />
+
+</LinearLayout>

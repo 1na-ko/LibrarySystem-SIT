@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色模式下的品牌化图书封面占位图：使用更明亮的品牌色调保证对比度 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="120dp"
+    android:viewportWidth="80"
+    android:viewportHeight="120">
+
+    <!-- 书本封面：深色模式下使用更亮的朱砂红 -->
+    <path
+        android:fillColor="@color/dark_chart_color_1"
+        android:pathData="M8,4 L72,4 C73.1,4 74,4.9 74,6 L74,114 C74,115.1 73.1,116 72,116 L8,116 C6.9,116 6,115.1 6,114 L6,6 C6,4.9 6.9,4 8,4 Z" />
+
+    <!-- 书脊：略深 -->
+    <path
+        android:fillColor="#A52A46"
+        android:pathData="M6,6 L16,6 L16,114 L6,114 C6,114 6,6 6,6 Z" />
+
+    <!-- 内页装饰线条：白色 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,42 L56,42"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,56 L52,56"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,70 L48,70"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+
+    <!-- 底部装饰：打开的书页 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,88 L40,94 L48,88 L40,82 Z" />
+
+</vector>

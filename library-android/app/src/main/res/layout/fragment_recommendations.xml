@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WP-7：推荐页重构 — AI 卡片与列表同处一个 NestedScrollView，
+  AI 卡片随列表滚动（原版 AI 卡片固定顶部、不随滚动）；
+  去除卡片 elevation 统一平面视觉，AI 图标与列表色条同色。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- ============ 顶部 AI 推荐助手卡片（流式逐字显示导语） ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAiReason"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/space_md"
+                    app:cardElevation="0dp"
+                    app:cardCornerRadius="@dimen/space_md"
+                    app:strokeWidth="@dimen/stroke_thickness"
+                    app:strokeColor="@color/border_light"
+                    app:cardBackgroundColor="@color/bg_card">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_lg">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_ai_assistant"
+                                android:contentDescription="@string/recommend_ai_title"
+                                app:tint="@color/accent_cta" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="@dimen/space_sm"
+                                android:text="@string/recommend_ai_title"
+                                android:textColor="@color/text_primary"
+                                android:textSize="@dimen/text_size_body_large"
+                                android:textStyle="bold" />
+
+                            <!-- 导语流式生成中的小 loading -->
+                            <ProgressBar
+                                android:id="@+id/reasonLoading"
+                                style="?android:attr/progressBarStyleSmall"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+                        <!-- AI 导语文本（流式逐 token 累加，逐字渲染） -->
+                        <TextView
+                            android:id="@+id/tvAiReason"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/recommend_ai_initial"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="@dimen/text_size_body"
+                            android:lineSpacingExtra="@dimen/space_xs" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ 推荐书目列表（books 事件秒回） ============ -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvRecommendations"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:clipToPadding="false"
+                    android:paddingBottom="@dimen/space_lg" />
+
+                <!-- 书目空态 -->
+                <TextView
+                    android:id="@+id/layoutEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xxxl"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:drawablePadding="@dimen/space_md"
+                    app:drawableTopCompat="@drawable/ill_empty_state"
+                    android:text="@string/recommend_empty"
+                    android:textSize="@dimen/text_size_body_large"
+                    android:textColor="@color/text_tertiary" />
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- 书目加载中（books 事件到达前，全屏覆盖层） -->
+    <LinearLayout
+        android:id="@+id/layoutLoading"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="@dimen/book_cover_width"
+            android:layout_height="40dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/recommend_books_loading"
+            android:textSize="@dimen/text_size_body_small"
+            android:textColor="@color/text_tertiary" />
+
+    </LinearLayout>
+
+</LinearLayout>

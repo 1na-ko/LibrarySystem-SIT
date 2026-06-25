@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 书本图标：封面 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,36 L74,36 C76.2,36 78,37.8 78,40 L78,72 L34,72 L34,40 C34,37.8 35.8,36 38,36 Z" />
+
+    <!-- 书本图标：书脊 -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M34,36 L38,36 L38,76 L34,76 Z" />
+
+    <!-- 书本图标：内页线条 -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M41,44 L71,44"
+        android:strokeWidth="1.5"
+        android:strokeColor="#BDBDBD" />
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M41,50 L65,50"
+        android:strokeWidth="1.5"
+        android:strokeColor="#BDBDBD" />
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M41,56 L68,56"
+        android:strokeWidth="1.5"
+        android:strokeColor="#BDBDBD" />
+</vector>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_lg">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/as_title"
+                android:textSize="@dimen/text_size_headline"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Library.TextInputLayout"
+                android:hint="@string/as_title_hint"
+                android:layout_marginTop="@dimen/space_xl">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutAuthor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Library.TextInputLayout"
+                android:hint="@string/as_author_hint"
+                android:layout_marginTop="@dimen/space_md">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etAuthor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutIsbn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Library.TextInputLayout"
+                android:hint="@string/as_isbn_hint"
+                android:layout_marginTop="@dimen/space_md">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etIsbn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutPublisher"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Library.TextInputLayout"
+                android:hint="@string/as_publisher_hint"
+                android:layout_marginTop="@dimen/space_md">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPublisher"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/space_md">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutYearFrom"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    style="@style/Widget.Library.TextInputLayout"
+                    android:hint="@string/as_year_from">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etYearFrom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/year_range_separator"
+                    android:textSize="@dimen/text_size_title"
+                    android:textColor="@color/text_tertiary"
+                    android:gravity="center"
+                    android:padding="@dimen/space_sm" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutYearTo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    style="@style/Widget.Library.TextInputLayout"
+                    android:hint="@string/as_year_to">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etYearTo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+            <!-- 仅可借开关 -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchOnlyAvailable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/as_only_available"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="@dimen/space_md" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSearch"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_min_height"
+                style="@style/Widget.Library.Button.Primary"
+                android:text="@string/search"
+                android:layout_marginTop="@dimen/space_xl" />
+
+        </LinearLayout>
+
+    </ScrollView>

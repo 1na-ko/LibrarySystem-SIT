@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- 深色模式下使用更明亮的品牌色，保证视觉层次 -->
+    <solid android:color="@color/accent_cta" />
+    <size
+        android:width="@dimen/space_xxxl"
+        android:height="@dimen/space_xxxl" />
+</shape>
