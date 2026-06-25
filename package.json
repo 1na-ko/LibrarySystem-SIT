@@ -1,0 +1,24 @@
+{
+  "name": "librarysystem-sit",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <img src=\"https://img.shields.io/badge/Spring%20Boot-3.5.0-6DB33F?style=flat-square&logo=springboot&logoColor=white\" alt=\"Spring Boot\">   <img src=\"https://img.shields.io/badge/Java-17-ED8B00?style=flat-square&logo=openjdk&logoColor=white\" alt=\"Java 17\">   <img src=\"https://img.shields.io/badge/Maven-3.9+-C71A36?style=flat-square&logo=apachemaven&logoColor=white\" alt=\"Maven\">   <img src=\"https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white\" alt=\"MySQL\">   <img src=\"https://img.shields.io/badge/Redis-7.2-DC382D?style=flat-square&logo=redis&logoColor=white\" alt=\"Redis\">   <img src=\"https://img.shields.io/badge/Elasticsearch-8.11-005571?style=flat-square&logo=elasticsearch&logoColor=white\" alt=\"ES\">   <img src=\"https://img.shields.io/badge/Neo4j-5.17-4581C3?style=flat-square&logo=neo4j&logoColor=white\" alt=\"Neo4j\">   <img src=\"https://img.shields.io/badge/RabbitMQ-3.12-FF6600?style=flat-square&logo=rabbitmq&logoColor=white\" alt=\"RabbitMQ\">   <img src=\"https://img.shields.io/badge/license-MIT-green?style=flat-square\" alt=\"License\"> </p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1na-ko/LibrarySystem-SIT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/1na-ko/LibrarySystem-SIT/issues"
+  },
+  "homepage": "https://github.com/1na-ko/LibrarySystem-SIT#readme"
+}
